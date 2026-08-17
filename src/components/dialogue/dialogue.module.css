@@ -1,0 +1,67 @@
+.portrait {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.frame {
+    position: relative;
+    aspect-ratio: 3 / 4;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    border: 1px solid var(--gold-dim);
+    background:
+        linear-gradient(180deg, #3a3124 0%, #1a1612 100%);
+    overflow: hidden;
+}
+
+.silhouette {
+    width: 58%;
+    height: 72%;
+    background: #12100c;
+    clip-path: ellipse(50% 48% at 50% 42%);
+    box-shadow: 0 24px 0 18px #12100c;
+}
+
+.placeholder {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: var(--text-dim);
+}
+
+.name {
+    margin: 0;
+    text-align: center;
+    font-size: 13px;
+    color: var(--gold);
+}
+
+.box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.speaker {
+    margin: 0;
+    color: var(--gold);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.line {
+    margin: 0;
+    font-family: var(--font-story), "Apple SD Gothic Neo", serif;
+    font-size: 16px;
+    line-height: 1.7;
+}
+
+.dialogue {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}

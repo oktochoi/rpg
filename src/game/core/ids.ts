@@ -1,0 +1,10 @@
+export type PlayerId = string;
+export type NpcId = string;
+export type QuestId = string;
+export type LocationId = string;
+export type ItemId = string;
+export type SceneId = string;
+export type EncounterId = string;
+export type SaveSlotId = string;
+export type ChoiceId = string;
+export type MemoryId = string;

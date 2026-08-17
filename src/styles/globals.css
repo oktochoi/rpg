@@ -1,0 +1,67 @@
+html,
+body,
+#__next {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    color: var(--text);
+    background-color: var(--bg);
+    font-family: var(--font-ui), "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+}
+
+:root {
+    --bg: #0e0c0a;
+    --panel: #181410;
+    --panel-raised: #201c16;
+    --panel-border: #3d3428;
+    --gold: #c4a574;
+    --gold-dim: #8a7350;
+    --text: #ece6d9;
+    --text-dim: #9a8f7d;
+    --hp: #a63d3d;
+    --mp: #3d6ea6;
+    --choice: #241f19;
+    --shadow: rgba(0, 0, 0, 0.45);
+}
+
+#app {
+    width: 100%;
+    height: 100%;
+    min-height: 100vh;
+    overflow: auto;
+}
+
+.spritePosition {
+    margin: 10px 0 0 10px;
+    font-size: 0.8em;
+}
+
+.button {
+    width: 140px;
+    margin: 10px;
+    padding: 10px;
+    background-color: #000000;
+    color: rgba(255, 255, 255, 0.87);
+    border: 1px solid rgba(255, 255, 255, 0.87);
+    cursor: pointer;
+    transition: all 0.3s;
+
+    &:hover {
+        border: 1px solid #0ec3c9;
+        color: #0ec3c9;
+    }
+
+    &:active {
+        background-color: #0ec3c9;
+    }
+
+    /* Disabled styles */
+    &:disabled {
+        cursor: not-allowed;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: rgba(255, 255, 255, 0.3);
+    }
+}
