@@ -1,4 +1,5 @@
 import * as Phaser from 'phaser';
+import { PlayerAttackController } from '../player/PlayerAttackController';
 import { PlayerController } from '../player/PlayerController';
 
 const PLAYER_SIZE = 32;
@@ -6,6 +7,7 @@ const PLAYER_SIZE = 32;
 export class CombatScene extends Phaser.Scene {
   private player?: Phaser.GameObjects.Rectangle;
   private controller?: PlayerController;
+  private attack?: PlayerAttackController;
 
   constructor() {
     super('CombatScene');
@@ -27,8 +29,9 @@ export class CombatScene extends Phaser.Scene {
     const body = player.body as Phaser.Physics.Arcade.Body;
     this.player = player;
     this.controller = new PlayerController(this, body);
+    this.attack = new PlayerAttackController(this, player, this.controller);
 
-    this.add.text(16, 16, 'WASD 이동', {
+    this.add.text(16, 16, 'WASD 이동  ·  Space 회피  ·  좌클릭 공격', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '14px',
       color: '#9a8f7d',
@@ -43,8 +46,9 @@ export class CombatScene extends Phaser.Scene {
     this.game.canvas.focus();
   }
 
-  update(): void {
-    this.controller?.update();
+  update(_time: number, delta: number): void {
+    this.controller?.update(delta);
+    this.attack?.update(delta);
   }
 
   private handleResize(gameSize: Phaser.Structs.Size): void {
