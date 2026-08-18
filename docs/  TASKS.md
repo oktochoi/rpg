@@ -105,6 +105,14 @@ Player는 Lv.1 모험가로 시작한다. 선택마다 Game Time과 EXP가 흐�
 
 # CURRENT
 
+플레이 가능: **Chapter 1 Organic RPG Loop (STEP 34 COMPLETE)**.
+
+New Game → 길드 등록 → 고블린 의뢰/전투 → Gold → 상점/장비/강화 → 세리아 폐허 → Guardian → 조사/귀환/보고/휴식 → 길드 공적 → **First Advancement** → 북문 Hook → Chapter Complete.
+
+다음 작업은 STEP 35 Chapter 2. Chapter 2는 아직 만들지 않는다.
+
+상세 흐름: `docs/  GAME_DESIGN.md` 맨 위 **현재 상태 / 현재 Chapter 1 플레이 흐름**.
+
 ## STEP 32 — Chapter 1 Complete RPG Loop / Economy / Shop / Inventory / Equipment / Story Finalization
 
 Status: COMPLETE
@@ -144,6 +152,8 @@ Chapter 1을 실제 UI만으로 처음부터 끝까지 플레이할 수 있는 �
 
 # NEXT
 
+다음 스텝은 **STEP 35 — Chapter 2 Northern Region**. STEP 33 / 34는 완료.
+
 ## STEP 33 — Chapter 1 Post-Boss Epilogue & Narrative Completion
 
 Status: COMPLETE
@@ -166,9 +176,54 @@ Status: COMPLETE
 * [x] shouldResolveStory: allow resolution after STORY_UPDATED
 * [x] Full Scenario Test (A~V) PASS + tsc + build
 
-## STEP 34 — Chapter 2 Northern Region
+## STEP 34 — Chapter 1 Complete Organic RPG Loop
 
-STEP 34에서 실제로:
+Status: COMPLETE
+
+Chapter 1을 “몇 번 클릭 후 Boss”가 아니라 탐색 / 대화 / 의뢰 / 전투 / Gold / 상점 / 장비 / 강화 / 보고 / 전직이 이어지는 첫 RPG 챕터로 완성한다. Chapter 2는 만들지 않는다.
+
+* [x] Chapter 1 Flow Rewrite
+* [x] Goblin Scout Encounter
+* [x] Forest Ambush
+* [x] Goblin Camp
+* [x] Ruins Entrance Encounter
+* [x] Side Quest Integration
+* [x] Quest Economy Loop
+* [x] Gold Balance
+* [x] Shop Story Unlock
+* [x] Equipment Purchase
+* [x] Equipment Stat Integration
+* [x] Enhancement +0~+3
+* [x] Enhancement Cost
+* [x] Enhancement UI
+* [x] Enhancement Save
+* [x] Dialogue Topic State
+* [x] Dialogue Repeat Prevention
+* [x] Semantic Candidate Dedup
+* [x] Dialogue Exhaustion
+* [x] Candidate Fallback
+* [x] Zero Choice Prevention
+* [x] Main Progress Candidate
+* [x] NPC Context Dialogue
+* [x] Story Priority Fix
+* [x] First Advancement Bug Fix
+* [x] First Advancement Resolver
+* [x] Advancement Priority
+* [x] Advancement Starter Equipment
+* [x] Post Boss Flow
+* [x] UI Layout Fix
+* [x] Footer Single Row
+* [x] Footer Duplicate Check
+* [x] Modal Overflow Fix
+* [x] Long Text Fix
+* [x] Combat → Story UI Regression
+* [x] Save/Load
+* [x] Old Save Migration
+* [x] Full Chapter 1 Playthrough
+
+## STEP 35 — Chapter 2 Northern Region
+
+STEP 35에서 실제로:
 
 - Northern Gate 너머 Region
 - Chapter 2 Main Story

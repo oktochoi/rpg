@@ -5,7 +5,7 @@ import { PLAYER_CLASS_ID, canChooseFirstAdvancement } from '../player/classes';
 import { ENCOUNTER_ID } from '../combat/encounters/encounter-definitions';
 import { QUEST_ID } from '../quests/quest-definitions';
 import { QUEST_STATUS } from '../quests/quest-types';
-import { LOCATION_ID, WORLD_FLAG } from '../world/locations/location-definitions';
+import { getLocationDefinition, LOCATION_ID, WORLD_FLAG } from '../world/locations/location-definitions';
 import { worldFlag } from '../world/locations/location-selectors';
 import { ITEM_ID } from '../inventory/item-definitions';
 import { derivedPlayerStats } from '../inventory/derived-stats';
@@ -15,12 +15,15 @@ import { eventsForExpGrant } from '../player/progression/progression-rules';
 import { buildChoiceCandidates, buildStoryDirectorContext, hasMainProgressCandidate } from '../story/choices';
 import { resolveNextScene } from '../story/story-scene-resolver';
 import { STORY_SCENE_ID } from '../story/story-scene-definitions';
-import { REPEAT_POLICY, topicsForNpc } from '../dialogue/dialogue-topics';
-import { isTopicAvailable } from '../dialogue/dialogue-topic-state';
+import { topicsForNpc } from '../dialogue/dialogue-topics';
+import { consumptionIdFor, isTopicAvailable } from '../dialogue/dialogue-topic-state';
 import { createMemoryStorage, createSaveService, migrateSaveData, SAVE_VERSION } from '../save';
 import { toPersistedGameState } from '../save/save-serialize';
 import { toStoryScreenView } from '../story/story-view';
 import { BOSS_INSTANCE_ID, BOSS_ID } from '../combat/boss/boss-types';
+import { CHAPTER_ID, isChapterCompleted } from '../story/chapters';
+import { CHOICE_INVESTIGATE_ALTAR, CHOICE_LOOK_AROUND, CHOICE_REST_INN } from '../world/locations/location-story-choices';
+import { CHOICE_REPORT_RUINS } from '../quests/quest-story-choices';
 
 function victory(combatId: string, enemies: string[]) {
   return {
@@ -39,14 +42,50 @@ function withShop(state = createInitialGameState()) {
   ]);
 }
 
+async function hopTo(orch: ReturnType<typeof createGameOrchestrator>, locationId: string) {
+  const hops = pathBetween(orch.getState().world.currentLocationId, locationId);
+  for (const hop of hops) {
+    await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: hop });
+  }
+}
+
+function pathBetween(start: string, dest: string): string[] {
+  if (start === dest) {
+    return [];
+  }
+  const prev = new Map<string, string | null>([[start, null]]);
+  const queue = [start];
+  while (queue.length > 0) {
+    const cursor = queue.shift()!;
+    const definition = getLocationDefinition(cursor);
+    if (!definition) {
+      continue;
+    }
+    for (const next of definition.connectedLocationIds) {
+      if (prev.has(next)) {
+        continue;
+      }
+      prev.set(next, cursor);
+      if (next === dest) {
+        const path: string[] = [];
+        let walk: string | null = dest;
+        while (walk && walk !== start) {
+          path.unshift(walk);
+          walk = prev.get(walk) ?? null;
+        }
+        return path;
+      }
+      queue.push(next);
+    }
+  }
+  return [dest];
+}
+
 function consumeAllTopics(state: ReturnType<typeof createInitialGameState>, npcId: string) {
-  const events = topicsForNpc(state, npcId).flatMap((topic) => {
-    const id =
-      topic.repeatPolicy === REPEAT_POLICY.UNTIL_STATE_CHANGE || topic.repeatPolicy === REPEAT_POLICY.DAILY
-        ? `${npcId}:${topic.topicId}`
-        : `${npcId}:${topic.topicId}`;
-    return [{ type: 'DIALOGUE_TOPIC_CONSUMED' as const, topicId: id }, { type: 'DIALOGUE_TOPIC_CONSUMED' as const, topicId: topic.topicId }];
-  });
+  const events = topicsForNpc(state, npcId).map((topic) => ({
+    type: 'DIALOGUE_TOPIC_CONSUMED' as const,
+    topicId: consumptionIdFor(state, topic),
+  }));
   return applyEvents(state, events);
 }
 
@@ -64,10 +103,15 @@ export async function runStep34FlowScenarios(): Promise<string[]> {
 
   const orch = createGameOrchestrator(createInitialGameState());
   await orch.dispatch({ type: 'NEW_GAME', name: '옥토' });
-  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.LUEN_ADVENTURERS_GUILD });
+  await hopTo(orch, LOCATION_ID.LUEN_ADVENTURERS_GUILD);
   await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'register_adventurer' });
-  await orch.dispatch({ type: 'ACCEPT_QUEST', questId: QUEST_ID.FOREST_GOBLIN_SCOUR });
-  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.FOREST_ROAD });
+  if (orch.getState().quests[QUEST_ID.FOREST_GOBLIN_SCOUR]?.status === QUEST_STATUS.AVAILABLE) {
+    await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'accept_forest_scouts_register' });
+  }
+  if (orch.getState().quests[QUEST_ID.FOREST_GOBLIN_SCOUR]?.status !== QUEST_STATUS.ACTIVE) {
+    await orch.dispatch({ type: 'ACCEPT_QUEST', questId: QUEST_ID.FOREST_GOBLIN_SCOUR });
+  }
+  await hopTo(orch, LOCATION_ID.FOREST_ROAD);
   await orch.dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_FOREST_SCOUTS });
   await orch.dispatch({
     type: 'RESOLVE_COMBAT',
@@ -87,7 +131,7 @@ export async function runStep34FlowScenarios(): Promise<string[]> {
     fail('C-oneshot', 'repeat combat started');
   }
 
-  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.LUEN_ADVENTURERS_GUILD });
+  await hopTo(orch, LOCATION_ID.LUEN_ADVENTURERS_GUILD);
   await orch.dispatch({ type: 'START_DIALOGUE', npcId: 'guildmaster_doran' });
   const afterReport = orch.getState();
   if (afterReport.quests[QUEST_ID.FOREST_GOBLIN_SCOUR]?.status === QUEST_STATUS.COMPLETED && worldFlag(afterReport, WORLD_FLAG.SHOP_UNLOCKED)) {
@@ -96,7 +140,7 @@ export async function runStep34FlowScenarios(): Promise<string[]> {
     fail('D-quest-shop-unlock', `${afterReport.quests[QUEST_ID.FOREST_GOBLIN_SCOUR]?.status} shop ${worldFlag(afterReport, WORLD_FLAG.SHOP_UNLOCKED)}`);
   }
 
-  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.LUEN_GENERAL_STORE });
+  await hopTo(orch, LOCATION_ID.LUEN_GENERAL_STORE);
   await orch.dispatch({ type: 'BUY_ITEM', itemId: ITEM_ID.HEALING_POTION });
   const afterPotion = orch.getState();
   if (afterPotion.player.gold < afterReport.player.gold) {
@@ -110,7 +154,7 @@ export async function runStep34FlowScenarios(): Promise<string[]> {
     ...poor,
     player: { ...poor.player, inventory: [...poor.player.inventory, { itemId: ITEM_ID.IRON_SWORD, quantity: 1 }] },
   });
-  await poorOrch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.LUEN_GENERAL_STORE });
+  await hopTo(poorOrch, LOCATION_ID.LUEN_GENERAL_STORE);
   await poorOrch.dispatch({ type: 'ENHANCE_EQUIPMENT', itemId: ITEM_ID.IRON_SWORD });
   if (poorOrch.getState().player.gold === 0 && enhancementLevelOf(poorOrch.getState(), ITEM_ID.IRON_SWORD) === 0) {
     pass('G-enhance-broke', 'no negative gold');
@@ -118,13 +162,13 @@ export async function runStep34FlowScenarios(): Promise<string[]> {
     fail('G-enhance-broke', `gold ${poorOrch.getState().player.gold}`);
   }
 
-  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.FOREST_ROAD });
+  await hopTo(orch, LOCATION_ID.FOREST_ROAD);
   await orch.dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_FOREST_AMBUSH });
   await orch.dispatch({
     type: 'RESOLVE_COMBAT',
     result: victory(ENCOUNTER_ID.CH1_FOREST_AMBUSH, ['ambush_goblin_001', 'ambush_archer_001']),
   });
-  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.LUEN_GENERAL_STORE });
+  await hopTo(orch, LOCATION_ID.LUEN_GENERAL_STORE);
   await orch.dispatch({ type: 'SET_PLAYER_GOLD', gold: 200 });
   await orch.dispatch({ type: 'BUY_ITEM', itemId: ITEM_ID.IRON_SWORD });
   await orch.dispatch({ type: 'EQUIP_ITEM', itemId: ITEM_ID.IRON_SWORD });
@@ -147,9 +191,10 @@ export async function runStep34FlowScenarios(): Promise<string[]> {
   } else {
     fail('F-enhance', `lv ${enhancementLevelOf(enhanced, ITEM_ID.IRON_SWORD)} gold ${enhanced.player.gold}`);
   }
+  await hopTo(orch, LOCATION_ID.NORTHERN_GATE);
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'look_around' });
   await orch.dispatch({ type: 'ACCEPT_QUEST', questId: QUEST_ID.LEON_GOBLIN_WATCH });
   if (orch.getState().quests[QUEST_ID.LEON_GOBLIN_WATCH]?.status !== QUEST_STATUS.ACTIVE) {
-    await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.LUEN_VILLAGE });
     await orch.dispatch({
       type: 'RECORD_DIALOGUE',
       npcId: 'leon',
@@ -158,7 +203,7 @@ export async function runStep34FlowScenarios(): Promise<string[]> {
     });
     await orch.dispatch({ type: 'ACCEPT_QUEST', questId: QUEST_ID.LEON_GOBLIN_WATCH });
   }
-  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.FOREST_ROAD });
+  await hopTo(orch, LOCATION_ID.FOREST_ROAD);
   await orch.dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_GOBLIN_CAMP });
   if (orch.getState().mode === 'COMBAT') {
     await orch.dispatch({
@@ -175,7 +220,7 @@ export async function runStep34FlowScenarios(): Promise<string[]> {
     npcText: '폐허에서 이상한 마력이 느껴지고 있어.',
   });
   await orch.dispatch({ type: 'ACCEPT_QUEST', questId: QUEST_ID.RUINS_MYSTERY });
-  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.ANCIENT_RUINS });
+  await hopTo(orch, LOCATION_ID.ANCIENT_RUINS);
   await orch.dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_RUINS_GATE });
   await orch.dispatch({
     type: 'RESOLVE_COMBAT',
@@ -199,7 +244,10 @@ export async function runStep34FlowScenarios(): Promise<string[]> {
 
   const seriaState = createInitialGameState();
   const firstTopics = topicsForNpc(seriaState, 'seria').filter((topic) => isTopicAvailable(seriaState, topic));
-  const consumed = applyEvents(seriaState, firstTopics.map((topic) => ({ type: 'DIALOGUE_TOPIC_CONSUMED' as const, topicId: `seria:${topic.topicId}` })));
+  const consumed = applyEvents(
+    seriaState,
+    firstTopics.map((topic) => ({ type: 'DIALOGUE_TOPIC_CONSUMED' as const, topicId: consumptionIdFor(seriaState, topic) }))
+  );
   const afterTopics = topicsForNpc(consumed, 'seria').filter((topic) => isTopicAvailable(consumed, topic));
   const afterCandidates = buildChoiceCandidates(consumed, buildStoryDirectorContext(consumed));
   const duplicate = afterCandidates.some((candidate) => candidate.semanticKey === 'TALK:SERIA:INTRO' || candidate.semanticKey === 'TALK:SERIA:RUINS_BACKGROUND');
@@ -278,26 +326,50 @@ export async function runStep34FlowScenarios(): Promise<string[]> {
     fail('O-footer-layout', `${view.timeOfDay}`);
   }
 
+  const full = await playOrganicChapter1();
+  const finished = full.getState();
+  if (
+    isChapterCompleted(finished, CHAPTER_ID.CHAPTER_1_LUEN_RUINS) &&
+    worldFlag(finished, WORLD_FLAG.FIRST_ADVANCEMENT_DONE) &&
+    finished.player.classId !== PLAYER_CLASS_ID.ADVENTURER &&
+    finished.player.level >= 5
+  ) {
+    pass(
+      'P-full-playthrough',
+      `lv ${finished.player.level} ${finished.player.classId} gold ${finished.player.gold} encounters ${finished.world.clearedEncounterIds?.length ?? 0}`
+    );
+  } else {
+    fail(
+      'P-full-playthrough',
+      `lv ${finished.player.level} class ${finished.player.classId} chapter ${isChapterCompleted(finished, CHAPTER_ID.CHAPTER_1_LUEN_RUINS)} adv ${worldFlag(finished, WORLD_FLAG.FIRST_ADVANCEMENT_DONE)} scene ${finished.story.currentSceneId}`
+    );
+  }
+
   return lines;
 }
 
 export async function playOrganicChapter1() {
   const orch = createGameOrchestrator(createInitialGameState());
   await orch.dispatch({ type: 'NEW_GAME', name: '옥토' });
-  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.LUEN_ADVENTURERS_GUILD });
+  await hopTo(orch, LOCATION_ID.LUEN_ADVENTURERS_GUILD);
   await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'register_adventurer' });
-  await orch.dispatch({ type: 'ACCEPT_QUEST', questId: QUEST_ID.FOREST_GOBLIN_SCOUR });
-  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.FOREST_ROAD });
+  if (orch.getState().quests[QUEST_ID.FOREST_GOBLIN_SCOUR]?.status === QUEST_STATUS.AVAILABLE) {
+    await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'accept_forest_scouts_register' });
+  }
+  if (orch.getState().quests[QUEST_ID.FOREST_GOBLIN_SCOUR]?.status !== QUEST_STATUS.ACTIVE) {
+    await orch.dispatch({ type: 'ACCEPT_QUEST', questId: QUEST_ID.FOREST_GOBLIN_SCOUR });
+  }
+  await hopTo(orch, LOCATION_ID.FOREST_ROAD);
   await orch.dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_FOREST_SCOUTS });
   await orch.dispatch({
     type: 'RESOLVE_COMBAT',
     result: victory(ENCOUNTER_ID.CH1_FOREST_SCOUTS, ['scout_goblin_001', 'scout_goblin_002']),
   });
-  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.LUEN_ADVENTURERS_GUILD });
+  await hopTo(orch, LOCATION_ID.LUEN_ADVENTURERS_GUILD);
   await orch.dispatch({ type: 'START_DIALOGUE', npcId: 'guildmaster_doran' });
-  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.LUEN_GENERAL_STORE });
+  await hopTo(orch, LOCATION_ID.LUEN_GENERAL_STORE);
   await orch.dispatch({ type: 'BUY_ITEM', itemId: ITEM_ID.HEALING_POTION });
-  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.FOREST_ROAD });
+  await hopTo(orch, LOCATION_ID.FOREST_ROAD);
   await orch.dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_FOREST_AMBUSH });
   if (orch.getState().mode === 'COMBAT') {
     await orch.dispatch({
@@ -312,13 +384,14 @@ export async function playOrganicChapter1() {
     npcText: '폐허에서 이상한 마력이 느껴지고 있어.',
   });
   await orch.dispatch({ type: 'ACCEPT_QUEST', questId: QUEST_ID.RUINS_MYSTERY });
-  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.ANCIENT_RUINS });
+  await hopTo(orch, LOCATION_ID.ANCIENT_RUINS);
   await orch.dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_RUINS_GATE });
   await orch.dispatch({
     type: 'RESOLVE_COMBAT',
     result: victory(ENCOUNTER_ID.CH1_RUINS_GATE, ['gate_goblin_001', 'gate_archer_001', 'gate_brute_001']),
   });
-  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'investigate_altar' });
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_INVESTIGATE_ALTAR });
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_LOOK_AROUND });
   await orch.dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.RUINS_BOSS_01 });
   if (orch.getState().mode === 'COMBAT') {
     await orch.dispatch({
@@ -332,5 +405,20 @@ export async function playOrganicChapter1() {
       },
     });
   }
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'investigate_guardian_core' });
+  await hopTo(orch, LOCATION_ID.FOREST_ROAD);
+  await hopTo(orch, LOCATION_ID.LUEN_VILLAGE);
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_REPORT_RUINS });
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'report_all' });
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'leon_tell_all' });
+  await hopTo(orch, LOCATION_ID.BLUE_MOON_INN);
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_REST_INN });
+  await hopTo(orch, LOCATION_ID.LUEN_ADVENTURERS_GUILD);
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_LOOK_AROUND });
+  if (canChooseFirstAdvancement(orch.getState()) || orch.getState().player.level >= 5) {
+    await orch.dispatch({ type: 'CHOOSE_CLASS_PATH', classId: PLAYER_CLASS_ID.WARRIOR });
+  }
+  await hopTo(orch, LOCATION_ID.NORTHERN_GATE);
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_LOOK_AROUND });
   return orch;
 }

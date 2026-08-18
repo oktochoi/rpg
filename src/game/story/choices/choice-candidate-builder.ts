@@ -100,7 +100,26 @@ export function hasMainProgressCandidate(candidates: readonly ChoiceCandidate[])
 }
 
 function storyCandidates(state: Readonly<GameState>): ChoiceCandidate[] {
-  return getAvailableChoiceDefinitions(state).map((choice) => storyChoiceToCandidate(choice, state));
+  return getAvailableChoiceDefinitions(state)
+    .filter((choice) => !isConsumedStoryTalk(state, choice))
+    .map((choice) => storyChoiceToCandidate(choice, state));
+}
+
+function matchingStoryTalkTopic(state: Readonly<GameState>, choice: StoryChoiceDefinition) {
+  if (choice.action.type !== 'TALK') {
+    return null;
+  }
+  const promptId = choice.action.promptId ?? choice.id;
+  const npcId = npcIdFromTalkChoice(choice.id, promptId) ?? getStorySceneDefinition(state.story.currentSceneId)?.npcId;
+  if (!npcId) {
+    return null;
+  }
+  return topicsForNpc(state, npcId).find((topic) => topic.promptId === promptId || topic.topicId === promptId) ?? null;
+}
+
+function isConsumedStoryTalk(state: Readonly<GameState>, choice: StoryChoiceDefinition): boolean {
+  const topic = matchingStoryTalkTopic(state, choice);
+  return Boolean(topic && !isTopicAvailable(state, topic));
 }
 
 function storyChoiceToCandidate(choice: StoryChoiceDefinition, state: Readonly<GameState>): ChoiceCandidate {
@@ -116,7 +135,8 @@ function storyChoiceToCandidate(choice: StoryChoiceDefinition, state: Readonly<G
     actionType === 'SHARE_FACT' ||
     actionType === 'CHOOSE_CLASS_PATH' ||
     (bossScene && actionType === 'MOVE_TO_LOCATION');
-  const semanticKey = semanticKeyForStoryChoice(choice);
+  const talkTopic = matchingStoryTalkTopic(state, choice);
+  const semanticKey = talkTopic?.semanticKey ?? semanticKeyForStoryChoice(choice);
   return {
     id: `story_${choice.id}`,
     actionType: mapped.actionType,

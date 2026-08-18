@@ -110,6 +110,7 @@ export const LOCATION_DEFINITIONS: Record<string, LocationDefinition> = {
       ENCOUNTER_ID.CH1_FOREST_AMBUSH,
       ENCOUNTER_ID.CH1_GOBLIN_CAMP,
     ],
+    tags: ['forest', 'road', 'danger'],
     discoveryRequired: false,
     audioTheme: 'STORY_MYSTERY',
   },

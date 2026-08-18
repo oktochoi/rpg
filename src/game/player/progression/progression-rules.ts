@@ -2,7 +2,7 @@ import type { GameEvent } from '../../core/event';
 import type { GameState } from '../../core/game-state';
 import { applyEvents } from '../../core/reducer';
 import { ENCOUNTER_ID } from '../../combat/encounters/encounter-definitions';
-import { flagForClearedEncounter, canonicalEncounterId } from '../combat/encounters/encounter-progress';
+import { flagForClearedEncounter, canonicalEncounterId } from '../../combat/encounters/encounter-progress';
 import { QUEST_ID, RUINS_SEAL_FACT_ID } from '../../quests/quest-definitions';
 import { QUEST_STATUS } from '../../quests/quest-types';
 import { CHAPTER_ID } from '../../story/chapters/chapter-types';
@@ -185,6 +185,36 @@ export function eventsForProgression(state: Readonly<GameState>, incoming: reado
     }
   }
 
+  return outgoing;
+}
+
+export function eventsForLateProgression(state: Readonly<GameState>, incoming: readonly GameEvent[]): GameEvent[] {
+  if (incoming.length === 0) {
+    return [];
+  }
+  const simulated = applyEvents(state, incoming);
+  const outgoing: GameEvent[] = [];
+  const granted = (sourceEventId: string) =>
+    (simulated.processedExpSourceIds ?? []).includes(sourceEventId) ||
+    incoming.some((event) => event.type === 'PLAYER_EXP_GAINED' && event.sourceEventId === sourceEventId);
+
+  if (
+    incoming.some((event) => event.type === 'WORLD_FLAG_SET' && event.flagId === WORLD_FLAG.GUILD_RECOGNITION_DONE && event.value) &&
+    !granted('exp:guild_recognition')
+  ) {
+    outgoing.push(...eventsForExpGrant(simulated, EXP_REWARD.GUILD_RECOGNITION, 'exp:guild_recognition', 'QUEST'));
+  }
+
+  if (canCompleteChapter(simulated, CHAPTER_ID.CHAPTER_1_LUEN_RUINS)) {
+    const chapterEvents = eventsForChapterComplete(simulated, CHAPTER_ID.CHAPTER_1_LUEN_RUINS);
+    outgoing.push(...chapterEvents);
+    const chapterExpId = `exp:chapter:${CHAPTER_ID.CHAPTER_1_LUEN_RUINS}`;
+    if (chapterEvents.some((item) => item.type === 'CHAPTER_COMPLETED') && !granted(chapterExpId)) {
+      outgoing.push(
+        ...eventsForExpGrant(applyEvents(simulated, chapterEvents), EXP_REWARD.CHAPTER, chapterExpId, 'CHAPTER')
+      );
+    }
+  }
   return outgoing;
 }
 

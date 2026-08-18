@@ -19,7 +19,8 @@ import { canChooseFirstAdvancement } from '../player/classes/first-advancement';
 import { PLAYER_CLASS_ID } from '../player/classes';
 import { isNpcDuelCombatId } from '../actions/action-validator';
 import { ENCOUNTER_ID, isStartableCombatId } from '../combat/encounters/encounter-definitions';
-import { QUEST_ID, RUINS_SEAL_FACT_ID } from '../quests/quest-definitions';
+import { getQuestDefinition, QUEST_ID, RUINS_SEAL_FACT_ID } from '../quests/quest-definitions';
+import { requirementsMet } from '../quests/quest-selectors';
 import {
   CHOICE_ACCEPT_RUINS_MYSTERY,
   CHOICE_ENTER_RUINS,
@@ -41,7 +42,7 @@ import { eventsForMoveToLocation, validateMoveToLocation } from '../world/locati
 import { isKnownLocationId } from '../world/locations/location-definitions';
 import { isNpcAtCurrentLocation, worldFlag } from '../world/locations/location-selectors';
 import { eventsForExplorationPoint, resolveExplorationForInvestigate } from '../world/exploration/exploration-service';
-import { QUEST_STATUS } from '../quests/quest-types';
+import { QUEST_OBJECTIVE_TYPE, QUEST_STATUS } from '../quests/quest-types';
 import {
   CHOICE_FIGHT_GOBLIN,
   CHOICE_FLEE_GOBLIN,
@@ -371,6 +372,23 @@ function evaluateStoryChoice(
   choice: StoryChoiceDefinition,
   state: Readonly<GameState>
 ): RuleResult {
+  if (choice.id === 'skip_forest_ambush' || choiceId === 'skip_forest_ambush') {
+    return allow([
+      { type: 'CHOICE_RESOLVED', choiceId },
+      { type: 'WORLD_FLAG_SET', flagId: WORLD_FLAG.FOREST_AMBUSH_CLEARED, value: true },
+      { type: 'ENCOUNTER_CLEARED', encounterId: ENCOUNTER_ID.CH1_FOREST_AMBUSH },
+      {
+        type: 'ACTION_RESOLVED',
+        turnId: state.world.turn,
+        resolution: {
+          success: true,
+          actionType: 'MOVE',
+          narrative: '활 시위 소리를 피해 길을 따른다.',
+          nextMode: 'STORY',
+        },
+      },
+    ]);
+  }
   const action = choice.action;
   if (action.type === 'MOVE_TO_LOCATION') {
     return evaluateMoveChoice(choiceId, action.locationId, state);
@@ -454,23 +472,6 @@ function evaluateStoryChoice(
       return entered;
     }
     return allow([{ type: 'CHOICE_RESOLVED', choiceId }, ...entered.events]);
-  }
-  if (choice.id === 'skip_forest_ambush') {
-    return allow([
-      { type: 'CHOICE_RESOLVED', choiceId },
-      { type: 'WORLD_FLAG_SET', flagId: WORLD_FLAG.FOREST_AMBUSH_CLEARED, value: true },
-      { type: 'ENCOUNTER_CLEARED', encounterId: ENCOUNTER_ID.CH1_FOREST_AMBUSH },
-      {
-        type: 'ACTION_RESOLVED',
-        turnId: state.world.turn,
-        resolution: {
-          success: true,
-          actionType: 'MOVE',
-          narrative: '활 시위 소리를 피해 길을 따른다.',
-          nextMode: 'STORY',
-        },
-      },
-    ]);
   }
   if (action.type === 'TALK') {
     const npcId = npcIdFromTalkKey(choiceId, action.promptId) ?? state.story.currentNpcId ?? undefined;
@@ -895,16 +896,29 @@ function evaluateAcceptQuest(questId: string, state: Readonly<GameState>): RuleR
   if (quest.status === QUEST_STATUS.ACTIVE || quest.status === QUEST_STATUS.COMPLETED) {
     return reject('이미 진행 중이거나 완료된 퀘스트입니다.');
   }
-  if (quest.status !== QUEST_STATUS.AVAILABLE) {
+  const definition = getQuestDefinition(questId);
+  if (quest.status === QUEST_STATUS.LOCKED) {
+    if (!definition || !requirementsMet(state, definition.prerequisites)) {
+      return reject('아직 받을 수 없는 퀘스트입니다.');
+    }
+  } else if (quest.status !== QUEST_STATUS.AVAILABLE) {
     return reject('아직 받을 수 없는 퀘스트입니다.');
   }
-  const events: GameEvent[] = [{ type: 'QUEST_STARTED', questId }];
-  if (quest.requesterNpcId) {
+  const events: GameEvent[] = [];
+  if (quest.status === QUEST_STATUS.LOCKED) {
+    events.push({ type: 'QUEST_AVAILABLE', questId });
+  }
+  events.push({ type: 'QUEST_STARTED', questId });
+  const talkWithTopic = definition?.objectives.find(
+    (objective) => objective.type === QUEST_OBJECTIVE_TYPE.TALK_TO_NPC && Boolean(objective.conversationTopicId)
+  );
+  const talkNpcId = talkWithTopic?.targetId ?? (talkWithTopic ? quest.requesterNpcId : undefined);
+  if (talkNpcId) {
     events.push({
       type: 'DIALOGUE_TURN_RECORDED',
-      npcId: quest.requesterNpcId,
+      npcId: talkNpcId,
       playerText: '내가 조사해볼게.',
-      npcText: '폐허에서 이상한 마력이 느껴지고 있어. 부탁할게.',
+      npcText: '부탁할게.',
     });
   }
   return allow(events);

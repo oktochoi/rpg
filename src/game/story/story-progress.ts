@@ -48,10 +48,14 @@ export function eventsForStoryProgress(state: Readonly<GameState>, incoming: rea
   if (entered.length > 0) {
     const outgoing: GameEvent[] = [];
     let simulated = applyEvents(state, incoming.filter((event) => event.type !== 'STORY_SCENE_ENTERED'));
+    let lastSceneId = simulated.story.currentSceneId;
     for (const event of entered) {
-      outgoing.push(...firstEnterEffects(simulated, event.sceneId));
-      simulated = applyEvents(simulated, [{ type: 'STORY_SCENE_ENTERED', sceneId: event.sceneId }]);
+      const enterEffects = firstEnterEffects(simulated, event.sceneId);
+      outgoing.push(...enterEffects);
+      simulated = applyEvents(simulated, [{ type: 'STORY_SCENE_ENTERED', sceneId: event.sceneId }, ...enterEffects]);
+      lastSceneId = event.sceneId;
     }
+    outgoing.push(...followUpSceneEvents(simulated, lastSceneId, incoming));
     return outgoing;
   }
 
@@ -67,5 +71,29 @@ export function eventsForStoryProgress(state: Readonly<GameState>, incoming: rea
   if (!next || next.id === simulated.story.currentSceneId) {
     return [];
   }
-  return [{ type: 'STORY_SCENE_ENTERED', sceneId: next.id }, ...firstEnterEffects(simulated, next.id)];
+  const enterEffects = firstEnterEffects(simulated, next.id);
+  const afterEnter = applyEvents(simulated, [{ type: 'STORY_SCENE_ENTERED', sceneId: next.id }, ...enterEffects]);
+  return [
+    { type: 'STORY_SCENE_ENTERED', sceneId: next.id },
+    ...enterEffects,
+    ...followUpSceneEvents(afterEnter, next.id, incoming),
+  ];
+}
+
+function followUpSceneEvents(
+  state: Readonly<GameState>,
+  currentSceneId: string,
+  incoming: readonly GameEvent[]
+): GameEvent[] {
+  const follow = resolveNextScene(state, { incoming });
+  if (!follow || follow.id === currentSceneId) {
+    return [];
+  }
+  const currentPriority = getStorySceneDefinition(currentSceneId)?.priority ?? 0;
+  const followPriority = follow.priority ?? 0;
+  if (followPriority <= currentPriority) {
+    return [];
+  }
+  const enterEffects = firstEnterEffects(state, follow.id);
+  return [{ type: 'STORY_SCENE_ENTERED', sceneId: follow.id }, ...enterEffects];
 }

@@ -1,5 +1,92 @@
 # AI RPG — Game Design
 
+## 현재 상태 (STEP 34)
+
+플레이 가능한 범위는 **Chapter 1 — 폐허에서 깨어난 것**까지다. Chapter 2는 아직 없다.
+
+New Game은 **Lv1 모험가**, Gold 50, 낡은 검 / 여행자 옷으로 루엔에 도착한다. 직업은 캐릭터 생성에서 고르지 않는다. Chapter 1 후반, 길드 공적 인정 뒤 **Lv5 First Advancement**에서 검사 / 마법사 / 도적 중 하나를 고른다.
+
+Guardian을 잡았다고 Chapter가 끝나지 않는다. 조사 → 귀환 → 보고 → 휴식 → 길드 인정 → **전직** → 북문 Hook까지가 한 편이다.
+
+검증 기준: New Game부터 Debug 없이 이어지는 상태 플레이스루. (STEP 34 테스트: Lv6 검사, Chapter Complete)
+
+---
+
+## 현재 Chapter 1 플레이 흐름
+
+UI 목표 문구(`getMainObjectiveText`)와 실제 다음 행동이 같아야 한다.
+
+```text
+TITLE
+ → NEW GAME
+ → 이름 입력 (직업 선택 없음)
+ → Lv1 모험가 · DAY 1 · 08:00
+ → 루엔 도착
+
+PHASE 1  루엔의 신참
+ → 마을 둘러보기 (여관 마르타 / 광장 세리아 / 북문 레온)
+ → 모험가 길드 등록 (도란)
+   목표: 루엔 모험가 길드에서 등록하세요.
+
+PHASE 2  작은 의뢰
+ → 길드 칠판: 숲길의 고블린 (첫 의뢰)
+   목표: 길드에서 첫 의뢰를 맡으세요.
+ → Forest Road · Goblin Scouts (Goblin 2, one-shot)
+   목표: 숲길의 고블린을 처리하세요.
+ → 길드 보고 → Gold 30 + EXP 20
+   목표: 길드로 돌아가 보상을 받으세요.
+ → 이 시점에 상점 / 강화 Unlock
+
+PHASE 3  성장 / 준비 (optional, 강제 구매 없음)
+   목표: 장비를 정비하세요. 광장 옆 잡화점을 이용할 수 있습니다.
+ → 잡화점 엘린: 물약 / 철제 검 / 가죽 갑옷 / 반지
+ → 장비 장착 → 강화 +0~+3 (잡화점 또는 길드)
+ → (선택) 숲 매복 Goblin + Archer
+ → (선택) 마르타 잃어버린 짐 / 레온 고블린 야영지
+ → Leon Camp 조사 시 fact_goblins_moving_near_ruins → 세리아 대화가 달라짐
+
+PHASE 4  세리아와 폐허
+   목표: 세리아를 만나세요. → 폐허 조사 의뢰를 맡으세요.
+ → Forest Road deeper → Ruins Entrance Mixed (Goblin + Archer + Brute)
+   목표: 고대 폐허를 조사하세요. → 폐허 입구의 적을 물리치세요.
+ → 제단 / 왕실 문양 / 마법석
+   목표: 제단을 조사하세요.
+ → Ruins Guardian (Boss)
+ → 보스 직후 조사 (핵 / 문양 / 훼손된 봉인). 보스 처치만으로 챕터 종료 아님.
+
+PHASE 5  귀환 / 전직 / 엔딩
+ → 폐허 탈출 → 숲 귀환 이벤트 → 루엔
+   목표: 폐허를 빠져나가세요. → 루엔으로 돌아가세요.
+ → 마르타 반응 → 세리아 보고 → 레온 대면
+   목표: 세리아에게 보고하세요. → 레온과 이야기하세요.
+ → 여관 휴식 (다음날)
+   목표: 푸른 달 여관에서 휴식하세요.
+ → 길드 공적 인정
+   목표: 길드로 가서 공적을 인정받으세요.
+ → Lv5 First Advancement (검사 / 마법사 / 도적)
+   목표: 모험가 길드에서 첫 번째 직업을 선택하세요.
+ → 북문 긴급 보고 (Chapter 2 Hook)
+   목표: 북문으로 향하세요.
+ → CHAPTER 1 COMPLETE
+```
+
+장소 이동은 인접 로케이션만 가능하다. 길드에서 잡화점으로 한 번에 가지 않고, 마을을 거친다. Choice가 그 hop을 안내한다.
+
+---
+
+## Chapter 1 완료 조건 (모두 필요)
+
+- Quest `ruins_mystery` = COMPLETED
+- `RUINS_GUARDIAN_DEFEATED`
+- `SERIA_FINAL_REPORT`
+- `GUILD_RECOGNITION_DONE`
+- `FIRST_ADVANCEMENT_DONE`  ← 전직 없이 Chapter Complete 불가
+- `NORTHERN_GATE_HOOK_SEEN`
+
+강제 `player.level = 5`는 없다. EXP로 자연히 Lv5에 도달한 뒤 길드에서 전직한다.
+
+---
+
 ## 1. Game Concept
 
 싱글 플레이 AI 기반 RPG.
@@ -291,27 +378,27 @@ MVP는 작은 범위로 제한한다.
 NEW GAME
  → 이름 입력 (직업 선택 없음)
  → Lv.1 모험가 · DAY 1 · 08:00
- → 루엔 도착
- → 모험가 길드 등록
- → 마을 탐색 / Marta / Leon / Seria
- → 폐허 Quest
- → 숲길
- → 고대 폐허
- → 일반 전투
- → 부서진 제단 조사 (모험가식 해결)
- → 왕실 마법석 발견
- → 고대 수호자
- → Boss Victory
- → 세리아 보고
+ → 루엔 도착 / 마을 탐색
+ → 마르타 · 길드 등록 · 첫 작은 의뢰
+ → Forest Road Goblin Scouts
+ → 보상 / Gold → 상점 Unlock → Potion / Equipment / 강화
+ → Optional: Forest Ambush, Goblin Camp (Leon Side Quest)
+ → 세리아 폐허 의뢰
+ → Ruins Gate Mixed Encounter
+ → 제단 조사 / 왕실 마법석
+ → Guardian Boss
+ → Post-Boss Investigation / 귀환 / Report / Rest
+ → Guild Recognition
+ → Lv5 First Advancement (검사 / 마법사 / 도적)
+ → Northern Gate Hook
  → Chapter 1 Complete
- → Lv4~5 근처에서 첫 전직 (검사 / 마법사 / 도적)
 ```
 
 범위:
 
-* 메인 지역: 루엔 마을, 푸른 달 여관, 숲길, 고대 폐허, 북문
-* 메인 Quest 1개
-* Boss 1개 (RUINS_GUARDIAN)
+* 메인 지역: 루엔 마을, 푸른 달 여관, 잡화점, 숲길, 고대 폐허, 북문
+* Main Quest + Side Quest 2~3개
+* 배치된 one-shot Encounter 3~4회 + Boss 1개
 * Groq AI 또는 Mock fallback
 * Audio/BGM 구조 (실제 음원 파일은 선택)
 
@@ -360,9 +447,9 @@ PLAYER CHOICE
 ## Chapter
 
 제1장 — 폐허에서 깨어난 것 (`CHAPTER_1_LUEN_RUINS`)이 현재 Vertical Slice다.
-Guardian 격파 + 메인 퀘스트 완료 시 Chapter Complete, 북문 개방, 제2장 훅만 연다.
+Guardian 격파만으로 Chapter Complete가 되지 않는다. Investigation, Report, Rest, Guild Recognition, First Advancement, Northern Gate Hook까지 마쳐야 한다.
 
-제2장 이후 전체 콘텐츠는 STEP 32+.
+제2장 콘텐츠는 STEP 35 이후.
 
 ## Level / Class Rank
 
@@ -444,7 +531,8 @@ PROLOGUE / 루엔 도착
 → Seria Final Report (Knowledge Sharing, Quest 완료)
 → Leon Confrontation (왕실 문양 대면)
 → Inn Rest (에필로그 휴식)
-→ Guild Recognition + Lv5 First Advancement (검사 / 마법사 / 도적)
+→ Guild Recognition
+→ Lv5 First Advancement (검사 / 마법사 / 도적). 조건 충족 시 길드 Scene 우선
 → Northern Gate Emergency (Chapter 2 Hook)
 → Chapter 1 Complete
 ```
@@ -453,10 +541,19 @@ Chapter 1 완료 조건 (모두 충족):
 - RUINS_GUARDIAN_DEFEATED
 - SERIA_FINAL_REPORT
 - GUILD_RECOGNITION_DONE
+- FIRST_ADVANCEMENT_DONE
 - NORTHERN_GATE_HOOK_SEEN
 - Quest RUINS_MYSTERY = COMPLETED
 
 Shop은 optional support다. 필수 Quest Item을 상점에서 사도록 강요하지 않는다. Guardian Boss는 Adventurer Kit으로 클리어 가능하다.
+
+Chapter 1 Organic Loop:
+
+* Encounter는 배치된 one-shot (`ch1_forest_scouts`, `ch1_forest_ambush`, `ch1_goblin_camp`, `ch1_ruins_gate`). 같은 위치 재입장으로 무한 반복하지 않는다.
+* Side Quest는 filler가 아니다. Leon Camp 조사는 `fact_goblins_moving_near_ruins`를 남기고 Seria 대화에 연결된다.
+* 첫 Goblin Quest 완료 후 Shop / Enhancement Unlock.
+* Dialogue Topic: ONCE / UNTIL_STATE_CHANGE / REPEATABLE / DAILY. 소모된 Topic은 Candidate에서 제외한다. Choice 0개는 Fallback으로 막는다.
+* First Advancement Scene Priority 210. 일반 Location Scene보다 앞선다. `player.level = 5` 강제 금지.
 
 ---
 
@@ -475,6 +572,8 @@ UI는 gold를 직접 수정하지 않는다. `sourceEventId` / `processedRewardI
 NPC 대화만으로는 Gold를 주지 않는다. 구매/판매/메뉴 열기는 EXP를 주지 않는다.
 
 Inn Rest: 10G. 다음 날 08:00, HP/MP Full.
+
+Enhancement (Chapter 1): Weapon/Armor만 +0~+3. 실패/파괴/확률 없음. 비용 25/50/90G. Weapon 단계당 ATK +2, Armor 단계당 HP +10. Command `ENHANCE_EQUIPMENT`, Event `EQUIPMENT_ENHANCED`.
 
 ---
 

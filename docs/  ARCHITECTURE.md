@@ -576,7 +576,13 @@ Level/EXP/Chapter/Time/Job도 Game Engine Event만 변경한다. Groq는 읽기 
 
 Economy는 Game Core다. Shop UI / Inventory UI는 State mutation authority가 아니다.
 Gold는 `PLAYER_GOLD_GAINED` / `PLAYER_GOLD_SPENT`만 변경한다. `processedRewardIds`로 보상 중복을 막는다.
-Equipment Derived Stats = Base Stats + Level Growth + Job/Rank Bonus + Equipment Bonus.
+Equipment Derived Stats = Base Stats + Level Growth + Job/Rank Bonus + Equipment Bonus + Enhancement Bonus.
+Enhancement는 Rules만 성공을 결정한다. Groq는 강화 결과를 만들지 않는다.
+Encounter 완료는 `clearedEncounterIds` / `ENCOUNTER_CLEARED`가 권한이다. Chapter 1 주요 Encounter는 one-shot.
+Dialogue Topic 소모는 `consumedTopicIds`에 저장한다. CandidateBuilder는 Topic + Fallback을 합쳐 Choice 0개를 만들지 않는다. `semanticKey`로 같은 의미의 선택을 한 턴에서 중복하지 않는다.
+Story Resolver 우선순위: Blocking 220, First Advancement 210, Post-Boss 200, Quest Critical 190. 조건이 맞으면 일반 Location Hub가 Advancement / Post-Boss를 덮지 않는다.
+Turn pipeline은 Story `onEnter` 플래그 이후에 Quest Availability와 Late Progression(길드 공적 EXP, Chapter Complete)을 한 번 더 적용한다.
+Footer는 한 줄(`flex-wrap: nowrap`). Combat 중에는 StoryScreen을 숨기고 CombatView만 마운트한다.
 CombatConfig.player는 Derived HP/MP와 `attackBonus`(장비 Attack)를 사용한다. Move Speed는 Class 값 유지.
 Item Definition은 Save하지 않는다. Save에는 itemId/quantity/equipped slot ids만 남긴다.
 Groq는 상점 가격과 Item Registry의 authority가 아니다. 존재하지 않는 Item을 GameState에 생성하지 않는다.

@@ -27,6 +27,10 @@ export function getTalkPrompt(choiceId: string): string | null {
   return TALK_CHOICE_PROMPTS[choiceId] ?? null;
 }
 
+export function isTalkChoice(choiceId: string): boolean {
+  return getTalkPrompt(choiceId) !== null;
+}
+
 export function npcIdFromTalkKey(choiceId: string, promptId?: string): string | undefined {
   const key = `${choiceId}_${promptId ?? ''}`.toLowerCase();
   if (key.includes('leon')) {

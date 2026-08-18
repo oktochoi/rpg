@@ -123,6 +123,16 @@ export function eventsForQuestProgress(state: Readonly<GameState>, incoming: rea
   return outgoing;
 }
 
+export function eventsForNewlyAvailableQuests(state: Readonly<GameState>, incoming: readonly GameEvent[]): GameEvent[] {
+  if (incoming.length === 0) {
+    return [];
+  }
+  const simulated = applyEvents(state, incoming);
+  return availabilityEvents(state, simulated, incoming).filter(
+    (event) => !incoming.some((existing) => existing.type === 'QUEST_AVAILABLE' && existing.questId === event.questId)
+  );
+}
+
 function availabilityEvents(
   original: Readonly<GameState>,
   simulated: Readonly<GameState>,
