@@ -1,4 +1,5 @@
 import type { PlayerState } from '../player/player-state';
+import { allocatedStatBonuses } from '../player/stats/stat-rules';
 import { EQUIPMENT_SLOT } from './item-definitions';
 import { getItemDefinition } from './item-definitions';
 import type { EquipmentState } from './equipment-types';
@@ -56,13 +57,14 @@ export function equipmentBonuses(
 
 export function derivedPlayerStats(player: PlayerState): DerivedPlayerStats {
   const bonus = equipmentBonuses(player.equipment, player.equipmentEnhancements);
+  const allocated = allocatedStatBonuses(player.allocatedStats);
   return {
-    maxHp: player.maxHp + bonus.hp,
-    maxMp: player.maxMp + bonus.mp,
-    attackPower: (player.attackPower ?? 0) + bonus.attack,
-    attackBonus: bonus.attack,
-    hpBonus: bonus.hp,
-    mpBonus: bonus.mp,
+    maxHp: player.maxHp + bonus.hp + allocated.maxHp,
+    maxMp: player.maxMp + bonus.mp + allocated.maxMp,
+    attackPower: (player.attackPower ?? 0) + bonus.attack + allocated.attack,
+    attackBonus: bonus.attack + allocated.attack,
+    hpBonus: bonus.hp + allocated.maxHp,
+    mpBonus: bonus.mp + allocated.maxMp,
   };
 }
 

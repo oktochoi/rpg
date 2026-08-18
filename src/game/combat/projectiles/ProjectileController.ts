@@ -4,6 +4,7 @@ import type { CombatHittable } from '../types/combat-hittable';
 import type { PlayerDamageHit } from '../player/PlayerHealthController';
 import type { CombatBounds, CombatProjectile } from './projectile-types';
 import { aimDirection, createProjectile, projectileHitsTarget, stepProjectile } from './projectile-runtime';
+import { circleHitsRect } from '../arenas/arena-geometry';
 import { createProjectileVisual, projectileKindFromSpawn } from '../visual/ProjectileVisual';
 
 const FIREBALL_COLOR = 0xff7a3d;
@@ -136,12 +137,17 @@ export class ProjectileController {
     enemies: readonly CombatHittable[],
     player?: ProjectilePlayerTarget,
     onEnemyHit?: (enemy: CombatHittable, damage: number) => void,
-    onPlayerHit?: (damage: number) => void
+    onPlayerHit?: (damage: number) => void,
+    solids?: readonly { x: number; y: number; w: number; h: number }[]
   ): void {
     const bounds = this.bounds();
     for (const item of this.projectiles) {
       item.state = stepProjectile(item.state, deltaMs, bounds);
       if (!item.state.alive) {
+        continue;
+      }
+      if (solids && projectileHitsSolid(item.state, solids)) {
+        item.state = { ...item.state, alive: false };
         continue;
       }
 
@@ -236,11 +242,12 @@ export class ProjectileController {
   }
 
   private bounds(): CombatBounds {
+    const layout = this.scene.physics.world.bounds;
     return {
-      left: 0,
-      top: 0,
-      right: this.scene.scale.width,
-      bottom: this.scene.scale.height,
+      left: layout.x,
+      top: layout.y,
+      right: layout.right,
+      bottom: layout.bottom,
     };
   }
 
@@ -255,6 +262,13 @@ export class ProjectileController {
       }
     }
   }
+}
+
+function projectileHitsSolid(
+  projectile: CombatProjectile,
+  solids: readonly { x: number; y: number; w: number; h: number }[]
+): boolean {
+  return solids.some((solid) => circleHitsRect({ x: projectile.x, y: projectile.y, radius: projectile.radius }, solid));
 }
 
 interface TrackedProjectile {

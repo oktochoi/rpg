@@ -37,6 +37,18 @@ export interface EnemyDefinition {
   projectileSpeed?: number;
   projectileLifetimeMs?: number;
   projectileRadius?: number;
+  lungeRange?: number;
+  lungeSpeed?: number;
+  chargeRangeMin?: number;
+  chargeRangeMax?: number;
+  chargeSpeed?: number;
+  chargeWindupMs?: number;
+  chargeDurationMs?: number;
+  chargeRecoveryMs?: number;
+  predictionFactor?: number;
+  maxRetreatDistance?: number;
+  knockbackResist?: number;
+  stunLockImmune?: boolean;
 }
 
 export function isEnemyTypeId(value: string): value is EnemyTypeId {

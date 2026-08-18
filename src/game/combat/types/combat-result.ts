@@ -17,4 +17,5 @@ export interface CombatResult {
   defeatedEnemyIds: string[];
   defeatedEnemyTypes?: string[];
   escapedEnemyIds?: string[];
+  consumedItemIds?: string[];
 }

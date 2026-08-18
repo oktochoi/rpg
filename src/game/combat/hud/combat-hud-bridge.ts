@@ -40,6 +40,8 @@ function hudKey(snapshot: CombatHudState): string {
     Math.round(snapshot.player.hp),
     Math.round(snapshot.player.mp),
     Math.ceil(snapshot.player.dashCooldown / 100),
+    snapshot.player.potionCount,
+    Math.ceil(snapshot.player.potionCooldown / 100),
     skills,
     boss,
   ].join('|');

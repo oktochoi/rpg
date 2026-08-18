@@ -152,6 +152,7 @@ const RESOLVE_EVENT_TYPES = new Set<GameEvent['type']>([
   'PLAYER_CLASS_PATH_CHOSEN',
   'PLAYER_LEVEL_UP',
   'TIME_ADVANCED',
+  'STORY_CONTINUED',
 ]);
 
 export function shouldResolveStory(incoming: readonly GameEvent[]): boolean {

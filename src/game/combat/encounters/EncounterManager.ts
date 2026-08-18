@@ -13,6 +13,8 @@ import type { EncounterDefinition, EncounterEnemySpawn } from './encounter-types
 export interface EncounterStartOptions {
   width: number;
   height: number;
+  originX?: number;
+  originY?: number;
   instanceIds?: readonly string[];
 }
 
@@ -41,7 +43,10 @@ export class EncounterManager {
       const overrideId = options.instanceIds?.[index];
       const instanceId = allocateInstanceId(spawn.enemyType, used, overrideId ?? spawn.instanceId);
       used.add(instanceId);
-      const point = resolveSpawnPoint(spawn.spawnPosition, options.width, options.height);
+      const point = resolveSpawnPoint(spawn.spawnPosition, options.width, options.height, {
+        x: options.originX ?? 0,
+        y: options.originY ?? 0,
+      });
       const definitionForType = getEnemyDefinition(spawn.enemyType);
       this.enemies.spawnEnemy({
         instanceId,

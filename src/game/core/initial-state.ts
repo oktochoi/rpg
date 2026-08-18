@@ -60,6 +60,8 @@ export function createInitialGameState(options: NewGameOptions = {}): GameState 
       },
       equipmentEnhancements: {},
       skills: [],
+      unspentStatPoints: 0,
+      allocatedStats: { vit: 0, str: 0, int: 0, agi: 0 },
     },
     PLAYER_CLASS_ID.ADVENTURER
   );

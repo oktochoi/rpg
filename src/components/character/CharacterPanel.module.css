@@ -78,6 +78,42 @@
   margin: 0;
 }
 
+.points {
+  margin: 8px 0 4px;
+  color: var(--gold);
+}
+
+.statList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.statRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.plus {
+  min-width: 28px;
+  min-height: 28px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel-raised);
+  color: var(--gold);
+  font: inherit;
+  cursor: pointer;
+}
+
+.plus:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 @media (max-width: 640px) {
   .grid,
   .top {

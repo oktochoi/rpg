@@ -1,4 +1,4 @@
-import { TEST_GOBLIN_ARENA_ID } from '../../story/test-scenes';
+import { ARENA_ID } from '../arenas/arena-types';
 import {
   BOSS_ID,
   BOSS_PATTERN_ID,
@@ -17,7 +17,7 @@ export const BOSS_DEFINITIONS: Record<BossId, BossDefinition> = {
     damage: 28,
     size: 64,
     color: 0x6b4c9a,
-    arenaId: TEST_GOBLIN_ARENA_ID,
+    arenaId: ARENA_ID.RUINS_GUARDIAN,
     tags: ['boss', 'ruins', 'guardian'],
     patternIds: [BOSS_PATTERN_ID.HEAVY_SLAM, BOSS_PATTERN_ID.PROJECTILE_BURST, BOSS_PATTERN_ID.CHARGE],
     statusResistance: {

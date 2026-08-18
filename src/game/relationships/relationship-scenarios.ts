@@ -13,7 +13,7 @@ export async function runStep16RelationshipScenarios(): Promise<string[]> {
   const orchA = createGameOrchestrator(createInitialGameState());
   await orchA.dispatch({ type: 'FREE_ACTION', turnId: 1, input: '세리아를 돕는다.' });
   const seriaA = orchA.getState().relationships.seria;
-  if (seriaA.affection === 8 && seriaA.trust === 6 && seriaA.respect === 3 && seriaA.fear === 0) {
+  if (seriaA.affection === 8 && seriaA.trust === 6 && seriaA.respect === 0 && seriaA.fear === 0) {
     pass('A-help', `aff ${seriaA.affection} trust ${seriaA.trust} respect ${seriaA.respect}`);
   } else {
     fail('A-help', JSON.stringify(seriaA));

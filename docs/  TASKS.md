@@ -105,13 +105,13 @@ Player는 Lv.1 모험가로 시작한다. 선택마다 Game Time과 EXP가 흐�
 
 # CURRENT
 
-플레이 가능: **Chapter 1 Organic RPG Loop (STEP 34 COMPLETE)**.
+플레이 가능: **Chapter 1 Final Manual Playtest (STEP 34.10)**.
 
-New Game → 길드 등록 → 고블린 의뢰/전투 → Gold → 상점/장비/강화 → 세리아 폐허 → Guardian → 조사/귀환/보고/휴식 → 길드 공적 → **First Advancement** → 북문 Hook → Chapter Complete.
+New Game부터 Chapter Complete까지 Continue / Hub / Side Quest / Combat / Stat / Rest / 전직이 이어진다.
 
-다음 작업은 STEP 35 Chapter 2. Chapter 2는 아직 만들지 않는다.
+다음 작업은 **STEP 35 — Chapter 2 Northern Region**. Chapter 2는 아직 만들지 않는다.
 
-상세 흐름: `docs/  GAME_DESIGN.md` 맨 위 **현재 상태 / 현재 Chapter 1 플레이 흐름**.
+상세 흐름: `docs/  GAME_DESIGN.md` 맨 위 **현재 상태 / Main Story Flow Philosophy**.
 
 ## STEP 32 — Chapter 1 Complete RPG Loop / Economy / Shop / Inventory / Equipment / Story Finalization
 
@@ -152,7 +152,7 @@ Chapter 1을 실제 UI만으로 처음부터 끝까지 플레이할 수 있는 �
 
 # NEXT
 
-다음 스텝은 **STEP 35 — Chapter 2 Northern Region**. STEP 33 / 34는 완료.
+다음 스텝은 **STEP 35 — Chapter 2 Northern Region**. STEP 33 / 34 / 34.5 / 34.7 / 34.8 / 34.9 / 34.10은 완료.
 
 ## STEP 33 — Chapter 1 Post-Boss Epilogue & Narrative Completion
 
@@ -220,6 +220,113 @@ Chapter 1을 “몇 번 클릭 후 Boss”가 아니라 탐색 / 대화 / 의뢰
 * [x] Save/Load
 * [x] Old Save Migration
 * [x] Full Chapter 1 Playthrough
+
+## STEP 34.5 — Chapter 1 Story Expansion / 30-Minute Vertical Slice
+
+Status: COMPLETE
+
+Chapter 1을 대사량 증가가 아니라 Meaningful Beat(대화·선택·State·이동·조사·전투·보상)로 확장한다. Main Route 약 25~35분, Main+Side 약 35~50분.
+
+* [x] 5 Phase / 15 Beat 세분화
+* [x] Luen Arrival choices + rumor facts
+* [x] Village exploration discover-on-see
+* [x] Marta first meeting 2~4 turns
+* [x] Guild atmosphere then register role-play
+* [x] Quest board 2~3 jobs, starter only required
+* [x] Forest investigation before first combat
+* [x] Report shares only spoken facts
+* [x] Shop / Enhancement story intro
+* [x] Leon camp gated after first quest
+* [x] Seria 3-stage conversation before ruins
+* [x] Forest deeper + ruins interior investigation
+* [x] Altar choice before Guardian
+* [x] Seria report follow-up + player position seed
+* [x] Advancement class questions ONCE, delay allowed
+* [x] First Advancement still fires
+* [x] Dialogue exhaustion / no 0 choices
+* [x] Full playthrough + tsc / lint / build
+
+## STEP 34.7 — Combat Difficulty / Arena Design
+
+Status: COMPLETE
+
+빈 Rectangle Arena와 거리 유지 kiting을 줄이고, Chapter 1 Encounter별 Arena / Enemy 역할 / Dodge resource / Guardian pattern으로 난이도를 올린다. HP x3 같은 방식은 쓰지 않는다.
+
+* [x] CombatArenaDefinition (walls / obstacles / decorations)
+* [x] Forest Scouts / Ambush / Camp / Ruins / Guardian Arena
+* [x] Collision vs decoration 분리
+* [x] Dodge cooldown 750~1000ms (모험가 850)
+* [x] Attack movement penalty 0.72
+* [x] Goblin flank + lunge
+* [x] Enemy separation 유지
+* [x] Archer range / retreat cap / prediction
+* [x] Brute charge + wall recovery
+* [x] Melee attack tokens (2)
+* [x] Hurt i-frame 340ms
+* [x] Potion combat cooldown 1.6s
+* [x] Guardian pattern rotation / residue / charge lock
+* [x] Projectile vs solid cover
+* [x] Dash wall collision
+* [x] Camp observe positional bias
+* [x] First Advancement / CombatResult / Save 원칙 유지
+* [x] tsc / lint / build
+
+## STEP 34.8 — Chapter 1 World Cohesion / Interaction Recovery / Living Luen
+
+Status: COMPLETE
+
+새 대형 시스템 없이 Story / NPC / Shop / Quest / Exploration을 연결해 루엔을 작은 Hub로 만든다.
+
+* [x] 선택 불가 원인 분류 (UI lock / RESOLVING / stale)
+* [x] selectInteractionState 중앙화
+* [x] RESOLVING finally unlock + Groq fallback
+* [x] stale turn 후에도 Candidate 유지
+* [x] FallbackCandidate / 대화 종료
+* [x] Shop 가격 3-tier + sturdy_sword + stock phase
+* [x] 첫 Shop 방문 affordable item
+* [x] NPC small talk / fingerprint / public event
+* [x] Hub interaction / micro event / secret
+* [x] Quest 연결 / world description variant
+* [x] Dialogue EXP 재조정 (Lv5~6)
+* [x] tsc / lint / build
+
+## STEP 34.9 — RPG Flow Reset / Linear Main Story / Stat Allocation / Rest / Dialogue UI Stability
+
+Status: COMPLETE
+
+선택지 소설이 아니라, 스토리가 있는 Action RPG로 Chapter 1 흐름을 재정렬한다.
+
+* [x] Relationship 의미 재정리 (Affection / Trust / Fear / Respect)
+* [x] Player-facing Relationship 자연어, 숫자 비노출
+* [x] Main Story Progression Choice 제거, Continue
+* [x] Hub Location Navigation
+* [x] Level Up Stat Point (VIT / STR / INT / AGI)
+* [x] ALLOCATE_STAT_POINT / STAT_POINT_SPENT
+* [x] Blue Moon Inn 연결 + Rest 10G + 에필로그 무료 Rest
+* [x] Internal ID UI 노출 제거
+* [x] Doran 등록 반복 Topic 제거
+* [x] Dialogue / Portrait / Choice layout 고정
+* [x] tsc / lint / build
+
+## STEP 34.10 — Chapter 1 Final Manual Playtest
+
+Status: COMPLETE
+
+New Game부터 Chapter Complete까지 실제 플레이 경로로 잔여 UX를 점검한다.
+
+* [x] Arrival Continue / EXP·Time 없음
+* [x] Hub Location Navigation
+* [x] Inn Rest
+* [x] Doran 등록 Roleplay 1회, 재방문 시 반복 없음
+* [x] Starter Quest / Forest / Combat
+* [x] Level Up Stat 투자
+* [x] Shop
+* [x] Internal ID 0
+* [x] Relationship 자연어
+* [x] Save / Load 유지
+* [x] Full Chapter + Advancement
+* [x] Story free rest
+* [x] tsc / lint / build
 
 ## STEP 35 — Chapter 2 Northern Region
 

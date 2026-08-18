@@ -2,11 +2,16 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    width: 160px;
+    height: 220px;
 }
 
 .frame {
     position: relative;
-    aspect-ratio: 3 / 4;
+    width: 160px;
+    height: 180px;
+    aspect-ratio: 4 / 5;
+    flex: 0 0 180px;
     display: flex;
     align-items: flex-end;
     justify-content: center;
@@ -41,6 +46,8 @@
     height: 100%;
     object-fit: contain;
     object-position: center bottom;
+    opacity: 1;
+    transition: opacity 160ms ease;
 }
 
 .probe {
@@ -66,24 +73,27 @@
         linear-gradient(180deg, #6a4a28 0%, #1a1612 100%);
 }
 
-.role {
-    margin: 0;
-    text-align: center;
-    font-size: 11px;
-    color: var(--textSecondary);
-}
-
 .name {
     margin: 0;
     text-align: center;
     font-size: 13px;
     color: var(--gold);
+    min-height: 18px;
+}
+
+.role {
+    margin: 0;
+    text-align: center;
+    font-size: 11px;
+    color: var(--textSecondary);
+    min-height: 14px;
 }
 
 .box {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    min-height: 72px;
 }
 
 .speaker {
@@ -91,6 +101,7 @@
     color: var(--gold);
     font-size: 14px;
     font-weight: 700;
+    min-height: 20px;
 }
 
 .line {
@@ -98,6 +109,8 @@
     font-family: var(--font-story), "Apple SD Gothic Neo", serif;
     font-size: 16px;
     line-height: 1.7;
+    overflow: auto;
+    max-height: 4.8em;
 }
 
 .dialogue {

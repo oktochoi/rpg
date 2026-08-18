@@ -15,6 +15,7 @@ import { LocationMap } from './LocationMap';
 import { ShopPanel } from '@/components/shop/ShopPanel';
 import { PeoplePanel } from '@/components/navigation/PeoplePanel';
 import { HistoryPanel } from '@/components/navigation/HistoryPanel';
+import { HubLocationNav } from './HubLocationNav';
 import { LocationTitle } from './LocationTitle';
 import { StoryPanel } from './StoryPanel';
 import { InventoryPanel } from '@/components/navigation/InventoryPanel';
@@ -27,6 +28,8 @@ interface StoryScreenProps {
   inputEnabled?: boolean;
   statusMessage?: string | null;
   fallbackNotice?: string | null;
+  lockToken?: string;
+  debugReason?: string | null;
   activeMenu?: MenuId | null;
   saveNotice?: string | null;
   slots?: readonly SaveSlotSummary[];
@@ -39,6 +42,8 @@ export function StoryScreen({
   inputEnabled = true,
   statusMessage = null,
   fallbackNotice = null,
+  lockToken = '',
+  debugReason = null,
   activeMenu = null,
   saveNotice = null,
   slots = [],
@@ -70,7 +75,7 @@ export function StoryScreen({
       <div className={styles.player}>
         <PlayerPanel player={view.player} onOpenCharacter={() => dispatch({ type: 'OPEN_MENU', menu: 'character' })} />
       </div>
-      <div className={styles.story} key={view.locationId}>
+      <div className={styles.story}>
         <LocationTitle locationId={view.locationId} locationName={view.locationName} />
         <StoryPanel locationId={view.locationId} story={view.story} statusMessage={statusMessage} />
       </div>
@@ -78,10 +83,18 @@ export function StoryScreen({
         <InfoPanel quest={view.quest} relations={view.relations} mainObjective={view.mainObjective} />
       </div>
       <div className={styles.choices}>
-        <ChoicePanel choices={view.choices} dispatch={dispatch} disabled={!inputEnabled} turnId={view.turnId} />
+        {gameState ? <HubLocationNav state={gameState} dispatch={dispatch} disabled={!inputEnabled} /> : null}
+        <ChoicePanel
+          choices={view.choices}
+          dispatch={dispatch}
+          disabled={!inputEnabled}
+          turnId={view.turnId}
+          lockToken={lockToken}
+          debugReason={debugReason}
+        />
       </div>
       <div className={styles.nav}>
-        <GameNavigation dispatch={dispatch} />
+        <GameNavigation dispatch={dispatch} unspentStatPoints={view.player.unspentStatPoints} />
       </div>
       {activeMenu === 'character' && gameState ? (
         <CharacterPanel state={gameState} dispatch={dispatch} onClose={() => dispatch({ type: 'CLOSE_MENU' })} />

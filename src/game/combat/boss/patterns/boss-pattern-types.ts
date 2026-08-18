@@ -5,8 +5,12 @@ export interface BossPatternContext {
   y: number;
   playerX: number;
   playerY: number;
+  playerVx?: number;
+  playerVy?: number;
   width: number;
   height: number;
+  originX?: number;
+  originY?: number;
   size: number;
   phase: 1 | 2;
   lockDirection(dirX: number, dirY: number): void;
@@ -17,6 +21,7 @@ export interface BossPatternContext {
   hideTelegraph(): void;
   setHitboxActive(active: boolean, kind: 'slam' | 'charge'): void;
   fireProjectiles(shots: readonly BossProjectileShot[]): void;
+  spawnResidue?(x: number, y: number): void;
   clampToArena(): boolean;
   sourceId: string;
 }

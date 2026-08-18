@@ -17,6 +17,7 @@ export interface EncounterDefinition {
   bossInstanceId?: string;
   bossSpawn?: { x: number; y: number };
   difficulty?: number;
+  difficultyTag?: 'tutorial' | 'easy' | 'medium' | 'medium_hard' | 'hard';
   tags?: readonly string[];
   rewards?: {
     exp?: number;

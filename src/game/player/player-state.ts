@@ -1,6 +1,7 @@
 import type { LocationId, PlayerId } from '../core/ids';
 import type { EquipmentState } from '../inventory/equipment-types';
 import { getItemDefinition } from '../inventory/item-definitions';
+import { type AllocatedStats } from './stats/stat-types';
 
 export type SkillUseContext = 'STORY' | 'COMBAT' | 'BOTH';
 
@@ -32,10 +33,16 @@ export interface PlayerState {
   equipment: EquipmentState;
   equipmentEnhancements: Readonly<Record<string, number>>;
   skills: readonly PlayerSkill[];
+  unspentStatPoints: number;
+  allocatedStats: AllocatedStats;
 }
 
 export function playerHasItem(player: PlayerState, itemId: string): boolean {
   return player.inventory.some((item) => item.itemId === itemId && item.quantity > 0);
+}
+
+export function itemQuantity(player: PlayerState, itemId: string): number {
+  return player.inventory.find((item) => item.itemId === itemId)?.quantity ?? 0;
 }
 
 export function withItemAdded(

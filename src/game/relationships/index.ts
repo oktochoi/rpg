@@ -12,4 +12,4 @@ export {
   relationshipRequestsForQuest,
   relationshipRequestsForShare,
 } from './relationship-service';
-export { getRelationship, getNpcAttitude, attitudeFromRelationship, formatRelationshipFeedback } from './relationship-selectors';
+export { getRelationship, getNpcAttitude, attitudeFromRelationship, relationshipBandLabel, formatRelationshipFeedback } from './relationship-selectors';

@@ -50,6 +50,7 @@ export function PlayerPanel({ player, onOpenCharacter }: PlayerPanelProps) {
           <h2 className={styles.name}>{player.name}</h2>
           <p className={styles.job}>
             Lv.{player.level} {player.job}
+            {(player.unspentStatPoints ?? 0) > 0 ? ' +' : ''}
           </p>
           {expToNext ? (
             <div className={styles.barBlock}>

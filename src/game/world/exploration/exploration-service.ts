@@ -1,6 +1,6 @@
 import type { GameEvent } from '../../core/event';
 import type { GameState } from '../../core/game-state';
-import { eventsForRecordedFact } from '../../knowledge/knowledge-service';
+import { eventsForPlayerDiscoveredFact, eventsForRecordedFact } from '../../knowledge/knowledge-service';
 import { createRuinsSealFact } from '../../quests/quest-progress';
 import { getCurrentLocationNpcs } from '../locations/location-selectors';
 import { EXPLORATION_POINT_ID, getExplorationPoint, resolveExplorationPointFromInput } from './exploration-definitions';
@@ -39,8 +39,8 @@ export function eventsForExplorationPoint(state: Readonly<GameState>, point: Exp
     if (!state.world.facts.some((item) => item.id === fact.id)) {
       events.push(...eventsForRecordedFact(withWitnesses));
     }
-  } else if (point.discoverableFactId && !state.world.facts.some((item) => item.id === point.discoverableFactId)) {
-    events.push({ type: 'PLAYER_LEARNED_FACT', factId: point.discoverableFactId });
+  } else if (point.discoverableFactId) {
+    events.push(...eventsForPlayerDiscoveredFact(state, point.discoverableFactId, ['exploration', 'story']));
   }
   return events;
 }

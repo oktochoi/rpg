@@ -119,7 +119,7 @@ export function revalidateCandidate(
 }
 
 function isStoryLockedAction(candidate: ChoiceCandidate): boolean {
-  return candidate.source === 'STORY' && candidate.metadata?.storyAction?.type === 'NONE';
+  return candidate.source === 'STORY' && candidate.metadata?.storyAction == null;
 }
 
 function talkNpcFromPrompt(candidate: ChoiceCandidate): string | undefined {

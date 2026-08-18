@@ -2,7 +2,8 @@ import type { GameEvent } from '../core/event';
 import type { GameState } from '../core/game-state';
 import { canSellItem, getItemDefinition } from '../inventory/item-definitions';
 import { inventoryQuantity } from '../inventory/item-selectors';
-import { shopAtLocation, shopSellsItem, SHOP_ID } from './shop-definitions';
+import { shopAtLocation, SHOP_ID } from './shop-definitions';
+import { isShopConsumable, shopItemIdsFor } from './shop-stock';
 import { WORLD_FLAG } from '../world/locations/location-definitions';
 import { worldFlag } from '../world/locations/location-selectors';
 
@@ -13,7 +14,10 @@ export function currentShopId(state: Readonly<GameState>): string | null {
 export function eventsForBuyItem(state: Readonly<GameState>, itemId: string): GameEvent[] {
   const shopId = currentShopId(state) ?? SHOP_ID.LUEN_GENERAL_STORE;
   const definition = getItemDefinition(itemId);
-  if (!definition || !shopSellsItem(shopId, itemId)) {
+  if (!definition || !shopItemIdsFor(state, shopId).includes(itemId)) {
+    return [];
+  }
+  if (!worldFlag(state, WORLD_FLAG.SHOP_UNLOCKED) && !isShopConsumable(itemId)) {
     return [];
   }
   if (state.player.gold < definition.buyPrice) {
@@ -42,27 +46,24 @@ export function shopUnlocked(state: Readonly<GameState>): boolean {
 }
 
 export function buyBlockedReason(state: Readonly<GameState>, itemId: string): string | null {
-  if (!shopUnlocked(state)) {
-    return '아직 상점을 이용할 때가 아니다.';
-  }
   const shopId = currentShopId(state);
   if (!shopId) {
     return '상점 안에서만 살 수 있다.';
   }
   const definition = getItemDefinition(itemId);
-  if (!definition || !shopSellsItem(shopId, itemId)) {
+  if (!definition || !shopItemIdsFor(state, shopId).includes(itemId)) {
     return '여기서는 그 물건을 팔지 않는다.';
   }
+  if (!shopUnlocked(state) && !isShopConsumable(itemId)) {
+    return '아직 장비를 들이기 전이다. 소모품은 살 수 있다.';
+  }
   if (state.player.gold < definition.buyPrice) {
-    return '골드가 부족하다.';
+    return `골드가 부족하다. (${state.player.gold}G / ${definition.buyPrice}G)`;
   }
   return null;
 }
 
 export function sellBlockedReason(state: Readonly<GameState>, itemId: string, quantity = 1): string | null {
-  if (!shopUnlocked(state)) {
-    return '아직 상점을 이용할 때가 아니다.';
-  }
   if (!currentShopId(state)) {
     return '상점 안에서만 팔 수 있다.';
   }

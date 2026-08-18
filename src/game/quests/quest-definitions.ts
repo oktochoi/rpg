@@ -4,6 +4,7 @@ import { QUEST_CATEGORY, QUEST_OBJECTIVE_TYPE, type QuestDefinition } from './qu
 
 export const QUEST_ID = {
   FOREST_GOBLIN_SCOUR: 'forest_goblin_scour',
+  FOREST_HERB_GATHER: 'forest_herb_gather',
   RUINS_MYSTERY: 'ruins_mystery',
   KNIGHT_SUSPICION: 'knight_suspicion',
   MARTA_LOST_PARCEL: 'marta_lost_parcel',
@@ -18,7 +19,7 @@ export const QUEST_DEFINITIONS: Record<string, QuestDefinition> = {
   [QUEST_ID.FOREST_GOBLIN_SCOUR]: {
     id: QUEST_ID.FOREST_GOBLIN_SCOUR,
     title: '숲길의 고블린',
-    description: '길드 칠판의 작은 의뢰. 숲길에 나타난 고블린 정찰대를 처리한다.',
+    description: '최근 숲길에서 고블린 목격이 늘었다. 길드는 신참에게 주변 정찰을 맡긴다. 숲길을 조사하고, 고블린을 처리한 뒤 보고한다.',
     category: QUEST_CATEGORY.SIDE,
     requesterNpcId: 'guildmaster_doran',
     prerequisites: [{ type: 'WORLD_FLAG', flagId: 'guild_registered' }],
@@ -35,18 +36,43 @@ export const QUEST_DEFINITIONS: Record<string, QuestDefinition> = {
         description: '길드로 돌아가 보고한다',
         targetId: 'guildmaster_doran',
       },
+      {
+        id: 'scout_forest',
+        type: QUEST_OBJECTIVE_TYPE.LEARN_FACT,
+        description: '숲길의 흔적을 확인한다',
+        requiredFactId: 'fact_forest_tracks',
+        optional: true,
+      },
     ],
     completionEffects: [
       { type: 'SET_WORLD_FLAG', flagId: 'shop_unlocked', value: true },
       { type: 'SET_WORLD_FLAG', flagId: 'enhancement_unlocked', value: true },
+      { type: 'CREATE_WORLD_FACT', factType: 'QUEST_COMPLETED', factId: 'fact_public_goblin_road_cleared', tags: ['public', 'goblin'] },
       { type: 'RELATIONSHIP_CHANGE', npcId: 'guildmaster_doran', reason: 'PLAYER_COMPLETED_REQUEST' },
     ],
     reward: { exp: 20, gold: 30 },
   },
+  [QUEST_ID.FOREST_HERB_GATHER]: {
+    id: QUEST_ID.FOREST_HERB_GATHER,
+    title: '숲길의 약초',
+    description: '길드 칠판의 작은 부탁. 숲길 가장자리의 약초를 확인해 오면 된다. 전투는 필요 없다.',
+    category: QUEST_CATEGORY.SIDE,
+    requesterNpcId: 'guildmaster_doran',
+    prerequisites: [{ type: 'WORLD_FLAG', flagId: 'guild_registered' }],
+    objectives: [
+      {
+        id: 'find_herbs',
+        type: QUEST_OBJECTIVE_TYPE.LEARN_FACT,
+        description: '숲길에서 약초를 확인한다',
+        requiredFactId: 'fact_forest_herbs',
+      },
+    ],
+    reward: { exp: 8, gold: 15 },
+  },
   [QUEST_ID.RUINS_MYSTERY]: {
     id: QUEST_ID.RUINS_MYSTERY,
     title: '폐허의 이상한 기운',
-    description: '세리아가 폐허에서 이상한 마력을 느꼈다. 원인을 조사하고 돌아와 보고한다.',
+    description: '세리아가 폐허에서 이상한 마력을 느꼈다. 입구의 위험을 치우고, 내부를 조사한 뒤 돌아와 보고한다.',
     category: QUEST_CATEGORY.MAIN,
     requesterNpcId: 'seria',
     availabilityTriggers: [{ type: 'DIALOGUE_TOPIC', npcId: 'seria', topicId: RUINS_OFFER_TOPIC }],
@@ -158,7 +184,10 @@ export const QUEST_DEFINITIONS: Record<string, QuestDefinition> = {
     description: '레온이 숲 안쪽 고블린 야영지를 확인해 달라고 한다.',
     category: QUEST_CATEGORY.SIDE,
     requesterNpcId: 'leon',
-    prerequisites: [{ type: 'SCENE_VISITED', sceneId: 'leon_first_meeting' }],
+    prerequisites: [
+      { type: 'SCENE_VISITED', sceneId: 'leon_first_meeting' },
+      { type: 'QUEST_COMPLETED', questId: QUEST_ID.FOREST_GOBLIN_SCOUR },
+    ],
     objectives: [
       {
         id: 'win_camp',
@@ -175,6 +204,7 @@ export const QUEST_DEFINITIONS: Record<string, QuestDefinition> = {
     ],
     completionEffects: [
       { type: 'CREATE_WORLD_FACT', factType: 'INFORMATION_REVEALED', factId: 'fact_goblins_moving_near_ruins', tags: ['goblin', 'ruins'] },
+      { type: 'CREATE_WORLD_FACT', factType: 'QUEST_COMPLETED', factId: 'fact_public_goblin_camp_cleared', tags: ['public', 'goblin'] },
       { type: 'RELATIONSHIP_CHANGE', npcId: 'leon', reason: 'PLAYER_COMPLETED_REQUEST' },
     ],
     reward: { exp: 30, gold: 50 },

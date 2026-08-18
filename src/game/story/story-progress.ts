@@ -1,6 +1,7 @@
 import type { GameEvent } from '../core/event';
 import type { GameState } from '../core/game-state';
 import { applyEvents } from '../core/reducer';
+import { eventsForPlayerDiscoveredFact } from '../knowledge/knowledge-service';
 import { getStorySceneDefinition } from './story-scene-definitions';
 import { resolveNextScene, shouldResolveStory } from './story-scene-resolver';
 import type { StorySceneEffect } from './story-scene-types';
@@ -10,6 +11,7 @@ function eventsForSceneEffects(state: Readonly<GameState>, effects: readonly Sto
     return [];
   }
   const events: GameEvent[] = [];
+  const learned = new Set(state.knowledge.knownFactIds);
   for (const effect of effects) {
     if (effect.type === 'SET_WORLD_FLAG' && state.world.flags[effect.flagId] !== effect.value) {
       events.push({ type: 'WORLD_FLAG_SET', flagId: effect.flagId, value: effect.value });
@@ -24,6 +26,13 @@ function eventsForSceneEffects(state: Readonly<GameState>, effects: readonly Sto
         quantity: effect.quantity,
         sourceEventId: effect.sourceEventId,
       });
+    }
+    if (effect.type === 'LEARN_FACT' && !learned.has(effect.factId)) {
+      const factEvents = eventsForPlayerDiscoveredFact(state, effect.factId);
+      events.push(...factEvents);
+      if (factEvents.length > 0) {
+        learned.add(effect.factId);
+      }
     }
   }
   return events;
@@ -45,11 +54,18 @@ export function eventsForStoryProgress(state: Readonly<GameState>, incoming: rea
   const entered = incoming.filter((event): event is Extract<GameEvent, { type: 'STORY_SCENE_ENTERED' }> => {
     return event.type === 'STORY_SCENE_ENTERED';
   });
-  if (entered.length > 0) {
+  const continued = incoming.filter((event): event is Extract<GameEvent, { type: 'STORY_CONTINUED' }> => {
+    return event.type === 'STORY_CONTINUED' && Boolean(event.sceneId);
+  });
+  if (entered.length > 0 || continued.length > 0) {
     const outgoing: GameEvent[] = [];
     let simulated = applyEvents(state, incoming.filter((event) => event.type !== 'STORY_SCENE_ENTERED'));
     let lastSceneId = simulated.story.currentSceneId;
-    for (const event of entered) {
+    const enterList =
+      entered.length > 0
+        ? entered
+        : continued.flatMap((event) => (event.sceneId ? [{ type: 'STORY_SCENE_ENTERED' as const, sceneId: event.sceneId }] : []));
+    for (const event of enterList) {
       const enterEffects = firstEnterEffects(simulated, event.sceneId);
       outgoing.push(...enterEffects);
       simulated = applyEvents(simulated, [{ type: 'STORY_SCENE_ENTERED', sceneId: event.sceneId }, ...enterEffects]);

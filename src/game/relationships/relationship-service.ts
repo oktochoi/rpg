@@ -5,6 +5,8 @@ import type { NpcId } from '../core/ids';
 import { isNpcDuelCombatId } from '../actions/action-validator';
 import { getPresentEntityIds } from '../actions/entity-resolver';
 import { TEST_GOBLIN_COMBAT_ID } from '../story/test-scenes';
+import { ENCOUNTER_ID } from '../combat/encounters/encounter-definitions';
+import { QUEST_ID } from '../quests/quest-definitions';
 import { QUEST_STATUS } from '../quests/quest-types';
 import { toRelationshipDelta } from './relationship-rules';
 import type { RelationshipChangeReason, RelationshipRequest } from './relationship-types';
@@ -77,9 +79,6 @@ export function relationshipRequestsForAction(input: {
   if (actionType === 'GIVE' || actionType === 'BRIBE') {
     return [{ npcId: targetId, reason: 'PLAYER_GAVE_GIFT', sourceEventId: source('PLAYER_GAVE_GIFT') }];
   }
-  if (actionType === 'USE_SKILL') {
-    return [{ npcId: targetId, reason: 'PLAYER_SHOWED_SKILL', sourceEventId: source('PLAYER_SHOWED_SKILL') }];
-  }
   return [];
 }
 
@@ -90,13 +89,20 @@ export function relationshipRequestsForCombat(
   const requests: RelationshipRequest[] = [];
   const presentNpcs = getPresentEntityIds(state).filter((id) => state.npcs[id]);
 
-  if (result.outcome === 'VICTORY' && result.combatId === TEST_GOBLIN_COMBAT_ID) {
-    for (const npcId of presentNpcs) {
-      requests.push({
-        npcId,
-        reason: 'PLAYER_SHOWED_SKILL',
-        sourceEventId: `combat:${result.combatId}:PLAYER_SHOWED_SKILL:${npcId}`,
-      });
+  if (result.outcome === 'VICTORY') {
+    const witnessed =
+      result.combatId === TEST_GOBLIN_COMBAT_ID ||
+      result.combatId === ENCOUNTER_ID.CH1_FOREST_SCOUTS ||
+      result.combatId === ENCOUNTER_ID.CH1_GOBLIN_CAMP ||
+      result.combatId === ENCOUNTER_ID.RUINS_BOSS_01;
+    if (witnessed) {
+      for (const npcId of presentNpcs) {
+        requests.push({
+          npcId,
+          reason: 'PLAYER_SHOWED_SKILL',
+          sourceEventId: `combat:${result.combatId}:PLAYER_SHOWED_SKILL:${npcId}`,
+        });
+      }
     }
   }
 
@@ -119,13 +125,25 @@ export function relationshipRequestsForQuest(state: Readonly<GameState>, questId
   if (!quest?.requesterNpcId || quest.status === QUEST_STATUS.COMPLETED) {
     return [];
   }
-  return [
+  const requests: RelationshipRequest[] = [
     {
       npcId: quest.requesterNpcId,
       reason: 'PLAYER_COMPLETED_REQUEST',
       sourceEventId: `quest:${questId}:PLAYER_COMPLETED_REQUEST:${quest.requesterNpcId}`,
     },
   ];
+  const proved =
+    questId === QUEST_ID.FOREST_GOBLIN_SCOUR ||
+    questId === QUEST_ID.LEON_GOBLIN_WATCH ||
+    questId === QUEST_ID.RUINS_MYSTERY;
+  if (proved) {
+    requests.push({
+      npcId: quest.requesterNpcId,
+      reason: 'PLAYER_PROVED_CAPABILITY',
+      sourceEventId: `quest:${questId}:PLAYER_PROVED_CAPABILITY:${quest.requesterNpcId}`,
+    });
+  }
+  return requests;
 }
 
 export function relationshipRequestsForShare(fromId: string, toId: NpcId, factId: string): RelationshipRequest[] {

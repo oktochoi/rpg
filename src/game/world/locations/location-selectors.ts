@@ -1,8 +1,37 @@
 import type { GameState } from '../../core/game-state';
 import type { NpcState } from '../../npc/npc-state';
 import { explorationPointsAt } from '../exploration/exploration-definitions';
-import { getLocationDefinition } from './location-definitions';
+import { locationAtmosphere } from '../living-luen/atmosphere';
+import { getLocationDefinition, LOCATION_ID } from './location-definitions';
 import type { LocationAccessRequirement, LocationContext, LocationRuntimeState } from './location-types';
+
+export const HUB_LOCATION_IDS: readonly string[] = [
+  LOCATION_ID.LUEN_VILLAGE,
+  LOCATION_ID.LUEN_ADVENTURERS_GUILD,
+  LOCATION_ID.BLUE_MOON_INN,
+  LOCATION_ID.LUEN_GENERAL_STORE,
+];
+
+export function isHubLocation(locationId: string): boolean {
+  return HUB_LOCATION_IDS.includes(locationId);
+}
+
+export function hubTravelDestinations(state: Readonly<GameState>): readonly string[] {
+  if (!isHubLocation(state.world.currentLocationId)) {
+    return [];
+  }
+  const current = getLocationDefinition(state.world.currentLocationId);
+  if (!current) {
+    return [];
+  }
+  return current.connectedLocationIds.filter((locationId) => {
+    const definition = getLocationDefinition(locationId);
+    if (!definition) {
+      return false;
+    }
+    return isLocationDiscovered(state, locationId) && accessRequirementsMet(state, definition.accessRequirements);
+  });
+}
 
 export function getLocationRuntime(state: Readonly<GameState>, locationId: string): LocationRuntimeState | undefined {
   return state.world.locations[locationId];
@@ -51,21 +80,13 @@ export function accessRequirementsMet(
 }
 
 export function getLocationDescription(locationId: string, state: Readonly<GameState>): string {
+  const atmosphere = locationAtmosphere(locationId, state);
+  if (atmosphere) {
+    return atmosphere;
+  }
   const definition = getLocationDefinition(locationId);
   if (!definition) {
     return '알 수 없는 장소다.';
-  }
-  if (locationId === 'ancient_ruins') {
-    if (worldFlag(state, 'ruins_guardian_defeated')) {
-      return `${definition.description} 수호자가 쓰러진 뒤, 더 깊은 길이 열려 있다.`;
-    }
-    if (worldFlag(state, 'ruins_goblins_defeated')) {
-      return `${definition.description} 폐허는 이전보다 조용하다.`;
-    }
-    return `${definition.description} 안쪽에서 고블린들의 기척이 들린다.`;
-  }
-  if (locationId === 'northern_gate' && !worldFlag(state, 'northern_gate_open')) {
-    return `${definition.description} 지금은 문을 통과할 수 없다.`;
   }
   return definition.description;
 }

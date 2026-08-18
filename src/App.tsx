@@ -21,12 +21,14 @@ import { createStoryDirector, generateStoryChoices, getLastDirectorDebug } from 
 import { choiceRefreshKey } from '@/game/story/choices';
 import type { Choice } from '@/game/story/choice';
 import type { DynamicChoice } from '@/game/story/choices/choice-types';
+import { resolvePlayerFacingChoiceLabel } from '@/game/story/choices/choice-label';
 import { KnowledgeDebugPanel } from '@/components/debug/KnowledgeDebugPanel';
 import { createLocalSaveService } from '@/game/save/save-service';
 import type { SaveService } from '@/game/save/save-types';
 import { readPublicAiMode } from '@/ai/config/ai-config';
 import { getLastAiDebug, recordAiDebug, type AiDebugSnapshot } from '@/ai/debug/ai-debug';
 import { audioManager, bgmContextForLocation } from '@/game/audio';
+import { selectInteractionState, interactionStatusMessage } from '@/game/story/interaction-state';
 import { isDevelopmentBuild, isGameDebugEnabled, setGameDebugEnabled } from '@/game/debug/debug-flags';
 import { type PlayerClassId } from '@/game/player/classes';
 import { APP_PHASE, type AppPhase } from '@/game/app-flow';
@@ -46,6 +48,7 @@ function App() {
   const [directorLoading, setDirectorLoading] = useState(false);
   const [lastDialogue, setLastDialogue] = useState<NpcDialogueResponse | null>(null);
   const [directorChoices, setDirectorChoices] = useState<Choice[]>([]);
+  const [interactionTick, setInteractionTick] = useState(0);
   const [aiDebug, setAiDebug] = useState<AiDebugSnapshot>(getLastAiDebug);
   const [fallbackNotice, setFallbackNotice] = useState<string | null>(null);
   const orchestratorRef = useRef<GameOrchestrator | null>(null);
@@ -123,7 +126,9 @@ function App() {
   }, [aiDebug.fallbackUsed, aiDebug.requestId]);
 
   const dispatch = useCallback((command: Command) => {
-    void orchestratorRef.current?.dispatch(command);
+    void orchestratorRef.current?.dispatch(command).then(() => {
+      setInteractionTick((tick) => tick + 1);
+    });
   }, []);
 
   const runNpcDialogue = useCallback(async (playerText: string) => {
@@ -220,6 +225,9 @@ function App() {
         if (!latest || response.turnId !== latest.world.turn || response.turnId !== turnId) {
           return;
         }
+        if (response.choices.length === 0) {
+          return;
+        }
         setDirectorChoices(toViewChoices(response.choices));
       })
       .finally(() => {
@@ -266,19 +274,18 @@ function App() {
     setAppPhase(APP_PHASE.GAME);
   };
 
-  const storyInputEnabled =
-    inGame && state.mode !== 'COMBAT' && state.mode !== 'RESOLVING' && !talking && !directorLoading;
+  const interaction = selectInteractionState(state, {
+    inGame,
+    talking,
+    directorLoading,
+    candidateCount: directorChoices.length > 0 ? directorChoices.length : 1,
+  });
+  const storyInputEnabled = interaction.canInteract;
   const storyView = toStoryScreenView(state, directorChoices.length > 0 ? directorChoices : undefined, {
     npcEmotion: lastDialogue?.emotion ?? 'neutral',
   });
   const npcName = state.npcs[state.story.currentNpcId ?? 'seria']?.name ?? 'NPC';
-  const statusMessage = talking
-    ? `${npcName}가 잠시 생각한다...`
-    : state.mode === 'RESOLVING'
-      ? '행동을 해석하는 중...'
-      : directorLoading
-        ? '상황을 정리하는 중...'
-        : null;
+  const statusMessage = interactionStatusMessage(state, { talking, directorLoading, npcName });
 
   return (
     <div id="app">
@@ -303,6 +310,8 @@ function App() {
             inputEnabled={storyInputEnabled}
             statusMessage={statusMessage}
             fallbackNotice={fallbackNotice}
+            lockToken={`${interactionTick}:${refreshKey}`}
+            debugReason={isDevelopmentBuild() ? interaction.reason : null}
             activeMenu={state.activeMenu}
             saveNotice={state.saveNotice}
             slots={slots}
@@ -388,7 +397,12 @@ function App() {
 function toViewChoices(choices: readonly DynamicChoice[]): Choice[] {
   return choices.map((choice) => ({
     id: choice.id,
-    label: choice.text,
+    label: resolvePlayerFacingChoiceLabel({
+      text: choice.text,
+      actionType: choice.actionType,
+      intent: choice.intent,
+      candidateId: choice.candidateId,
+    }),
     source: choice.source,
     candidateId: choice.candidateId,
   }));

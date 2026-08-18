@@ -95,7 +95,7 @@ export function useGameToasts(state: GameState): GameToastItem[] {
       pushToast(setItems, {
         id: `level-${level}-${state.world.turn}`,
         title: 'LEVEL UP!',
-        detail: `Lv.${levelRef.current} → Lv.${level}`,
+        detail: `Lv.${level} · 능력치 포인트 +1`,
       });
     }
     levelRef.current = level;

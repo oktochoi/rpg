@@ -55,6 +55,31 @@ export function eventsForPublicReveal(
   }));
 }
 
+export function eventsForPlayerDiscoveredFact(
+  state: Readonly<GameState>,
+  factId: WorldFact['id'],
+  tags: readonly string[] = ['story', 'rumor']
+): GameEvent[] {
+  if (state.knowledge.knownFactIds.includes(factId)) {
+    return [];
+  }
+  const existing = state.world.facts.find((item) => item.id === factId);
+  if (existing) {
+    return [{ type: 'PLAYER_LEARNED_FACT', factId }];
+  }
+  return eventsForRecordedFact({
+    id: factId,
+    type: 'INFORMATION_REVEALED',
+    occurredAtTurn: state.world.turn,
+    locationId: state.world.currentLocationId,
+    actorIds: ['player'],
+    witnessIds: ['player'],
+    tags: [...tags],
+    publicLevel: 'PRIVATE',
+    payload: { key: factId },
+  });
+}
+
 export function eventsForGrantFact(
   state: Readonly<GameState>,
   npcId: NpcId,

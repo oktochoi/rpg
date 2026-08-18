@@ -22,7 +22,7 @@ export function getMainObjectiveText(state: Readonly<GameState>): string {
     const forest = state.quests[QUEST_ID.FOREST_GOBLIN_SCOUR];
     const ruins = state.quests[QUEST_ID.RUINS_MYSTERY];
     if (!worldFlag(state, WORLD_FLAG.GUILD_REGISTERED)) {
-      return '루엔 모험가 길드에서 등록하세요.';
+      return '루엔을 둘러보거나 모험가 길드에서 등록하세요.';
     }
     if (forest?.status === QUEST_STATUS.AVAILABLE) {
       return '길드에서 첫 의뢰를 맡으세요.';

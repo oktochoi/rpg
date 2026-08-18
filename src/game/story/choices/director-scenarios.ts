@@ -233,8 +233,8 @@ export async function runStep26DirectorScenarios(): Promise<string[]> {
         return fake;
       },
     });
-    if (stale.debugReason === 'stale_turn' && stale.choices.length === 0) {
-      pass('J-turnId', 'turn 20 discarded at 21');
+    if (stale.debugReason === 'stale_turn' && stale.choices.length > 0) {
+      pass('J-turnId', 'stale discarded, current fallback kept');
     } else {
       fail('J-turnId', JSON.stringify(stale));
     }

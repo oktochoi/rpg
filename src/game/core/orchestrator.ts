@@ -162,44 +162,57 @@ export function createGameOrchestrator(
       return;
     }
 
-    const context = buildActionParserContext(state);
-    const parsed = await parser.parse(input, context);
-    if (state.pendingFreeActionTurnId !== turnId || state.world.turn !== turnId) {
-      return;
-    }
-
-    const validation = validateAction(parsed, state);
-    let dialogueResponse = null;
-    if (validation.valid && (parsed.actionType === 'ASK' || parsed.actionType === 'TALK')) {
-      const npcId = parsed.targetId ?? state.story.currentNpcId ?? 'seria';
-      dialogueResponse = await dialogue.respond(npcId, parsed.speech ?? parsed.rawInput);
-      if (state.pendingFreeActionTurnId !== turnId || state.world.turn !== turnId) {
+    const unlock = (narrative: string, success = false) => {
+      if (state.mode !== 'RESOLVING' && state.pendingFreeActionTurnId == null) {
         return;
       }
-    }
-
-    const payload = resolveAction(parsed, validation, state, dialogueResponse);
-    const committed = applyCommand({
-      type: 'COMMIT_FREE_ACTION',
-      turnId,
-      rawInput: input,
-      payload,
-    });
-    if (!committed && state.mode === 'RESOLVING') {
       applyState(
         applyEvents(state, [
           {
             type: 'ACTION_RESOLVED',
             turnId,
             resolution: {
-              success: false,
-              actionType: parsed.actionType,
-              narrative: '그 행동을 할 방법이 떠오르지 않는다.',
+              success,
+              actionType: 'UNKNOWN',
+              narrative,
               nextMode: 'STORY',
             },
           },
         ])
       );
+    };
+
+    try {
+      const context = buildActionParserContext(state);
+      const parsed = await parser.parse(input, context);
+      if (state.pendingFreeActionTurnId !== turnId || state.world.turn !== turnId) {
+        unlock('지금은 다른 행동이 먼저 처리되었다.');
+        return;
+      }
+
+      const validation = validateAction(parsed, state);
+      let dialogueResponse = null;
+      if (validation.valid && (parsed.actionType === 'ASK' || parsed.actionType === 'TALK')) {
+        const npcId = parsed.targetId ?? state.story.currentNpcId ?? 'seria';
+        dialogueResponse = await dialogue.respond(npcId, parsed.speech ?? parsed.rawInput);
+        if (state.pendingFreeActionTurnId !== turnId || state.world.turn !== turnId) {
+          unlock('지금은 다른 행동이 먼저 처리되었다.');
+          return;
+        }
+      }
+
+      const payload = resolveAction(parsed, validation, state, dialogueResponse);
+      const committed = applyCommand({
+        type: 'COMMIT_FREE_ACTION',
+        turnId,
+        rawInput: input,
+        payload,
+      });
+      if (!committed) {
+        unlock('그 행동을 할 방법이 떠오르지 않는다.');
+      }
+    } catch {
+      unlock('그 행동을 끝까지 해내지 못했다.');
     }
   }
 
@@ -243,18 +256,44 @@ export function createGameOrchestrator(
     const candidate = findLiveCandidate(lookupState, command.candidateId);
     const prompt =
       getTalkPrompt(candidate?.metadata?.promptId ?? '') ?? candidate?.textTemplate ?? command.choiceId;
-    const response = await dialogue.respond(npcId, prompt);
-    if (state.pendingFreeActionTurnId !== command.turnId || state.world.turn !== command.turnId) {
-      return;
+    try {
+      const response = await dialogue.respond(npcId, prompt);
+      if (state.pendingFreeActionTurnId !== command.turnId || state.world.turn !== command.turnId) {
+        if (state.mode === 'RESOLVING' || state.pendingFreeActionTurnId != null) {
+          applyState(
+            applyEvents(state, [
+              {
+                type: 'ACTION_RESOLVED',
+                turnId: command.turnId,
+                resolution: {
+                  success: false,
+                  actionType: 'TALK',
+                  narrative: '지금은 다른 이야기가 먼저 진행되었다.',
+                  nextMode: 'STORY',
+                },
+              },
+            ])
+          );
+        }
+        return;
+      }
+      applyCommand({
+        type: 'RECORD_DIALOGUE',
+        npcId: response.npcId,
+        playerText: prompt,
+        npcText: response.dialogue,
+        usedMemoryIds: response.usedMemoryIds,
+      });
+    } catch {
+      applyCommand({
+        type: 'RECORD_DIALOGUE',
+        npcId,
+        playerText: prompt,
+        npcText: '……지금은 말을 고르지 못한다.',
+        usedMemoryIds: [],
+      });
     }
-    applyCommand({
-      type: 'RECORD_DIALOGUE',
-      npcId: response.npcId,
-      playerText: prompt,
-      npcText: response.dialogue,
-      usedMemoryIds: response.usedMemoryIds,
-    });
-    if (state.mode === 'RESOLVING') {
+    if (state.mode === 'RESOLVING' || state.pendingFreeActionTurnId != null) {
       applyState(
         applyEvents(state, [
           {
@@ -263,7 +302,7 @@ export function createGameOrchestrator(
             resolution: {
               success: true,
               actionType: candidate?.actionType ?? 'TALK',
-              narrative: response.dialogue,
+              narrative: state.story.lastActionNarrative ?? prompt,
               nextMode: 'STORY',
             },
           },

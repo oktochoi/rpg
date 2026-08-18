@@ -16,7 +16,8 @@ export type RelationshipChangeReason =
   | 'PLAYER_SHOWED_SKILL'
   | 'PLAYER_SHARED_INFORMATION'
   | 'PLAYER_INSULTED_NPC'
-  | 'PLAYER_COMPLETED_REQUEST';
+  | 'PLAYER_COMPLETED_REQUEST'
+  | 'PLAYER_PROVED_CAPABILITY';
 
 export interface RelationshipDelta {
   npcId: NpcId;

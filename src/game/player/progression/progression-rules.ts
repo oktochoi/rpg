@@ -57,6 +57,7 @@ export function eventsForExpGrant(
       hpDelta: growth.hp,
       mpDelta: growth.mp,
       attackDelta: growth.attack,
+      statPointsGranted: 1,
     });
     events.push({
       type: 'HISTORY_RECORDED',

@@ -14,15 +14,20 @@ export class MeleeBehavior implements EnemyBehavior {
     if (!ctx.isPlayerAlive || ctx.isAttacking || ctx.knockbackActive) {
       return { vx: 0, vy: 0 };
     }
-    const target = surroundOffset(ctx, 36);
+    const target = surroundOffset(ctx, 48);
     const dir = directionToward(ctx.x, ctx.y, target.x, target.y);
-    if (dir.dist <= ctx.definition.attackRange) {
+    if (dir.dist <= 10) {
       return { vx: 0, vy: 0 };
     }
-    return { vx: dir.x * ctx.moveSpeed, vy: dir.y * ctx.moveSpeed };
+    const speed = ctx.hasMeleeToken ? ctx.moveSpeed : ctx.moveSpeed * 0.72;
+    return { vx: dir.x * speed, vy: dir.y * speed };
   }
 
   shouldStartAttack(ctx: EnemyBehaviorContext): boolean {
-    return ctx.isPlayerAlive && !ctx.isAttacking && ctx.distance <= ctx.definition.attackRange;
+    if (!ctx.isPlayerAlive || ctx.isAttacking || !ctx.hasMeleeToken) {
+      return false;
+    }
+    const lungeRange = ctx.definition.lungeRange ?? ctx.definition.attackRange;
+    return ctx.distance <= lungeRange;
   }
 }

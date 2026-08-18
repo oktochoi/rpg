@@ -23,7 +23,7 @@
   ],
   "scripts": {
     "dev": "node log.js dev & next dev -p 8080",
-    "build": "node log.js build & next build",
+    "build": "next build",
     "dev-nolog": "next dev -p 8080",
     "build-nolog": "next build",
     "lint": "next lint",

@@ -12,6 +12,7 @@ export class ProjectileBurstPattern implements BossPattern {
   readonly id = BOSS_PATTERN_ID.PROJECTILE_BURST;
   private elapsed = 0;
   private fired = false;
+  private variant: 0 | 1 | 2 = 0;
   private readonly windUp = RUINS_GUARDIAN_CONFIG.projectileBurst.windUpMs;
   private readonly recovery = RUINS_GUARDIAN_CONFIG.projectileBurst.recoveryMs;
 
@@ -60,16 +61,29 @@ export class ProjectileBurstPattern implements BossPattern {
   destroy(): void {
     this.elapsed = 0;
     this.fired = false;
+    this.variant = ((this.variant + 1) % 3) as 0 | 1 | 2;
   }
 
   private buildShots(ctx: BossPatternContext): BossProjectileShot[] {
     const config = RUINS_GUARDIAN_CONFIG.projectileBurst;
-    const angles = ctx.phase === 2 ? config.anglesPhase2 : config.anglesPhase1;
-    const locked = ctx.getLockedDirection();
-    const originX = ctx.x + locked.x * (ctx.size / 2 + 8);
-    const originY = ctx.y + locked.y * (ctx.size / 2 + 8);
+    let angles: readonly number[] = ctx.phase === 2 ? config.anglesPhase2 : config.anglesPhase1;
+    if (ctx.phase === 2 && this.variant === 1) {
+      angles = [-20, 0, 20];
+    } else if (this.variant === 2) {
+      const predicted = directionTo(
+        ctx.x,
+        ctx.y,
+        ctx.playerX + (ctx.playerVx ?? 0) * 8,
+        ctx.playerY + (ctx.playerVy ?? 0) * 8
+      );
+      ctx.lockDirection(predicted.x, predicted.y);
+      angles = ctx.phase === 2 ? [-16, 0, 16] : [-10, 10];
+    }
+    const aim = ctx.getLockedDirection();
+    const originX = ctx.x + aim.x * (ctx.size / 2 + 8);
+    const originY = ctx.y + aim.y * (ctx.size / 2 + 8);
     return angles.map((offset) => {
-      const dir = rotateDirection(locked.x, locked.y, offset);
+      const dir = rotateDirection(aim.x, aim.y, offset);
       return {
         originX,
         originY,

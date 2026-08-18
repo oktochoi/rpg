@@ -36,7 +36,9 @@ export const WORLD_FLAG = {
   ENHANCEMENT_UNLOCKED: 'enhancement_unlocked',
   FOREST_AMBUSH_CLEARED: 'forest_ambush_cleared',
   GOBLIN_CAMP_CLEARED: 'goblin_camp_cleared',
+  GOBLIN_CAMP_OBSERVED: 'goblin_camp_observed',
   RUINS_GATE_CLEARED: 'ruins_gate_cleared',
+  STORY_FREE_REST_USED: 'story_free_rest_used',
 } as const;
 
 export const RUINS_GUARDIAN_FACT_ID = 'fact_important_event_ruins_guardian';

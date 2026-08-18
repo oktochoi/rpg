@@ -2,6 +2,7 @@ import type { GameEvent } from './event';
 import type { GameState } from './game-state';
 import { createInitialGameState } from './initial-state';
 import { clampRelationship, createRelationship } from '../npc/relationship';
+import { formatRelationshipFeedback } from '../relationships/relationship-selectors';
 import { trimNpcMemories } from '../npc/memory/memory-service';
 import { withItemAdded, withItemConsumed, withItemRemoved } from '../player/player-state';
 import { clampResourceToDerived, derivedPlayerStats } from '../inventory/derived-stats';
@@ -204,10 +205,15 @@ function applyEvent(state: GameState, event: GameEvent): GameState {
     case 'FREE_INPUT_RESOLVED':
     case 'ENEMY_DEFEATED':
     case 'PLAYER_DEFEATED':
+      return {
+        ...state,
+        mode: state.mode === 'RESOLVING' ? 'RESOLVING' : 'STORY',
+      };
     case 'DIALOGUE_ENDED':
       return {
         ...state,
         mode: 'STORY',
+        pendingFreeActionTurnId: null,
         story: {
           ...state.story,
           currentNpcId: null,
@@ -505,13 +511,7 @@ function applyEvent(state: GameState, event: GameEvent): GameState {
       }
       const current = state.relationships[event.npcId] ?? createRelationship();
       const npcName = state.npcs[event.npcId]?.name ?? event.npcId;
-      const feedbackParts = [
-        event.delta.affection ? `호감 ${event.delta.affection > 0 ? '+' : ''}${event.delta.affection}` : '',
-        event.delta.trust ? `신뢰 ${event.delta.trust > 0 ? '+' : ''}${event.delta.trust}` : '',
-        event.delta.fear ? `두려움 ${event.delta.fear > 0 ? '+' : ''}${event.delta.fear}` : '',
-        event.delta.respect ? `존경 ${event.delta.respect > 0 ? '+' : ''}${event.delta.respect}` : '',
-      ].filter(Boolean);
-      const feedback = feedbackParts.length > 0 ? `${npcName} ${feedbackParts.join(' · ')}` : null;
+      const feedback = formatRelationshipFeedback(npcName, event);
       return {
         ...state,
         processedRelationshipSourceIds: [...state.processedRelationshipSourceIds, event.sourceEventId],
@@ -810,9 +810,37 @@ function applyEvent(state: GameState, event: GameEvent): GameState {
           maxMp: state.player.maxMp + event.mpDelta,
           currentMp: state.player.currentMp + event.mpDelta,
           attackPower: (state.player.attackPower ?? 10) + event.attackDelta,
+          unspentStatPoints: (state.player.unspentStatPoints ?? 0) + (event.statPointsGranted ?? 1),
+          allocatedStats: state.player.allocatedStats ?? { vit: 0, str: 0, int: 0, agi: 0 },
         },
       };
     }
+    case 'STAT_POINT_SPENT': {
+      if ((state.player.unspentStatPoints ?? 0) <= 0) {
+        return state;
+      }
+      const allocated = state.player.allocatedStats ?? { vit: 0, str: 0, int: 0, agi: 0 };
+      if (event.statId !== 'vit' && event.statId !== 'str' && event.statId !== 'int' && event.statId !== 'agi') {
+        return state;
+      }
+      const nextAllocated = { ...allocated, [event.statId]: allocated[event.statId] + 1 };
+      const hpGain = event.statId === 'vit' ? 10 : 0;
+      const mpGain = event.statId === 'int' ? 8 : 0;
+      return {
+        ...state,
+        player: {
+          ...state.player,
+          unspentStatPoints: state.player.unspentStatPoints - 1,
+          allocatedStats: nextAllocated,
+          currentHp: state.player.currentHp + hpGain,
+          currentMp: state.player.currentMp + mpGain,
+        },
+      };
+    }
+    case 'STORY_CONTINUED':
+      return event.sceneId
+        ? withEnteredStoryScene({ ...state, mode: 'STORY' }, event.sceneId)
+        : { ...state, mode: 'STORY' };
     case 'CHAPTER_STARTED':
       return {
         ...state,

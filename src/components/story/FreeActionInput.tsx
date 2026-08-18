@@ -7,15 +7,16 @@ interface FreeActionInputProps {
   dispatch: CommandDispatcher;
   disabled?: boolean;
   turnId: number;
+  lockToken?: string;
 }
 
-export function FreeActionInput({ dispatch, disabled = false, turnId }: FreeActionInputProps) {
+export function FreeActionInput({ dispatch, disabled = false, turnId, lockToken = '' }: FreeActionInputProps) {
   const [text, setText] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     setSubmitting(false);
-  }, [turnId, disabled]);
+  }, [turnId, disabled, lockToken]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

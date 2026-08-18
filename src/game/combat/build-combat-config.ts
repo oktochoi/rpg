@@ -1,4 +1,8 @@
 import type { GameState } from '../core/game-state';
+import { ITEM_ID } from '../inventory/item-definitions';
+import { itemQuantity } from '../player/player-state';
+import { WORLD_FLAG } from '../world/locations/location-definitions';
+import { worldFlag } from '../world/locations/location-selectors';
 import type { EncounterId } from '../core/ids';
 import { getPlayerClass, resolvePlayerClassId } from '../player/classes';
 import { derivedPlayerStats } from '../inventory/derived-stats';
@@ -24,6 +28,7 @@ export function playerCombatSnapshot(state: Readonly<GameState>): CombatConfig['
     currentMp: Math.min(state.player.currentMp, derived.maxMp),
     moveSpeed: definition.baseStats.moveSpeed,
     attackBonus: derived.attackBonus,
+    healingPotions: itemQuantity(state.player, ITEM_ID.HEALING_POTION),
   };
 }
 
@@ -59,5 +64,9 @@ export function buildCombatConfig(state: Readonly<GameState>, combatId: Encounte
     player,
     enemies,
     arenaId: encounter.arenaId,
+    spawnBias:
+      encounterId === ENCOUNTER_ID.CH1_GOBLIN_CAMP && worldFlag(state, WORLD_FLAG.GOBLIN_CAMP_OBSERVED)
+        ? 'observed'
+        : 'default',
   };
 }

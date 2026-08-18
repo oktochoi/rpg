@@ -112,6 +112,16 @@ export class PlayerHealthController {
     return true;
   }
 
+  heal(amount: number): number {
+    if (this._isDead || amount <= 0) {
+      return 0;
+    }
+    const before = this._currentHp;
+    this._currentHp = Math.min(this._maxHp, this._currentHp + amount);
+    this.syncHpBar();
+    return this._currentHp - before;
+  }
+
   get isGuarding(): boolean {
     return this.guardRemainingMs > 0;
   }

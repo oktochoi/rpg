@@ -31,6 +31,8 @@ export class CombatFeedback {
   private afterImageSpawnRemainingMs = 0;
   private hitStopUntilMs = 0;
 
+  private lastShakeAt = 0;
+
   constructor(private readonly scene: Phaser.Scene) {
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, this.destroy, this);
   }
@@ -257,7 +259,12 @@ export class CombatFeedback {
   }
 
   private playShake(durationMs: number, intensity: number): void {
-    this.scene.cameras.main.shake(durationMs, intensity);
+    const now = performance.now();
+    if (now - this.lastShakeAt < 80) {
+      return;
+    }
+    this.lastShakeAt = now;
+    this.scene.cameras.main.shake(durationMs, Math.min(intensity, 0.01));
   }
 
   private playDamageNumber(x: number, y: number, amount: number, color: string, large = false, offsetY = 18): void {

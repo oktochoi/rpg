@@ -24,6 +24,7 @@ import { createProjectile, projectileHitsTarget } from '../projectiles/projectil
 import { collectTargetsInRadius } from '../skills/skill-combat-rules';
 import { SKILLS } from '../skills/skill-definitions';
 import { createCombatFacts } from '../../world/facts/fact-service';
+import { runCombatPressureScenarios } from '../arenas/combat-pressure-scenarios';
 
 function contextFor(
   definition: (typeof ENEMY_DEFINITIONS)[keyof typeof ENEMY_DEFINITIONS],
@@ -34,6 +35,10 @@ function contextFor(
     y: 0,
     playerX: 200,
     playerY: 0,
+    playerVx: 0,
+    playerVy: 0,
+    homeX: 0,
+    homeY: 0,
     distance: 200,
     isPlayerAlive: true,
     isAttacking: false,
@@ -42,6 +47,7 @@ function contextFor(
     definition,
     formationIndex: 0,
     aliveCount: 1,
+    hasMeleeToken: true,
     ...overrides,
   };
 }
@@ -97,7 +103,7 @@ export async function runStep21EncounterScenarios(): Promise<string[]> {
     archer.behaviorType === ENEMY_BEHAVIOR_TYPE.RANGED &&
     archer.maxHp === 55 &&
     approach.vx > 0 &&
-    hold.vx === 0 &&
+    Math.abs(hold.vx) < archer.moveSpeed * 0.4 &&
     retreat.vx < 0 &&
     canShoot &&
     !tooClose &&
@@ -292,5 +298,6 @@ export async function runStep21EncounterScenarios(): Promise<string[]> {
     );
   }
 
+  lines.push(...runCombatPressureScenarios());
   return lines;
 }

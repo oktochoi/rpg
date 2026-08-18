@@ -94,7 +94,9 @@ export type GameEvent =
   | { type: 'PLAYER_CLASS_PATH_CHOSEN'; classId: string }
   | { type: 'PLAYER_RESTORED'; currentHp: number; currentMp: number }
   | { type: 'PLAYER_EXP_GAINED'; amount: number; sourceEventId: string; reason: string }
-  | { type: 'PLAYER_LEVEL_UP'; fromLevel: number; toLevel: number; hpDelta: number; mpDelta: number; attackDelta: number }
+  | { type: 'PLAYER_LEVEL_UP'; fromLevel: number; toLevel: number; hpDelta: number; mpDelta: number; attackDelta: number; statPointsGranted: number }
+  | { type: 'STAT_POINT_SPENT'; statId: string; sourceEventId: string }
+  | { type: 'STORY_CONTINUED'; sceneId?: string }
   | { type: 'CHAPTER_STARTED'; chapterId: string }
   | { type: 'CHAPTER_COMPLETED'; chapterId: string }
   | { type: 'HISTORY_RECORDED'; entry: HistoryEntry }

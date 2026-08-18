@@ -14,7 +14,7 @@ const DEFAULT_DASH: DashProfile = {
   id: 'default_dash',
   speed: 620,
   durationMs: 160,
-  cooldownMs: 550,
+  cooldownMs: 850,
   invincibleMs: 120,
   style: 'dash',
 };
@@ -24,6 +24,7 @@ const IDLE_ALPHA = 1;
 export interface PlayerMovementOptions {
   moveSpeed?: number;
   dash?: DashProfile;
+  clampBlink?: (x: number, y: number, radius: number) => { x: number; y: number };
 }
 
 export class PlayerController {
@@ -48,6 +49,9 @@ export class PlayerController {
   private skillMoveRemainingMs = 0;
   private readonly skillMoveDirection = new Phaser.Math.Vector2(1, 0);
   private skillMoveSpeed = 0;
+  private attackMoveMultiplier = 1;
+  private dashLocked = false;
+  private readonly clampBlinkFn?: (x: number, y: number, radius: number) => { x: number; y: number };
 
   constructor(
     scene: Phaser.Scene,
@@ -56,6 +60,7 @@ export class PlayerController {
   ) {
     this.speed = options?.moveSpeed ?? MOVE_SPEED;
     this.dash = options?.dash ?? DEFAULT_DASH;
+    this.clampBlinkFn = options?.clampBlink;
     this.body.setAllowGravity(false);
     this.body.setCollideWorldBounds(true);
 
@@ -126,6 +131,11 @@ export class PlayerController {
 
   get isCombatLocked(): boolean {
     return this._combatLocked;
+  }
+
+  setCombatModifiers(modifiers: { attackMoveMultiplier?: number; dashLocked?: boolean }): void {
+    this.attackMoveMultiplier = modifiers.attackMoveMultiplier ?? 1;
+    this.dashLocked = modifiers.dashLocked ?? false;
   }
 
   lockCombat(): void {
@@ -286,7 +296,15 @@ export class PlayerController {
   }
 
   private tryStartDash(): void {
-    if (!this.spaceKey || this._isDead || this._combatLocked || this._isDashing || this.skillMoveRemainingMs > 0 || this.cooldownRemainingMs > 0) {
+    if (
+      !this.spaceKey ||
+      this._isDead ||
+      this._combatLocked ||
+      this._isDashing ||
+      this.skillMoveRemainingMs > 0 ||
+      this.cooldownRemainingMs > 0 ||
+      this.dashLocked
+    ) {
       return;
     }
 
@@ -318,17 +336,15 @@ export class PlayerController {
     const distance = this.dash.speed * (this.dash.durationMs / 1000);
     const half = this.body.halfWidth;
     const bounds = this.body.world.bounds;
-    const nextX = Phaser.Math.Clamp(
-      this.body.center.x + this.dashDirection.x * distance,
-      bounds.x + half,
-      bounds.right - half
-    );
-    const nextY = Phaser.Math.Clamp(
-      this.body.center.y + this.dashDirection.y * distance,
-      bounds.y + half,
-      bounds.bottom - half
-    );
-    this.body.reset(nextX, nextY);
+    const rawX = this.body.center.x + this.dashDirection.x * distance;
+    const rawY = this.body.center.y + this.dashDirection.y * distance;
+    const clamped = this.clampBlinkFn
+      ? this.clampBlinkFn(rawX, rawY, half)
+      : {
+          x: Phaser.Math.Clamp(rawX, bounds.x + half, bounds.right - half),
+          y: Phaser.Math.Clamp(rawY, bounds.y + half, bounds.bottom - half),
+        };
+    this.body.reset(clamped.x, clamped.y);
     this._isDashing = true;
     this.dashRemainingMs = this.dash.durationMs;
     this.body.setVelocity(0, 0);
@@ -341,7 +357,7 @@ export class PlayerController {
     }
 
     this.body.setVelocity(this.moveInput.x, this.moveInput.y);
-    this.body.velocity.normalize().scale(this.speed);
+    this.body.velocity.normalize().scale(this.speed * this.attackMoveMultiplier);
   }
 
   private syncVisual(): void {

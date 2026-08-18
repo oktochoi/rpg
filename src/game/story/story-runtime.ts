@@ -83,6 +83,8 @@ export function sanitizeStoryState(state: GameState): GameState {
       attackPower: state.player.attackPower ?? 10,
       equipment: state.player.equipment ?? { weapon: null, armor: null, accessory: null },
       equipmentEnhancements: state.player.equipmentEnhancements ?? {},
+      unspentStatPoints: state.player.unspentStatPoints ?? 0,
+      allocatedStats: state.player.allocatedStats ?? { vit: 0, str: 0, int: 0, agi: 0 },
     },
   };
   if (isCurrentSceneValid(normalized)) {

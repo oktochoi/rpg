@@ -8,6 +8,7 @@ export class HeavySlamPattern implements BossPattern {
   private windUp = RUINS_GUARDIAN_CONFIG.heavySlam.windUpMs;
   private readonly active = RUINS_GUARDIAN_CONFIG.heavySlam.activeMs;
   private readonly recovery = RUINS_GUARDIAN_CONFIG.heavySlam.recoveryMs;
+  private residueSpawned = false;
 
   canUse(_ctx: BossPatternContext): boolean {
     return true;
@@ -15,6 +16,7 @@ export class HeavySlamPattern implements BossPattern {
 
   start(ctx: BossPatternContext): void {
     this.elapsed = 0;
+    this.residueSpawned = false;
     this.windUp =
       ctx.phase === 2 ? RUINS_GUARDIAN_CONFIG.heavySlam.phase2WindUpMs : RUINS_GUARDIAN_CONFIG.heavySlam.windUpMs;
     const dir = directionTo(ctx.x, ctx.y, ctx.playerX, ctx.playerY);
@@ -44,6 +46,11 @@ export class HeavySlamPattern implements BossPattern {
       ctx.setState('RECOVERY');
       ctx.hideTelegraph();
       ctx.setHitboxActive(false, 'slam');
+      if (ctx.phase === 2 && !this.residueSpawned) {
+        const dir = ctx.getLockedDirection();
+        ctx.spawnResidue?.(ctx.x + dir.x * 48, ctx.y + dir.y * 48);
+        this.residueSpawned = true;
+      }
       return 'running';
     }
     this.cancel(ctx);
@@ -58,5 +65,6 @@ export class HeavySlamPattern implements BossPattern {
 
   destroy(): void {
     this.elapsed = 0;
+    this.residueSpawned = false;
   }
 }

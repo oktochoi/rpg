@@ -5,6 +5,10 @@ export interface EnemyBehaviorContext {
   y: number;
   playerX: number;
   playerY: number;
+  playerVx: number;
+  playerVy: number;
+  homeX: number;
+  homeY: number;
   distance: number;
   isPlayerAlive: boolean;
   isAttacking: boolean;
@@ -13,6 +17,7 @@ export interface EnemyBehaviorContext {
   definition: EnemyDefinition;
   formationIndex: number;
   aliveCount: number;
+  hasMeleeToken: boolean;
 }
 
 export interface EnemyMoveCommand {
@@ -37,12 +42,14 @@ export function directionToward(fromX: number, fromY: number, toX: number, toY: 
 }
 
 export function surroundOffset(ctx: EnemyBehaviorContext, radius: number): { x: number; y: number } {
-  const spread = ctx.formationIndex - (ctx.aliveCount - 1) / 2;
-  const { x, y } = directionToward(ctx.x, ctx.y, ctx.playerX, ctx.playerY);
-  const px = -y;
-  const py = x;
+  const count = Math.max(1, ctx.aliveCount);
+  const t = count === 1 ? 0.5 : ctx.formationIndex / (count - 1);
+  const angleOffset = (t - 0.5) * (Math.PI / 2);
+  const toEnemy = directionToward(ctx.playerX, ctx.playerY, ctx.x, ctx.y);
+  const base = Math.atan2(toEnemy.y, toEnemy.x);
+  const angle = base + angleOffset;
   return {
-    x: ctx.playerX + px * spread * radius,
-    y: ctx.playerY + py * spread * radius,
+    x: ctx.playerX + Math.cos(angle) * radius,
+    y: ctx.playerY + Math.sin(angle) * radius,
   };
 }

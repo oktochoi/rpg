@@ -15,9 +15,10 @@ const NAV_ITEMS: readonly { menu: MenuId; label: string }[] = [
 
 interface GameNavigationProps {
   dispatch: CommandDispatcher;
+  unspentStatPoints?: number;
 }
 
-export function GameNavigation({ dispatch }: GameNavigationProps) {
+export function GameNavigation({ dispatch, unspentStatPoints = 0 }: GameNavigationProps) {
   return (
     <nav className={styles.nav} aria-label="게임 메뉴">
       {NAV_ITEMS.map((item) => (
@@ -32,6 +33,7 @@ export function GameNavigation({ dispatch }: GameNavigationProps) {
           }}
         >
           {item.label}
+          {item.menu === 'character' && unspentStatPoints > 0 ? <span className={styles.dot} aria-hidden="true" /> : null}
         </button>
       ))}
     </nav>

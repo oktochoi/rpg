@@ -34,6 +34,11 @@ export interface EnemyControllerOptions {
   definition: EnemyDefinition;
   behavior: EnemyBehavior;
   onRangedShot?: (shot: EnemyRangedShot) => void;
+  canGrantMeleeToken?: (id: string) => boolean;
+  tryAcquireMeleeToken?: (id: string) => boolean;
+  releaseMeleeToken?: (id: string) => void;
+  getPlayerVelocity?: () => { x: number; y: number };
+  hitsObstacle?: (x: number, y: number, radius: number) => boolean;
 }
 
 export class EnemyController {
@@ -52,8 +57,15 @@ export class EnemyController {
   private readonly definition: EnemyDefinition;
   private readonly behavior: EnemyBehavior;
   private readonly onRangedShot?: (shot: EnemyRangedShot) => void;
+  private readonly canGrantMeleeToken?: (id: string) => boolean;
+  private readonly tryAcquireMeleeToken?: (id: string) => boolean;
+  private readonly releaseMeleeToken?: (id: string) => void;
+  private readonly getPlayerVelocity?: () => { x: number; y: number };
+  private readonly hitsObstacle?: (x: number, y: number, radius: number) => boolean;
   private readonly _maxHp: number;
   private readonly _attackDamage: number;
+  private readonly homeX: number;
+  private readonly homeY: number;
   private _currentHp: number;
   private _isHit = false;
   private _isDead = false;
@@ -63,6 +75,8 @@ export class EnemyController {
   private _formationIndex = 0;
   private _aliveCount = 1;
   private rangedShotFired = false;
+  private attackMove: 'melee' | 'lunge' | 'charge' = 'melee';
+  private chargeLocked = new Phaser.Math.Vector2(1, 0);
 
   private hitFlashRemainingMs = 0;
   private knockbackRemainingMs = 0;
@@ -85,9 +99,16 @@ export class EnemyController {
     this.definition = options.definition;
     this.behavior = options.behavior;
     this.onRangedShot = options.onRangedShot;
+    this.canGrantMeleeToken = options.canGrantMeleeToken;
+    this.tryAcquireMeleeToken = options.tryAcquireMeleeToken;
+    this.releaseMeleeToken = options.releaseMeleeToken;
+    this.getPlayerVelocity = options.getPlayerVelocity;
+    this.hitsObstacle = options.hitsObstacle;
     this._maxHp = options.definition.maxHp;
     this._attackDamage = options.definition.damage;
     this._currentHp = this._maxHp;
+    this.homeX = enemy.x;
+    this.homeY = enemy.y;
     this.hpBarWidth = Math.max(36, options.definition.size);
     this.body = enemy.body as Phaser.Physics.Arcade.Body;
     this.body.setAllowGravity(false);
@@ -218,10 +239,11 @@ export class EnemyController {
     this._aliveCount = Math.max(1, aliveCount);
   }
 
-  nudge(dx: number, dy: number, bounds: { width: number; height: number }): void {
+  nudge(dx: number, dy: number, _bounds?: { width: number; height: number }): void {
     const half = this.definition.size / 2;
-    this.enemy.x = Phaser.Math.Clamp(this.enemy.x + dx, half, bounds.width - half);
-    this.enemy.y = Phaser.Math.Clamp(this.enemy.y + dy, half, bounds.height - half);
+    const bounds = this.body.world.bounds;
+    this.enemy.x = Phaser.Math.Clamp(this.enemy.x + dx, bounds.x + half, bounds.right - half);
+    this.enemy.y = Phaser.Math.Clamp(this.enemy.y + dy, bounds.y + half, bounds.bottom - half);
   }
 
   halt(): void {
@@ -229,6 +251,7 @@ export class EnemyController {
     this.slowRemainingMs = 0;
     this.slowMultiplier = 1;
     this.cancelAttack();
+    this.releaseMeleeToken?.(this._id);
     this.body.setVelocity(0, 0);
   }
 
@@ -265,8 +288,14 @@ export class EnemyController {
     this.lastHitAttackId = hit.attackId;
     this._currentHp = Math.max(0, this._currentHp - hit.amount);
     this.playHitFeedback();
-    this.cancelAttack();
-    this.startKnockback(hit.direction, hit.knockbackScale ?? 1);
+    const committed =
+      this._isAttacking &&
+      this.definition.attackDurationMs - this.attackRemainingMs >= this.definition.hitStartMs;
+    if (!this.definition.stunLockImmune && !committed) {
+      this.cancelAttack();
+    }
+    const resist = this.definition.knockbackResist ?? (this.definition.stunLockImmune ? 0.4 : 0);
+    this.startKnockback(hit.direction, (hit.knockbackScale ?? 1) * (1 - resist));
     this.syncHpBar();
 
     if (this._currentHp <= 0) {
@@ -283,11 +312,17 @@ export class EnemyController {
   }
 
   private behaviorContext(): EnemyBehaviorContext {
+    const velocity = this.getPlayerVelocity?.() ?? { x: 0, y: 0 };
+    const melee = this.definition.behaviorType !== ENEMY_BEHAVIOR_TYPE.RANGED;
     return {
       x: this.enemy.x,
       y: this.enemy.y,
       playerX: this.player.x,
       playerY: this.player.y,
+      playerVx: velocity.x,
+      playerVy: velocity.y,
+      homeX: this.homeX,
+      homeY: this.homeY,
       distance: this.distanceToPlayer(),
       isPlayerAlive: this.isPlayerAlive(),
       isAttacking: this._isAttacking,
@@ -296,6 +331,7 @@ export class EnemyController {
       definition: this.definition,
       formationIndex: this._formationIndex,
       aliveCount: this._aliveCount,
+      hasMeleeToken: melee ? this.canGrantMeleeToken?.(this._id) !== false : true,
     };
   }
 
@@ -327,6 +363,10 @@ export class EnemyController {
     if (!this.canStartAttack()) {
       return;
     }
+    const melee = this.definition.behaviorType !== ENEMY_BEHAVIOR_TYPE.RANGED;
+    if (melee && this.tryAcquireMeleeToken && !this.tryAcquireMeleeToken(this._id)) {
+      return;
+    }
 
     this.facePlayer();
     this._attackId += 1;
@@ -334,6 +374,14 @@ export class EnemyController {
     this.rangedShotFired = false;
     this.attackRemainingMs = this.definition.attackDurationMs;
     this.attackCooldownRemainingMs = this.definition.attackCooldownMs;
+    this.attackMove = this.resolveAttackMove();
+    if (this.attackMove === 'charge') {
+      this.chargeLocked.copy(this._attackDirection);
+      this.attackRemainingMs =
+        (this.definition.chargeWindupMs ?? 480) +
+        (this.definition.chargeDurationMs ?? 380) +
+        (this.definition.chargeRecoveryMs ?? 640);
+    }
     this.attackHitbox.setVisible(true);
     this.syncAttackHitbox();
   }
@@ -342,6 +390,8 @@ export class EnemyController {
     this._isAttacking = false;
     this.attackRemainingMs = 0;
     this.rangedShotFired = false;
+    this.attackMove = 'melee';
+    this.releaseMeleeToken?.(this._id);
     this.attackHitbox.setVisible(false);
     this.attackHitboxBody.setEnable(false);
     this.enemy.setScale(1);
@@ -379,6 +429,14 @@ export class EnemyController {
       return;
     }
     this.rangedShotFired = true;
+    const velocity = this.getPlayerVelocity?.() ?? { x: 0, y: 0 };
+    const factor = this.definition.predictionFactor ?? 0;
+    const aimX = this.player.x + velocity.x * factor;
+    const aimY = this.player.y + velocity.y * factor;
+    const dx = aimX - this.enemy.x;
+    const dy = aimY - this.enemy.y;
+    const dist = Math.hypot(dx, dy) || 1;
+    this._attackDirection.set(dx / dist, dy / dist);
     this.onRangedShot?.({
       instanceId: this._id,
       originX: this.enemy.x + this._attackDirection.x * 18,
@@ -468,7 +526,7 @@ export class EnemyController {
   private updateMoveOrAttack(): void {
     const ctx = this.behaviorContext();
     if (this._isAttacking) {
-      this.body.setVelocity(0, 0);
+      this.applySpecialAttackMotion();
       return;
     }
 
@@ -476,6 +534,62 @@ export class EnemyController {
     this.body.setVelocity(move.vx, move.vy);
     this.facePlayer();
     this.tryStartAttack();
+  }
+
+  private resolveAttackMove(): 'melee' | 'lunge' | 'charge' {
+    const distance = this.distanceToPlayer();
+    if (
+      this.definition.behaviorType === ENEMY_BEHAVIOR_TYPE.HEAVY_MELEE &&
+      distance > this.definition.attackRange &&
+      distance <= (this.definition.chargeRangeMax ?? 300)
+    ) {
+      return 'charge';
+    }
+    if (
+      this.definition.behaviorType === ENEMY_BEHAVIOR_TYPE.MELEE &&
+      distance > this.definition.attackRange &&
+      distance <= (this.definition.lungeRange ?? this.definition.attackRange)
+    ) {
+      return 'lunge';
+    }
+    return 'melee';
+  }
+
+  private applySpecialAttackMotion(): void {
+    if (this.attackMove === 'charge') {
+      const windup = this.definition.chargeWindupMs ?? 480;
+      const duration = this.definition.chargeDurationMs ?? 380;
+      const elapsed =
+        (this.definition.chargeWindupMs ?? 480) +
+        (this.definition.chargeDurationMs ?? 380) +
+        (this.definition.chargeRecoveryMs ?? 640) -
+        this.attackRemainingMs;
+      if (elapsed < windup || elapsed > windup + duration) {
+        this.body.setVelocity(0, 0);
+        return;
+      }
+      const speed = this.definition.chargeSpeed ?? 390;
+      const nextX = this.enemy.x + this.chargeLocked.x * speed * 0.016;
+      const nextY = this.enemy.y + this.chargeLocked.y * speed * 0.016;
+      if (this.hitsObstacle?.(nextX, nextY, this.definition.size / 2)) {
+        this.attackRemainingMs = Math.min(this.attackRemainingMs, this.definition.chargeRecoveryMs ?? 640);
+        this.body.setVelocity(0, 0);
+        return;
+      }
+      this.body.setVelocity(this.chargeLocked.x * speed, this.chargeLocked.y * speed);
+      return;
+    }
+
+    if (this.attackMove === 'lunge') {
+      const elapsed = this.definition.attackDurationMs - this.attackRemainingMs;
+      if (elapsed >= this.definition.hitStartMs && elapsed < this.definition.hitEndMs) {
+        const speed = this.definition.lungeSpeed ?? 340;
+        this.body.setVelocity(this._attackDirection.x * speed, this._attackDirection.y * speed);
+        return;
+      }
+    }
+
+    this.body.setVelocity(0, 0);
   }
 
   private tickHitFlash(delta: number): void {

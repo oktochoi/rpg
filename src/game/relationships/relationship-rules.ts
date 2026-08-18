@@ -11,19 +11,20 @@ export const EMPTY_RELATIONSHIP_RULE: RelationshipRule = {
 };
 
 export const RELATIONSHIP_RULES: Readonly<Record<RelationshipChangeReason, Partial<RelationshipRule>>> = {
-  PLAYER_HELPED_NPC: { affection: 8, trust: 6, respect: 3 },
+  PLAYER_HELPED_NPC: { affection: 8, trust: 6 },
   PLAYER_SAVED_NPC: { affection: 15, trust: 12, respect: 10 },
   PLAYER_GAVE_GIFT: { affection: 6, trust: 3 },
-  PLAYER_KEPT_PROMISE: { affection: 4, trust: 10, respect: 4 },
+  PLAYER_KEPT_PROMISE: { affection: 4, trust: 10 },
   PLAYER_BROKE_PROMISE: { affection: -8, trust: -25 },
   PLAYER_LIED: { trust: -15, affection: -5 },
   PLAYER_THREATENED_NPC: { affection: -12, trust: -10, fear: 20 },
   PLAYER_ATTACKED_NPC: { affection: -30, trust: -35, fear: 15 },
   PLAYER_DEFEATED_NPC: { affection: -20, trust: -25, fear: 10, respect: 5 },
   PLAYER_SHOWED_SKILL: { respect: 8 },
-  PLAYER_SHARED_INFORMATION: { trust: 5, respect: 2 },
-  PLAYER_INSULTED_NPC: { affection: -10, respect: -6 },
-  PLAYER_COMPLETED_REQUEST: { affection: 10, trust: 8, respect: 6 },
+  PLAYER_SHARED_INFORMATION: { trust: 5 },
+  PLAYER_INSULTED_NPC: { affection: -10 },
+  PLAYER_COMPLETED_REQUEST: { affection: 10, trust: 8 },
+  PLAYER_PROVED_CAPABILITY: { respect: 8, trust: 4 },
 };
 
 const NPC_REASON_MODIFIERS: Readonly<Record<string, Partial<Record<RelationshipChangeReason, Partial<RelationshipRule>>>>> = {

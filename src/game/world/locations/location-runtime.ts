@@ -22,8 +22,6 @@ export function createInitialLocationRuntimes(): Record<string, LocationRuntimeS
     const knownStart =
       definition.id === LOCATION_ID.LUEN_VILLAGE ||
       definition.id === LOCATION_ID.BLUE_MOON_INN ||
-      definition.id === LOCATION_ID.FOREST_ROAD ||
-      definition.id === LOCATION_ID.NORTHERN_GATE ||
       definition.id === LOCATION_ID.LUEN_ADVENTURERS_GUILD ||
       definition.id === LOCATION_ID.LUEN_GENERAL_STORE;
     const visited = definition.id === LOCATION_ID.LUEN_VILLAGE;

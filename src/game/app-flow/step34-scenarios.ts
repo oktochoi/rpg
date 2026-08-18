@@ -103,15 +103,17 @@ export async function runStep34FlowScenarios(): Promise<string[]> {
 
   const orch = createGameOrchestrator(createInitialGameState());
   await orch.dispatch({ type: 'NEW_GAME', name: '옥토' });
+  await orch.dispatch({ type: 'CONTINUE_STORY' });
   await hopTo(orch, LOCATION_ID.LUEN_ADVENTURERS_GUILD);
-  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'register_adventurer' });
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'register_exp_none' });
   if (orch.getState().quests[QUEST_ID.FOREST_GOBLIN_SCOUR]?.status === QUEST_STATUS.AVAILABLE) {
-    await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'accept_forest_scouts_register' });
+    await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'accept_forest_scouts' });
   }
   if (orch.getState().quests[QUEST_ID.FOREST_GOBLIN_SCOUR]?.status !== QUEST_STATUS.ACTIVE) {
     await orch.dispatch({ type: 'ACCEPT_QUEST', questId: QUEST_ID.FOREST_GOBLIN_SCOUR });
   }
   await hopTo(orch, LOCATION_ID.FOREST_ROAD);
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'investigate_tracks' });
   await orch.dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_FOREST_SCOUTS });
   await orch.dispatch({
     type: 'RESOLVE_COMBAT',
@@ -332,7 +334,8 @@ export async function runStep34FlowScenarios(): Promise<string[]> {
     isChapterCompleted(finished, CHAPTER_ID.CHAPTER_1_LUEN_RUINS) &&
     worldFlag(finished, WORLD_FLAG.FIRST_ADVANCEMENT_DONE) &&
     finished.player.classId !== PLAYER_CLASS_ID.ADVENTURER &&
-    finished.player.level >= 5
+    finished.player.level >= 5 &&
+    finished.player.level <= 6
   ) {
     pass(
       'P-full-playthrough',
@@ -351,15 +354,19 @@ export async function runStep34FlowScenarios(): Promise<string[]> {
 export async function playOrganicChapter1() {
   const orch = createGameOrchestrator(createInitialGameState());
   await orch.dispatch({ type: 'NEW_GAME', name: '옥토' });
+  await orch.dispatch({ type: 'CONTINUE_STORY' });
+  await hopTo(orch, LOCATION_ID.BLUE_MOON_INN);
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'marta_reason_adventure' });
   await hopTo(orch, LOCATION_ID.LUEN_ADVENTURERS_GUILD);
-  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'register_adventurer' });
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'register_exp_none' });
   if (orch.getState().quests[QUEST_ID.FOREST_GOBLIN_SCOUR]?.status === QUEST_STATUS.AVAILABLE) {
-    await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'accept_forest_scouts_register' });
+    await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'accept_forest_scouts' });
   }
   if (orch.getState().quests[QUEST_ID.FOREST_GOBLIN_SCOUR]?.status !== QUEST_STATUS.ACTIVE) {
     await orch.dispatch({ type: 'ACCEPT_QUEST', questId: QUEST_ID.FOREST_GOBLIN_SCOUR });
   }
   await hopTo(orch, LOCATION_ID.FOREST_ROAD);
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'investigate_tracks' });
   await orch.dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_FOREST_SCOUTS });
   await orch.dispatch({
     type: 'RESOLVE_COMBAT',
@@ -410,12 +417,15 @@ export async function playOrganicChapter1() {
   await hopTo(orch, LOCATION_ID.LUEN_VILLAGE);
   await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_REPORT_RUINS });
   await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'report_all' });
-  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'leon_tell_all' });
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'seria_follow_done' });
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'leon_agree_seria' });
   await hopTo(orch, LOCATION_ID.BLUE_MOON_INN);
   await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_REST_INN });
   await hopTo(orch, LOCATION_ID.LUEN_ADVENTURERS_GUILD);
   await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_LOOK_AROUND });
-  if (canChooseFirstAdvancement(orch.getState()) || orch.getState().player.level >= 5) {
+  if (orch.getState().story.currentSceneId === STORY_SCENE_ID.LUEN_GUILD_ADVANCEMENT) {
+    await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'choose_path_warrior' });
+  } else if (canChooseFirstAdvancement(orch.getState()) || orch.getState().player.level >= 5) {
     await orch.dispatch({ type: 'CHOOSE_CLASS_PATH', classId: PLAYER_CLASS_ID.WARRIOR });
   }
   await hopTo(orch, LOCATION_ID.NORTHERN_GATE);

@@ -20,7 +20,7 @@ export function CombatHUD() {
       <PlayerStatusHUD player={snapshot.player} />
       {snapshot.boss ? <BossHUD boss={snapshot.boss} /> : null}
       <SkillBar player={snapshot.player} />
-      <p className={styles.hint}>WASD 이동 · 마우스 조준</p>
+      <p className={styles.hint}>WASD 이동 · 마우스 조준 · H 물약</p>
     </div>
   );
 }

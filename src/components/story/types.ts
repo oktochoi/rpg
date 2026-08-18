@@ -20,6 +20,7 @@ export interface PlayerPanelView {
   maxMp: number;
   attack?: number;
   gold?: number;
+  unspentStatPoints?: number;
   stats: readonly PlayerStatView[];
 }
 

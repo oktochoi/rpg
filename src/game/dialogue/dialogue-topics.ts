@@ -3,9 +3,11 @@ import { QUEST_ID } from '../quests/quest-definitions';
 import { QUEST_STATUS } from '../quests/quest-types';
 import { LOCATION_ID, WORLD_FLAG } from '../world/locations/location-definitions';
 import { worldFlag } from '../world/locations/location-selectors';
+import { CHAPTER_FACT_ID } from '../knowledge/chapter-1-facts';
 import { doesPlayerKnowFact } from '../knowledge/knowledge-selectors';
 import { isChapterCompleted } from '../story/chapters/chapter-rules';
 import { CHAPTER_ID } from '../story/chapters/chapter-types';
+import { smallTalkTopics } from './small-talk';
 import { PLAYER_CLASS_ID } from '../player/classes/class-types';
 
 export const REPEAT_POLICY = {
@@ -17,7 +19,7 @@ export const REPEAT_POLICY = {
 
 export type RepeatPolicy = (typeof REPEAT_POLICY)[keyof typeof REPEAT_POLICY];
 
-export const GOBLIN_RUINS_FACT_ID = 'fact_goblins_moving_near_ruins';
+export const GOBLIN_RUINS_FACT_ID = CHAPTER_FACT_ID.GOBLINS_MOVING_NEAR_RUINS;
 
 export interface DialogueTopicDefinition {
   topicId: string;
@@ -115,6 +117,9 @@ export function npcDialoguePhase(state: Readonly<GameState>, npcId: string): str
     if (worldFlag(state, WORLD_FLAG.GUILD_REGISTERED)) {
       return 'REGISTERED';
     }
+    if (state.world.currentLocationId === LOCATION_ID.LUEN_ADVENTURERS_GUILD) {
+      return 'REGISTRATION_AVAILABLE';
+    }
     return 'FIRST_MEETING';
   }
   return 'DEFAULT';
@@ -145,33 +150,58 @@ export function dialogueStateKey(state: Readonly<GameState>, npcId: string): str
 
 export function topicsForNpc(state: Readonly<GameState>, npcId: string): DialogueTopicDefinition[] {
   const phase = npcDialoguePhase(state, npcId);
+  let topics: DialogueTopicDefinition[] = [];
   if (npcId === 'seria') {
-    return seriaTopics(state, phase);
+    topics = seriaTopics(state, phase);
+  } else if (npcId === 'leon') {
+    topics = leonTopics(state, phase);
+  } else if (npcId === 'innkeeper') {
+    topics = martaTopics(state, phase);
+  } else if (npcId === 'guildmaster_doran') {
+    topics = doranTopics(state, phase);
+  } else if (npcId === 'shopkeeper_elin') {
+    topics = elinTopics(state);
   }
-  if (npcId === 'leon') {
-    return leonTopics(state, phase);
+  return [...topics, ...smallTalkTopics(state, npcId)];
+}
+
+function elinTopics(state: Readonly<GameState>): DialogueTopicDefinition[] {
+  const npcId = 'shopkeeper_elin';
+  const topics: DialogueTopicDefinition[] = [
+    {
+      topicId: 'elin_shop_intro',
+      npcId,
+      semanticKey: 'TALK:ELIN:SHOP',
+      promptId: 'talk_elin_here',
+      text: '엘린에게 신참 조언을 듣는다.',
+      priority: 70,
+      repeatPolicy: REPEAT_POLICY.ONCE,
+      locationId: LOCATION_ID.LUEN_GENERAL_STORE,
+    },
+    {
+      topicId: 'elin_shop_prices',
+      npcId,
+      semanticKey: 'TALK:ELIN:PRICES',
+      promptId: 'talk_elin_here',
+      text: '가격을 다시 확인한다.',
+      priority: 40,
+      repeatPolicy: REPEAT_POLICY.DAILY,
+      locationId: LOCATION_ID.LUEN_GENERAL_STORE,
+    },
+  ];
+  if (worldFlag(state, WORLD_FLAG.SHOP_UNLOCKED)) {
+    topics.push({
+      topicId: 'elin_new_stock',
+      npcId,
+      semanticKey: 'TALK:ELIN:NEW_STOCK',
+      promptId: 'talk_elin_stock',
+      text: '새로 들어온 물건을 물어본다.',
+      priority: 75,
+      repeatPolicy: REPEAT_POLICY.ONCE,
+      locationId: LOCATION_ID.LUEN_GENERAL_STORE,
+    });
   }
-  if (npcId === 'innkeeper') {
-    return martaTopics(state, phase);
-  }
-  if (npcId === 'guildmaster_doran') {
-    return doranTopics(state, phase);
-  }
-  if (npcId === 'shopkeeper_elin') {
-    return [
-      {
-        topicId: 'elin_shop_intro',
-        npcId,
-        semanticKey: 'TALK:ELIN:SHOP',
-        promptId: 'talk_elin_here',
-        text: '엘린에게 필요한 물건을 묻는다.',
-        priority: 70,
-        repeatPolicy: REPEAT_POLICY.UNTIL_STATE_CHANGE,
-        locationId: LOCATION_ID.LUEN_GENERAL_STORE,
-      },
-    ];
-  }
-  return [];
+  return topics;
 }
 
 function seriaTopics(state: Readonly<GameState>, phase: string): DialogueTopicDefinition[] {
@@ -188,14 +218,43 @@ function seriaTopics(state: Readonly<GameState>, phase: string): DialogueTopicDe
       repeatPolicy: REPEAT_POLICY.ONCE,
     });
     topics.push({
+      topicId: 'seria_why_luen',
+      npcId,
+      semanticKey: 'TALK:SERIA:WHY_LUEN',
+      promptId: 'ask_recent_event',
+      text: '루엔에 온 이유를 묻는다.',
+      priority: 88,
+      repeatPolicy: REPEAT_POLICY.ONCE,
+    });
+    topics.push({
+      topicId: 'seria_research',
+      npcId,
+      semanticKey: 'TALK:SERIA:RESEARCH',
+      promptId: 'ask_seria_research',
+      text: '무엇을 연구하는지 묻는다.',
+      priority: 86,
+      repeatPolicy: REPEAT_POLICY.ONCE,
+    });
+    topics.push({
       topicId: 'seria_ruins_background',
       npcId,
       semanticKey: 'TALK:SERIA:RUINS_BACKGROUND',
       promptId: 'ask_ruins',
-      text: '세리아에게 폐허에 대해 묻는다.',
+      text: '폐허의 역사에 대해 묻는다.',
       priority: 95,
       repeatPolicy: REPEAT_POLICY.UNTIL_STATE_CHANGE,
     });
+    if (doesPlayerKnowFact(state, CHAPTER_FACT_ID.GOBLINS_MOVING_NEAR_RUINS)) {
+      topics.push({
+        topicId: 'seria_goblin_before_quest',
+        npcId,
+        semanticKey: 'TALK:SERIA:GOBLIN_MOVEMENT',
+        promptId: 'ask_goblin',
+        text: '고블린들이 폐허 쪽으로 이동하는 것을 봤습니다.',
+        priority: 100,
+        repeatPolicy: REPEAT_POLICY.ONCE,
+      });
+    }
   }
   if (phase === 'RUINS_QUEST_ACTIVE') {
     topics.push({
@@ -207,7 +266,43 @@ function seriaTopics(state: Readonly<GameState>, phase: string): DialogueTopicDe
       priority: 90,
       repeatPolicy: REPEAT_POLICY.UNTIL_STATE_CHANGE,
     });
-    if (doesPlayerKnowFact(state, GOBLIN_RUINS_FACT_ID)) {
+    topics.push({
+      topicId: 'seria_ruins_danger',
+      npcId,
+      semanticKey: 'TALK:SERIA:DANGER',
+      promptId: 'ask_seria_danger',
+      text: '위험 요소를 묻는다.',
+      priority: 80,
+      repeatPolicy: REPEAT_POLICY.ONCE,
+    });
+    topics.push({
+      topicId: 'seria_feel_danger',
+      npcId,
+      semanticKey: 'TALK:SERIA:FEEL_DANGER',
+      promptId: 'talk_seria_feel_danger',
+      text: '문양을 처음 봤을 때 위험하다고 느꼈다고 말한다.',
+      priority: 72,
+      repeatPolicy: REPEAT_POLICY.ONCE,
+    });
+    topics.push({
+      topicId: 'seria_feel_curious',
+      npcId,
+      semanticKey: 'TALK:SERIA:FEEL_CURIOUS',
+      promptId: 'talk_seria_feel_curious',
+      text: '문양을 처음 봤을 때 흥미로웠다고 말한다.',
+      priority: 71,
+      repeatPolicy: REPEAT_POLICY.ONCE,
+    });
+    topics.push({
+      topicId: 'seria_feel_royal',
+      npcId,
+      semanticKey: 'TALK:SERIA:FEEL_ROYAL',
+      promptId: 'talk_seria_feel_royal',
+      text: '문양이 왕실과 관련 있을 것 같다고 말한다.',
+      priority: 70,
+      repeatPolicy: REPEAT_POLICY.ONCE,
+    });
+    if (doesPlayerKnowFact(state, GOBLIN_RUINS_FACT_ID) || doesPlayerKnowFact(state, CHAPTER_FACT_ID.GOBLIN_MOVEMENT_TRACES)) {
       topics.push({
         topicId: 'seria_goblin_movement',
         npcId,
@@ -258,14 +353,54 @@ function leonTopics(state: Readonly<GameState>, phase: string): DialogueTopicDef
       repeatPolicy: REPEAT_POLICY.ONCE,
     });
     topics.push({
+      topicId: 'leon_safety',
+      npcId,
+      semanticKey: 'TALK:LEON:SAFETY',
+      promptId: 'talk_leon_here',
+      text: '마을 치안을 묻는다.',
+      priority: 80,
+      repeatPolicy: REPEAT_POLICY.ONCE,
+    });
+    topics.push({
       topicId: 'leon_goblin_threat',
       npcId,
       semanticKey: 'TALK:LEON:GOBLIN_THREAT',
       promptId: 'ask_recent_event',
       text: '고블린 위협에 대해 듣는다.',
-      priority: 95,
+      priority: 90,
       repeatPolicy: REPEAT_POLICY.UNTIL_STATE_CHANGE,
     });
+    topics.push({
+      topicId: 'leon_honest_report',
+      npcId,
+      semanticKey: 'TALK:LEON:HONEST',
+      promptId: 'talk_leon_honest',
+      text: '본 것을 숨기지 않고 보고한다.',
+      priority: 78,
+      repeatPolicy: REPEAT_POLICY.ONCE,
+    });
+    if (doesPlayerKnowFact(state, CHAPTER_FACT_ID.RUMOR_GOBLINS_INCREASING)) {
+      topics.push({
+        topicId: 'leon_goblin_rumor',
+        npcId,
+        semanticKey: 'TALK:LEON:GOBLIN_RUMOR',
+        promptId: 'talk_leon_goblin_rumor',
+        text: '숲길 고블린 이야기를 들었습니다.',
+        priority: 100,
+        repeatPolicy: REPEAT_POLICY.ONCE,
+      });
+    }
+    if (doesPlayerKnowFact(state, CHAPTER_FACT_ID.GOBLIN_MOVEMENT_TRACES) || doesPlayerKnowFact(state, CHAPTER_FACT_ID.FOREST_TRACKS)) {
+      topics.push({
+        topicId: 'leon_movement_traces',
+        npcId,
+        semanticKey: 'TALK:LEON:MOVEMENT',
+        promptId: 'talk_leon_here',
+        text: '고블린의 이동 흔적을 전한다.',
+        priority: 102,
+        repeatPolicy: REPEAT_POLICY.ONCE,
+      });
+    }
   }
   if (phase === 'GOBLIN_CAMP_CLEARED') {
     topics.push({
@@ -312,8 +447,17 @@ function martaTopics(state: Readonly<GameState>, phase: string): DialogueTopicDe
       npcId,
       semanticKey: 'TALK:MARTA:INTRO',
       promptId: 'talk_marta_here',
-      text: '마르타에게 여관 소문을 묻는다.',
+      text: '루엔에 처음 왔다고 말한다.',
       priority: 90,
+      repeatPolicy: REPEAT_POLICY.ONCE,
+    });
+    topics.push({
+      topicId: 'marta_guild_hint',
+      npcId,
+      semanticKey: 'TALK:MARTA:GUILD',
+      promptId: 'talk_marta_here',
+      text: '길드 위치를 묻는다.',
+      priority: 80,
       repeatPolicy: REPEAT_POLICY.ONCE,
     });
   }
@@ -338,6 +482,28 @@ function martaTopics(state: Readonly<GameState>, phase: string): DialogueTopicDe
         repeatPolicy: REPEAT_POLICY.ONCE,
       });
     }
+    if (state.quests[QUEST_ID.MARTA_LOST_PARCEL]?.status === QUEST_STATUS.COMPLETED) {
+      topics.push({
+        topicId: 'marta_thanks',
+        npcId,
+        semanticKey: 'TALK:MARTA:THANKS',
+        promptId: 'talk_marta_here',
+        text: '짐을 찾아 준 뒤의 인사를 나눈다.',
+        priority: 85,
+        repeatPolicy: REPEAT_POLICY.ONCE,
+      });
+    }
+    if (worldFlag(state, WORLD_FLAG.FOREST_GOBLIN_DEFEATED)) {
+      topics.push({
+        topicId: 'marta_forest_quiet',
+        npcId,
+        semanticKey: 'TALK:MARTA:FOREST_QUIET',
+        promptId: 'talk_marta_here',
+        text: '숲길이 조금 조용해졌다는 이야기를 듣는다.',
+        priority: 76,
+        repeatPolicy: REPEAT_POLICY.ONCE,
+      });
+    }
   }
   if (phase === 'POST_DANGER' || phase === 'POST_GUARDIAN') {
     topics.push({
@@ -347,6 +513,28 @@ function martaTopics(state: Readonly<GameState>, phase: string): DialogueTopicDe
       promptId: 'talk_marta_here',
       text: '폐허에서 돌아온 일을 이야기한다.',
       priority: 95,
+      repeatPolicy: REPEAT_POLICY.ONCE,
+    });
+    if (state.quests[QUEST_ID.MARTA_LOST_PARCEL]?.status === QUEST_STATUS.COMPLETED) {
+      topics.push({
+        topicId: 'marta_warm_return',
+        npcId,
+        semanticKey: 'TALK:MARTA:WARM_RETURN',
+        promptId: 'talk_marta_here',
+        text: '짐을 도와준 사람에게 마르타가 더 따뜻하게 맞는다.',
+        priority: 96,
+        repeatPolicy: REPEAT_POLICY.ONCE,
+      });
+    }
+  }
+  if (state.quests[QUEST_ID.RUINS_MYSTERY]?.status === QUEST_STATUS.ACTIVE) {
+    topics.push({
+      topicId: 'marta_worry_ruins',
+      npcId,
+      semanticKey: 'TALK:MARTA:WORRY_RUINS',
+      promptId: 'marta_worry_ruins',
+      text: '폐허로 떠나기 전에 마르타와 이야기한다.',
+      priority: 82,
       repeatPolicy: REPEAT_POLICY.ONCE,
     });
   }
@@ -364,23 +552,23 @@ function martaTopics(state: Readonly<GameState>, phase: string): DialogueTopicDe
   return topics;
 }
 
-function doranTopics(_state: Readonly<GameState>, phase: string): DialogueTopicDefinition[] {
+function doranTopics(state: Readonly<GameState>, phase: string): DialogueTopicDefinition[] {
   const npcId = 'guildmaster_doran';
-  if (phase === 'FIRST_MEETING') {
+  if (phase === 'FIRST_MEETING' || phase === 'REGISTRATION_AVAILABLE') {
     return [
       {
-        topicId: 'doran_register',
+        topicId: 'doran_welcome',
         npcId,
-        semanticKey: 'TALK:DORAN:REGISTER',
+        semanticKey: 'TALK:DORAN:WELCOME',
         promptId: 'talk_doran_here',
-        text: '도란에게 길드 등록을 묻는다.',
-        priority: 100,
-        repeatPolicy: REPEAT_POLICY.UNTIL_STATE_CHANGE,
+        text: '길드 분위기를 묻는다.',
+        priority: 70,
+        repeatPolicy: REPEAT_POLICY.ONCE,
       },
     ];
   }
   if (phase === 'REGISTERED') {
-    return [
+    const topics: DialogueTopicDefinition[] = [
       {
         topicId: 'doran_first_job',
         npcId,
@@ -390,10 +578,29 @@ function doranTopics(_state: Readonly<GameState>, phase: string): DialogueTopicD
         priority: 95,
         repeatPolicy: REPEAT_POLICY.UNTIL_STATE_CHANGE,
       },
+      {
+        topicId: 'doran_goblin_count',
+        npcId,
+        semanticKey: 'TALK:DORAN:GOBLIN_COUNT',
+        promptId: 'ask_quest_goblin_count',
+        text: '고블린이 몇 마리나 있는지 묻는다.',
+        priority: 80,
+        repeatPolicy: REPEAT_POLICY.ONCE,
+      },
+      {
+        topicId: 'doran_goblin_danger',
+        npcId,
+        semanticKey: 'TALK:DORAN:GOBLIN_DANGER',
+        promptId: 'ask_quest_goblin_danger',
+        text: '위험한지 묻는다.',
+        priority: 78,
+        repeatPolicy: REPEAT_POLICY.ONCE,
+      },
     ];
+    return topics;
   }
   if (phase === 'RECOGNITION') {
-    return [
+    const topics: DialogueTopicDefinition[] = [
       {
         topicId: 'doran_advancement',
         npcId,
@@ -403,7 +610,46 @@ function doranTopics(_state: Readonly<GameState>, phase: string): DialogueTopicD
         priority: 110,
         repeatPolicy: REPEAT_POLICY.UNTIL_STATE_CHANGE,
       },
+      {
+        topicId: 'doran_path_warrior',
+        npcId,
+        semanticKey: 'TALK:DORAN:PATH_WARRIOR',
+        promptId: 'ask_path_warrior',
+        text: '검사는 어떤 길입니까?',
+        priority: 90,
+        repeatPolicy: REPEAT_POLICY.ONCE,
+      },
+      {
+        topicId: 'doran_path_mage',
+        npcId,
+        semanticKey: 'TALK:DORAN:PATH_MAGE',
+        promptId: 'ask_path_mage',
+        text: '마법사는 어떤 길입니까?',
+        priority: 89,
+        repeatPolicy: REPEAT_POLICY.ONCE,
+      },
+      {
+        topicId: 'doran_path_rogue',
+        npcId,
+        semanticKey: 'TALK:DORAN:PATH_ROGUE',
+        promptId: 'ask_path_rogue',
+        text: '도적은 어떤 길입니까?',
+        priority: 88,
+        repeatPolicy: REPEAT_POLICY.ONCE,
+      },
     ];
+    if (state.quests[QUEST_ID.LEON_GOBLIN_WATCH]?.status === QUEST_STATUS.COMPLETED) {
+      topics.push({
+        topicId: 'doran_camp_mention',
+        npcId,
+        semanticKey: 'TALK:DORAN:CAMP',
+        promptId: 'talk_doran_here',
+        text: '숲길 문제까지 처리한 이야기를 듣는다.',
+        priority: 100,
+        repeatPolicy: REPEAT_POLICY.ONCE,
+      });
+    }
+    return topics;
   }
   return [
     {

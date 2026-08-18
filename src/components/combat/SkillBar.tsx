@@ -11,6 +11,10 @@ export function SkillBar({ player }: SkillBarProps) {
   const dashSeconds = Math.max(0, player.dashCooldown / 1000);
   const dashRatio =
     player.dashMaxCooldown > 0 ? Math.min(1, player.dashCooldown / player.dashMaxCooldown) : 0;
+  const potionReady = player.potionCooldown <= 0 && player.potionCount > 0;
+  const potionSeconds = Math.max(0, player.potionCooldown / 1000);
+  const potionRatio =
+    player.potionMaxCooldown > 0 ? Math.min(1, player.potionCooldown / player.potionMaxCooldown) : 0;
 
   return (
     <div className={styles.skills} aria-label="전투 조작">
@@ -30,6 +34,18 @@ export function SkillBar({ player }: SkillBarProps) {
           )}
         </div>
         <p className={styles.slotName}>{dashReady ? 'DASH Ready' : 'DASH'}</p>
+      </div>
+      <div className={`${styles.slot} ${potionReady ? '' : styles.slotDisabled}`}>
+        <p className={styles.slotKey}>H</p>
+        <div className={styles.cooldown}>
+          <div className={styles.icon} data-icon="potion" />
+          {potionReady ? null : (
+            <div className={styles.cooldownOverlay} style={{ opacity: 0.45 + potionRatio * 0.4 }}>
+              {player.potionCount <= 0 ? '0' : potionSeconds.toFixed(1)}
+            </div>
+          )}
+        </div>
+        <p className={styles.slotName}>{`Potion ${player.potionCount}`}</p>
       </div>
       {player.skills.map((slot) => (
         <SkillSlot currentMp={player.mp} key={slot.slot} slot={slot} />

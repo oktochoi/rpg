@@ -1,5 +1,6 @@
 import type { ChoiceCandidate, DynamicChoice } from './choice-types';
 import { CHOICE_SOURCE, choiceIdFor } from './choice-types';
+import { resolveCandidateFacingLabel } from './choice-label';
 import { DIRECTOR_MAX_CHOICES } from './choice-priority';
 import { hasActionableQuestCandidate, hasMainProgressCandidate } from './choice-candidate-builder';
 import type { DirectorDebugSnapshot } from '../../../ai/director/director-types';
@@ -159,7 +160,7 @@ function exclusionReason(candidate: ChoiceCandidate, selected: readonly ChoiceCa
 export function toDynamicChoices(turnId: number, selected: readonly ChoiceCandidate[]): DynamicChoice[] {
   return selected.map((candidate) => ({
     id: choiceIdFor(turnId, candidate.id),
-    text: candidate.textTemplate,
+    text: resolveCandidateFacingLabel(candidate),
     intent: candidate.intent,
     actionType: candidate.actionType,
     targetId: candidate.targetId,

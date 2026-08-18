@@ -158,7 +158,7 @@ export async function runStep32FlowScenarios(): Promise<string[]> {
   await orchC.dispatch({ type: 'BUY_ITEM', itemId: ITEM_ID.HEALING_POTION });
   const afterBuy = orchC.getState();
   const potions = afterBuy.player.inventory.find((item) => item.itemId === ITEM_ID.HEALING_POTION)?.quantity ?? 0;
-  if (afterBuy.player.gold === goldBeforeBuy - 20 && potions === 3) {
+  if (afterBuy.player.gold === goldBeforeBuy - 18 && potions === 3) {
     pass('C-shop-buy', `gold ${afterBuy.player.gold} potions ${potions}`);
   } else {
     fail('C-shop-buy', `gold ${afterBuy.player.gold} potions ${potions}`);

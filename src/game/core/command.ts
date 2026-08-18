@@ -54,6 +54,8 @@ export type Command =
   | { type: 'UNEQUIP_ITEM'; slot: 'WEAPON' | 'ARMOR' | 'ACCESSORY' }
   | { type: 'BUY_ITEM'; itemId: string }
   | { type: 'SELL_ITEM'; itemId: string; quantity?: number }
-  | { type: 'ENHANCE_EQUIPMENT'; itemId: string };
+  | { type: 'ENHANCE_EQUIPMENT'; itemId: string }
+  | { type: 'ALLOCATE_STAT_POINT'; statId: string }
+  | { type: 'CONTINUE_STORY' };
 
 export type CommandDispatcher = (command: Command) => void;

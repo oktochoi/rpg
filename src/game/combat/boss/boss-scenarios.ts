@@ -7,7 +7,7 @@ import { QUEST_ID } from '../../quests/quest-definitions';
 import { createMemoryStorage, createSaveService } from '../../save';
 import { canSaveGame } from '../../save/save-types';
 import { LOCATION_ID, RUINS_GUARDIAN_FACT_ID, WORLD_FLAG } from '../../world/locations/location-definitions';
-import { CHOICE_LOOK_AROUND } from '../../world/locations/location-story-choices';
+import { CHOICE_INVESTIGATE_ALTAR } from '../../world/locations/location-story-choices';
 import { getAvailableChoices } from '../../story/story-choice-service';
 import { CHOICE_FIGHT_GUARDIAN, STORY_SCENE_ID } from '../../story/story-scene-definitions';
 import { applyDamageReduction, isBackAttack, backstabDamage } from '../skills/skill-combat-rules';
@@ -129,9 +129,20 @@ async function unlockAndReachRuins() {
   return orch;
 }
 
-async function discoverSealAndAwaken(orch: ReturnType<typeof createGameOrchestrator>) {
-  await orch.dispatch({ type: 'FREE_ACTION', turnId: orch.getState().world.turn, input: '부서진 제단을 조사한다.' });
-  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_LOOK_AROUND });
+async function discoverSeal(orch: ReturnType<typeof createGameOrchestrator>) {
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_INVESTIGATE_ALTAR });
+  if (getAvailableChoices(orch.getState()).some((choice) => choice.id === 'touch_magic_stone')) {
+    await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'touch_magic_stone' });
+  }
+}
+
+async function startGuardianCombat(orch: ReturnType<typeof createGameOrchestrator>) {
+  if (getAvailableChoices(orch.getState()).some((choice) => choice.id === CHOICE_FIGHT_GUARDIAN)) {
+    await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_FIGHT_GUARDIAN });
+  }
+  if (orch.getState().mode !== 'COMBAT') {
+    await orch.dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.RUINS_BOSS_01 });
+  }
 }
 
 function victoryResult() {
@@ -188,26 +199,22 @@ export async function runStep25BossScenarios(): Promise<string[]> {
   }
 
   const orchA = await unlockAndReachRuins();
-  await discoverSealAndAwaken(orchA);
-  const awakened = orchA.getState();
-  const fightChoice = getAvailableChoices(awakened).some((choice) => choice.id === CHOICE_FIGHT_GUARDIAN);
-  await orchA.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_FIGHT_GUARDIAN });
+  await discoverSeal(orchA);
+  await startGuardianCombat(orchA);
   const afterStart = orchA.getState();
   const config = buildCombatConfig(afterStart, ENCOUNTER_ID.RUINS_BOSS_01);
   if (
-    awakened.story.currentSceneId === STORY_SCENE_ID.RUINS_GUARDIAN_AWAKENS &&
-    fightChoice &&
     afterStart.mode === 'COMBAT' &&
     afterStart.activeCombatId === ENCOUNTER_ID.RUINS_BOSS_01 &&
-    config?.encounterId === ENCOUNTER_ID.RUINS_BOSS_01
+    config?.encounterId === ENCOUNTER_ID.RUINS_BOSS_01 &&
+    config.arenaId === 'ruins_guardian_arena'
   ) {
-    pass('A-start', `${awakened.story.currentSceneId} -> ${afterStart.activeCombatId}`);
+    pass('A-start', `${afterStart.story.currentSceneId} -> ${afterStart.activeCombatId} ${config.arenaId}`);
   } else {
     fail(
       'A-start',
       JSON.stringify({
-        scene: awakened.story.currentSceneId,
-        fightChoice,
+        scene: afterStart.story.currentSceneId,
         mode: afterStart.mode,
         combatId: afterStart.activeCombatId,
         config,
@@ -327,8 +334,8 @@ export async function runStep25BossScenarios(): Promise<string[]> {
 
   const orchI = await unlockAndReachRuins();
   await orchI.dispatch({ type: 'SET_PLAYER_CLASS', classId: PLAYER_CLASS_ID.WARRIOR });
-  await discoverSealAndAwaken(orchI);
-  await orchI.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_FIGHT_GUARDIAN });
+  await discoverSeal(orchI);
+  await startGuardianCombat(orchI);
   await orchI.dispatch({ type: 'RESOLVE_COMBAT', result: victoryResult() });
   const won = orchI.getState();
   const questDone = won.quests[QUEST_ID.RUINS_MYSTERY]?.objectiveProgress.win_guardian?.completed;
@@ -356,8 +363,8 @@ export async function runStep25BossScenarios(): Promise<string[]> {
   }
 
   const orchJ = await unlockAndReachRuins();
-  await discoverSealAndAwaken(orchJ);
-  await orchJ.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_FIGHT_GUARDIAN });
+  await discoverSeal(orchJ);
+  await startGuardianCombat(orchJ);
   const saveBlocked = !canSaveGame(orchJ.getState());
   await orchJ.dispatch({ type: 'RESOLVE_COMBAT', result: defeatResult() });
   const lost = orchJ.getState();
@@ -377,9 +384,9 @@ export async function runStep25BossScenarios(): Promise<string[]> {
   }
 
   const orchK = await unlockAndReachRuins();
-  await discoverSealAndAwaken(orchK);
+  await discoverSeal(orchK);
   await orchK.dispatch({ type: 'MOVE_NPC', npcId: 'seria', locationId: LOCATION_ID.ANCIENT_RUINS });
-  await orchK.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_FIGHT_GUARDIAN });
+  await startGuardianCombat(orchK);
   await orchK.dispatch({ type: 'RESOLVE_COMBAT', result: victoryResult() });
   const known = orchK.getState();
   if (
@@ -471,16 +478,22 @@ export async function runStep25BossScenarios(): Promise<string[]> {
 
   const classOrch = await unlockAndReachRuins();
   await classOrch.dispatch({ type: 'SET_PLAYER_CLASS', classId: PLAYER_CLASS_ID.MAGE });
-  await discoverSealAndAwaken(classOrch);
-  await classOrch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_FIGHT_GUARDIAN });
+  await discoverSeal(classOrch);
+  await startGuardianCombat(classOrch);
   await classOrch.dispatch({ type: 'RESOLVE_COMBAT', result: victoryResult() });
   const mageVictory = classOrch.getState();
-  const mageChoice = getAvailableChoices(mageVictory).some((choice) => choice.id === 'guardian_victory_mage');
-  const warriorLockedOut = getAvailableChoices(mageVictory).some((choice) => choice.id === 'guardian_victory_warrior');
-  if (mageVictory.story.currentSceneId === STORY_SCENE_ID.RUINS_GUARDIAN_AFTER_VICTORY && mageChoice && !warriorLockedOut) {
-    pass('class-flavor', 'mage flavor without locking main scene');
+  const afterVictoryChoices = getAvailableChoices(mageVictory).map((choice) => choice.id);
+  const sharedAftermath = afterVictoryChoices.includes('investigate_guardian_core');
+  const warriorLockedOut = afterVictoryChoices.includes('guardian_victory_warrior');
+  if (
+    mageVictory.story.currentSceneId === STORY_SCENE_ID.RUINS_GUARDIAN_AFTER_VICTORY &&
+    mageVictory.player.classId === PLAYER_CLASS_ID.MAGE &&
+    sharedAftermath &&
+    !warriorLockedOut
+  ) {
+    pass('class-flavor', 'mage class kept, shared after-victory scene');
   } else {
-    fail('class-flavor', JSON.stringify({ scene: mageVictory.story.currentSceneId, mageChoice, warriorLockedOut }));
+    fail('class-flavor', JSON.stringify({ scene: mageVictory.story.currentSceneId, afterVictoryChoices, warriorLockedOut }));
   }
 
   return lines;

@@ -15,7 +15,7 @@ export function LocationMap({ state, dispatch, onClose }: LocationMapProps) {
   const currentRuntime = state.world.locations[state.world.currentLocationId];
   const known = Object.values(LOCATION_DEFINITIONS).filter((definition) => {
     const runtime = state.world.locations[definition.id];
-    return runtime?.discovered || runtime?.visited || definition.id === state.world.currentLocationId || !definition.discoveryRequired;
+    return runtime?.discovered || runtime?.visited || definition.id === state.world.currentLocationId;
   });
 
   return (
@@ -31,7 +31,7 @@ export function LocationMap({ state, dispatch, onClose }: LocationMapProps) {
             const runtime = state.world.locations[definition.id];
             const here = definition.id === state.world.currentLocationId;
             const locked = !accessRequirementsMet(state, definition.accessRequirements);
-            const discovered = isLocationDiscovered(state, definition.id) || !definition.discoveryRequired;
+            const discovered = isLocationDiscovered(state, definition.id);
             const label = discovered ? definition.name : '알 수 없는 길';
             const connected = current?.connectedLocationIds.includes(definition.id);
             return (

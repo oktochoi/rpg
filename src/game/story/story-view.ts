@@ -5,7 +5,7 @@ import type { NpcRelationView, StoryScreenView } from '../../components/story/ty
 import type { Choice } from './choice';
 import { getNpcProfile } from '../npc/npc-profiles';
 import { createRelationship, type RelationshipState } from '../npc/relationship';
-import { attitudeFromRelationship } from '../relationships/relationship-selectors';
+import { relationshipBandLabel } from '../relationships/relationship-selectors';
 import { getStoryScene } from './test-scenes';
 import { getQuestDefinition } from '../quests/quest-definitions';
 import { currentObjective, featuredQuest, statusLabel } from '../quests/quest-selectors';
@@ -32,31 +32,11 @@ function openingLine(npcId: NpcId, sceneDialogue: string): string {
   return sceneDialogue;
 }
 
-function attitudeLabel(relationship: RelationshipState): string {
-  const attitude = attitudeFromRelationship(relationship);
-  if (attitude === 'FRIENDLY') {
-    return '호의';
-  }
-  if (attitude === 'SUSPICIOUS') {
-    return '경계';
-  }
-  if (attitude === 'HOSTILE') {
-    return '적대';
-  }
-  if (attitude === 'AFRAID') {
-    return '두려움';
-  }
-  if (attitude === 'RESPECTFUL') {
-    return '인정';
-  }
-  return '미지';
-}
-
-function toRelationView(npcName: string, npcId: NpcId, relationship: RelationshipState | undefined): NpcRelationView {
+function toRelationView(npcName: string, _npcId: NpcId, relationship: RelationshipState | undefined): NpcRelationView {
   const value = relationship ?? createRelationship();
   return {
     npcName,
-    relation: npcId === 'seria' && attitudeLabel(value) === '미지' ? '동료' : attitudeLabel(value),
+    relation: relationshipBandLabel(value),
     affection: value.affection,
     trust: value.trust,
     fear: value.fear,
@@ -128,6 +108,7 @@ export function toStoryScreenView(
       maxMp: derived.maxMp,
       attack,
       gold: state.player.gold,
+      unspentStatPoints: state.player.unspentStatPoints ?? 0,
       stats: [
         { label: 'HP', value: derived.maxHp },
         { label: 'MP', value: derived.maxMp },

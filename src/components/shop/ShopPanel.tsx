@@ -5,6 +5,8 @@ import { getItemDefinition } from '@/game/inventory/item-definitions';
 import { compareEquipmentStats, isEquipped, itemDisplayName } from '@/game/inventory/item-selectors';
 import { equippedItemId } from '@/game/inventory/equipment-types';
 import { shopAtLocation } from '@/game/economy/shop-definitions';
+import { shopItemIdsFor } from '@/game/economy/shop-stock';
+import { buyBlockedReason } from '@/game/economy/shop-rules';
 import { canEnhanceHere, enhancementLevelOf, enhanceBlockedReason } from '@/game/inventory/enhancement-rules';
 import { enhancementCostFor, isEnhanceableSlot, MAX_ENHANCEMENT_LEVEL } from '@/game/inventory/enhancement-config';
 import { audioManager, SFX_ID } from '@/game/audio';
@@ -23,7 +25,7 @@ export function ShopPanel({ state, dispatch, onClose }: ShopPanelProps) {
   const enhanceReady = canEnhanceHere(state);
   const [tab, setTab] = useState<ShopTab>('buy');
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const buyItems = shop?.itemIds ?? [];
+  const buyItems = shop ? shopItemIdsFor(state, shop.id) : [];
   const sellItems = state.player.inventory.filter((item) => item.quantity > 0);
   const enhanceItems = enhanceableItemIds(state);
   const selectedBuy = selectedId && buyItems.includes(selectedId) ? selectedId : buyItems[0];
@@ -72,7 +74,8 @@ export function ShopPanel({ state, dispatch, onClose }: ShopPanelProps) {
                   return (
                     <li key={itemId}>
                       <button type="button" className={activeId === itemId ? styles.itemActive : styles.item} onClick={() => setSelectedId(itemId)}>
-                        {info?.name ?? itemId} · {info?.buyPrice ?? 0}G
+                    {info?.name ?? itemId} · {info?.buyPrice ?? 0}G
+                    {state.player.gold < (info?.buyPrice ?? 0) ? ' · 부족' : ''}
                       </button>
                     </li>
                   );
@@ -121,15 +124,19 @@ export function ShopPanel({ state, dispatch, onClose }: ShopPanelProps) {
                   </p>
                 ))}
                 {tab === 'buy' ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      audioManager.playSfx(SFX_ID.UI_CONFIRM);
-                      dispatch({ type: 'BUY_ITEM', itemId: definition.id });
-                    }}
-                  >
-                    구매
-                  </button>
+                  <>
+                    {buyBlockedReason(state, definition.id) ? <p>{buyBlockedReason(state, definition.id)}</p> : null}
+                    <button
+                      type="button"
+                      disabled={Boolean(buyBlockedReason(state, definition.id))}
+                      onClick={() => {
+                        audioManager.playSfx(SFX_ID.UI_CONFIRM);
+                        dispatch({ type: 'BUY_ITEM', itemId: definition.id });
+                      }}
+                    >
+                      {state.player.gold < definition.buyPrice ? `${definition.buyPrice - state.player.gold}G 더 모으면` : '구매'}
+                    </button>
+                  </>
                 ) : tab === 'sell' ? (
                   <button
                     type="button"

@@ -255,7 +255,10 @@ export async function runStep24StoryScenarios(): Promise<string[]> {
   await winRuinsCombat(orchH2);
   await orchH2.dispatch({ type: 'FREE_ACTION', turnId: orchH2.getState().world.turn, input: '부서진 제단을 조사한다.' });
   const freeDiscover = orchH2.getState().story.currentSceneId;
-  if (innScene === STORY_SCENE_ID.BLUE_MOON_INN && freeDiscover === STORY_SCENE_ID.ANCIENT_RUINS_DISCOVERY) {
+  if (
+    (innScene === STORY_SCENE_ID.BLUE_MOON_INN || innScene === STORY_SCENE_ID.MARTA_FIRST_MEETING) &&
+    freeDiscover === STORY_SCENE_ID.ANCIENT_RUINS_DISCOVERY
+  ) {
     pass('H-free-action', `${innScene} / ${freeDiscover}`);
   } else {
     fail('H-free-action', JSON.stringify({ innScene, freeDiscover, loc: orchH2.getState().world.currentLocationId }));

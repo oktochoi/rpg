@@ -12,7 +12,7 @@ import { getExplorationPoint, explorationPointsAt } from '../../world/exploratio
 import { isExplorationPointCompleted } from '../../world/exploration/exploration-service';
 import { getLocationDefinition, LOCATION_ID, WORLD_FLAG } from '../../world/locations/location-definitions';
 import { validateMoveDestination } from '../../world/locations/location-rules';
-import { isNpcAtCurrentLocation, reachableLocationIds, worldFlag } from '../../world/locations/location-selectors';
+import { isHubLocation, isNpcAtCurrentLocation, reachableLocationIds, worldFlag } from '../../world/locations/location-selectors';
 import { getAvailableChoiceDefinitions } from '../story-choice-service';
 import { getStorySceneDefinition, STORY_SCENE_ID } from '../story-scene-definitions';
 import type { StoryChoiceAction, StoryChoiceDefinition } from '../story-scene-types';
@@ -25,6 +25,7 @@ import { canChooseFirstAdvancement } from '../../player/classes/first-advancemen
 import { isTopicAvailable, shouldSuppressSemanticKey } from '../../dialogue/dialogue-topic-state';
 import { topicsForNpc } from '../../dialogue/dialogue-topics';
 import { createFallbackCandidates } from './choice-fallback';
+import { canRest, restGoldCost, storyFreeRestAvailable } from '../../time/day-rules';
 import { shopUnlocked } from '../../economy/shop-rules';
 import { canEnhanceHere } from '../../inventory/enhancement-rules';
 
@@ -51,6 +52,21 @@ export function buildChoiceCandidates(
 ): ChoiceCandidate[] {
   if (state.mode === 'COMBAT' || options.forceEmpty) {
     return [];
+  }
+
+  const scene = getStorySceneDefinition(state.story.currentSceneId);
+  if (scene?.autoContinue) {
+    const story = storyCandidates(state);
+    const meaningful = story.filter((candidate) => candidate.semanticKey !== 'CONTINUE');
+    if (meaningful.length === 0) {
+      return story.length > 0 ? story : [continueCandidate(state, scene.continueTo)];
+    }
+  }
+  if (scene?.isDecisionPoint) {
+    const story = storyCandidates(state);
+    if (story.length > 0) {
+      return story;
+    }
   }
 
   const raw: ChoiceCandidate[] = [
@@ -100,10 +116,47 @@ export function hasMainProgressCandidate(candidates: readonly ChoiceCandidate[])
 }
 
 function storyCandidates(state: Readonly<GameState>): ChoiceCandidate[] {
-  return getAvailableChoiceDefinitions(state)
-    .filter((choice) => !isConsumedStoryTalk(state, choice))
-    .map((choice) => storyChoiceToCandidate(choice, state));
+  const scene = getStorySceneDefinition(state.story.currentSceneId);
+  const definitions = getAvailableChoiceDefinitions(state).filter((choice) => !isConsumedStoryTalk(state, choice));
+  if (scene?.autoContinue) {
+    const meaningful = definitions.filter((choice) => choice.choicePurpose === 'ROLEPLAY' || choice.choicePurpose === 'DECISION');
+    if (meaningful.length === 0) {
+      return [continueCandidate(state, scene.continueTo)];
+    }
+    return meaningful.map((choice) => storyChoiceToCandidate(choice, state));
+  }
+  const filtered = definitions.filter((choice) => {
+    if (isHubLocation(state.world.currentLocationId) && choice.action.type === 'MOVE_TO_LOCATION') {
+      return false;
+    }
+    if (choice.choicePurpose === 'PROGRESSION' && choice.action.type !== 'CONTINUE') {
+      return false;
+    }
+    return true;
+  });
+  if (filtered.length === 0 && (scene?.autoContinue || definitions.some((choice) => choice.choicePurpose === 'PROGRESSION'))) {
+    return [continueCandidate(state, scene?.continueTo)];
+  }
+  return filtered.map((choice) => storyChoiceToCandidate(choice, state));
 }
+
+function continueCandidate(state: Readonly<GameState>, nextSceneId?: string): ChoiceCandidate {
+  return {
+    id: 'story_continue',
+    actionType: 'WAIT',
+    intent: CHOICE_INTENT.PROGRESS_STORY,
+    source: CHOICE_SOURCE.STORY,
+    basePriority: CHOICE_PRIORITY.STORY_CRITICAL,
+    textTemplate: '계속',
+    semanticKey: 'CONTINUE',
+    metadata: {
+      storyAction: { type: 'CONTINUE', nextSceneId: nextSceneId ?? state.story.currentSceneId },
+      semanticKey: 'CONTINUE',
+    },
+    critical: true,
+  };
+}
+
 
 function matchingStoryTalkTopic(state: Readonly<GameState>, choice: StoryChoiceDefinition) {
   if (choice.action.type !== 'TALK') {
@@ -194,8 +247,8 @@ function mapStoryAction(
         intent: ask ? CHOICE_INTENT.ASK : CHOICE_INTENT.TALK,
       };
     }
-    case 'LOOK_AROUND':
-      return { actionType: 'WAIT', intent: CHOICE_INTENT.INVESTIGATE };
+    case 'CONTINUE':
+      return { actionType: 'WAIT', intent: CHOICE_INTENT.PROGRESS_STORY };
     case 'REST':
       return { actionType: 'REST', intent: CHOICE_INTENT.REST };
     case 'PASS_GATE':
@@ -206,6 +259,10 @@ function mapStoryAction(
       return { actionType: 'WAIT', intent: CHOICE_INTENT.GENERAL };
     case 'CHOOSE_CLASS_PATH':
       return { actionType: 'USE_SKILL', intent: CHOICE_INTENT.USE_CLASS_ABILITY };
+    case 'LEARN_FACT':
+      return { actionType: 'ASK', targetId: action.factId, intent: CHOICE_INTENT.SHARE_INFORMATION };
+    case 'ACCEPT_SIDE_QUEST':
+      return { actionType: 'HELP', targetId: action.questId, intent: CHOICE_INTENT.HELP };
     default:
       return { actionType: 'WAIT', intent: CHOICE_INTENT.GENERAL };
   }
@@ -406,19 +463,17 @@ function npcCandidates(state: Readonly<GameState>, context: StoryDirectorContext
         metadata: { promptId: topic.promptId, topicId: topic.topicId, semanticKey: topic.semanticKey },
       });
     }
-    if (topics.length === 0) {
-      candidates.push({
-        id: `npc_end_${npc.npcId}`,
-        actionType: 'WAIT',
-        targetId: npc.npcId,
-        intent: CHOICE_INTENT.GENERAL,
-        source: CHOICE_SOURCE.NPC,
-        basePriority: CHOICE_PRIORITY.NPC_IMPORTANT,
-        textTemplate: `${npc.name}와의 대화를 마친다.`,
-        semanticKey: `END:${npc.npcId}`,
-        metadata: { promptId: 'end_dialogue', semanticKey: `END:${npc.npcId}` },
-      });
-    }
+    candidates.push({
+      id: `npc_end_${npc.npcId}`,
+      actionType: 'WAIT',
+      targetId: npc.npcId,
+      intent: CHOICE_INTENT.GENERAL,
+      source: CHOICE_SOURCE.NPC,
+      basePriority: topics.length === 0 ? CHOICE_PRIORITY.NPC_IMPORTANT : CHOICE_PRIORITY.GENERAL + 2,
+      textTemplate: `${npc.name}와의 대화를 마친다.`,
+      semanticKey: `END:${npc.npcId}`,
+      metadata: { promptId: 'end_dialogue', semanticKey: `END:${npc.npcId}` },
+    });
   }
   return candidates;
 }
@@ -536,6 +591,9 @@ function combatCandidates(state: Readonly<GameState>, context: StoryDirectorCont
 }
 
 function moveCandidates(state: Readonly<GameState>): ChoiceCandidate[] {
+  if (isHubLocation(state.world.currentLocationId) && !activeEncounterIdsForLocation(state).includes(ENCOUNTER_ID.RUINS_BOSS_01)) {
+    return [];
+  }
   const bossActive = activeEncounterIdsForLocation(state).includes(ENCOUNTER_ID.RUINS_BOSS_01);
   return reachableLocationIds(state).map((locationId) => {
     const definition = getLocationDefinition(locationId);
@@ -658,7 +716,7 @@ function utilityCandidates(state: Readonly<GameState>): ChoiceCandidate[] {
   }
   if (worldFlag(state, WORLD_FLAG.SHOP_UNLOCKED) && state.world.currentLocationId === LOCATION_ID.LUEN_VILLAGE) {
     const hop = nextHopToward(state, LOCATION_ID.LUEN_GENERAL_STORE);
-    if (hop) {
+    if (hop && !isHubLocation(state.world.currentLocationId)) {
       candidates.push({
         id: 'utility_move_shop',
         actionType: 'MOVE',
@@ -671,6 +729,24 @@ function utilityCandidates(state: Readonly<GameState>): ChoiceCandidate[] {
         metadata: { locationId: hop, storyAction: { type: 'MOVE_TO_LOCATION', locationId: hop }, semanticKey: 'MOVE:luen_general_store' },
       });
     }
+  }
+  if (state.world.currentLocationId === LOCATION_ID.BLUE_MOON_INN) {
+    const restCheck = canRest(state);
+    candidates.push({
+      id: 'utility_rest_inn',
+      actionType: 'REST',
+      intent: CHOICE_INTENT.REST,
+      source: CHOICE_SOURCE.STORY,
+      basePriority: CHOICE_PRIORITY.STORY_CRITICAL,
+      textTemplate: storyFreeRestAvailable(state)
+        ? '여관에서 쉰다. 오늘은 무료다.'
+        : restCheck.allowed
+          ? `여관에서 쉰다. (${restGoldCost(state)}G)`
+          : restCheck.reason ?? '여관에서 쉰다',
+      semanticKey: 'REST:INN',
+      metadata: { storyAction: { type: 'REST' }, semanticKey: 'REST:INN' },
+      critical: storyFreeRestAvailable(state),
+    });
   }
   return candidates;
 }
@@ -692,8 +768,8 @@ function semanticKeyForStoryChoice(choice: StoryChoiceDefinition): string {
   if (action.type === 'TALK') {
     return `TALK:${action.promptId ?? choice.id}`;
   }
-  if (action.type === 'OPEN_SHOP') {
-    return 'SHOP:OPEN';
+  if (action.type === 'CONTINUE') {
+    return 'CONTINUE';
   }
   if (action.type === 'CHOOSE_CLASS_PATH') {
     return `CLASS:${action.classId}`;

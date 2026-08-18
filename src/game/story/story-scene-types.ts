@@ -19,7 +19,8 @@ export type StoryConditionAtom =
   | { type: 'NPC_PRESENT'; npcId: string }
   | { type: 'DAY_MIN'; day: number }
   | { type: 'CHAPTER_COMPLETED'; chapterId: string }
-  | { type: 'PLAYER_LEVEL_MIN'; level: number };
+  | { type: 'PLAYER_LEVEL_MIN'; level: number }
+  | { type: 'LOCATION_DISCOVERED'; locationId: string };
 
 export type StoryCondition =
   | StoryConditionAtom
@@ -41,14 +42,18 @@ export type StoryChoiceAction =
   | { type: 'OPEN_SHOP' }
   | { type: 'CHOOSE_CLASS_PATH'; classId: string }
   | { type: 'ACCEPT_SIDE_QUEST'; questId: string }
-  | { type: 'NONE' };
+  | { type: 'LEARN_FACT'; factId: string }
+  | { type: 'CONTINUE'; nextSceneId?: string };
 
 export type StorySceneEffect =
   | { type: 'SET_WORLD_FLAG'; flagId: string; value: boolean }
   | { type: 'DISCOVER_LOCATION'; locationId: string }
-  | { type: 'GRANT_ITEM'; itemId: string; quantity: number; sourceEventId: string };
+  | { type: 'GRANT_ITEM'; itemId: string; quantity: number; sourceEventId: string }
+  | { type: 'LEARN_FACT'; factId: string };
 
 export type StorySceneActivation = 'auto' | 'on_talk';
+
+export type StoryChoicePurpose = 'PROGRESSION' | 'ROLEPLAY' | 'DECISION';
 
 export interface StoryChoiceDefinition {
   id: string;
@@ -56,6 +61,7 @@ export interface StoryChoiceDefinition {
   conditions?: StoryCondition;
   action: StoryChoiceAction;
   nextSceneId?: string;
+  choicePurpose?: StoryChoicePurpose;
 }
 
 export interface StorySceneDefinition {
@@ -72,6 +78,10 @@ export interface StorySceneDefinition {
   fallbackSceneId?: string;
   activation?: StorySceneActivation;
   onEnter?: readonly StorySceneEffect[];
+  autoContinue?: boolean;
+  continueTo?: string;
+  requiresPlayerAction?: boolean;
+  isDecisionPoint?: boolean;
 }
 
 export interface StorySceneRuntimeState {

@@ -37,6 +37,9 @@ export function buildCombatHudState(input: {
   maxMp: number;
   dashCooldown: number;
   dashMaxCooldown: number;
+  potionCount?: number;
+  potionCooldown?: number;
+  potionMaxCooldown?: number;
   skills: readonly SkillHudSlotView[];
   boss?: { name: string; hp: number; maxHp: number; phase: 1 | 2 };
 }): CombatHudState {
@@ -52,6 +55,9 @@ export function buildCombatHudState(input: {
       maxMp: input.maxMp,
       dashCooldown: input.dashCooldown,
       dashMaxCooldown: input.dashMaxCooldown,
+      potionCount: input.potionCount ?? 0,
+      potionCooldown: input.potionCooldown ?? 0,
+      potionMaxCooldown: input.potionMaxCooldown ?? 0,
       skills: toCombatHudSkills(input.skills, input.mp),
     },
     boss: input.boss,

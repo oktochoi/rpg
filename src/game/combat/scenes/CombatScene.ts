@@ -1,7 +1,10 @@
 import * as Phaser from 'phaser';
 import { EventBus } from '../../EventBus';
 import type { CombatStatus } from '../combat-state';
-import { PLAYER_MAX_HP } from '../CombatConfig';
+import { PLAYER_MAX_HP, POTION_COOLDOWN_MS } from '../CombatConfig';
+import { CombatArena } from '../arenas/CombatArena';
+import { DangerZoneController } from '../effects/DangerZoneController';
+import { ITEM_ID, getItemDefinition } from '../../inventory/item-definitions';
 import { COMBAT_CONFIG_REGISTRY_KEY } from '../CombatGame';
 import { CombatFeedback } from '../effects/CombatFeedback';
 import { COMBAT_FEEL } from '../effects/CombatFeelConfig';
@@ -53,6 +56,12 @@ export class CombatScene extends Phaser.Scene {
   private hud?: CombatHud;
   private bossHud?: BossHud;
   private feedback?: CombatFeedback;
+  private arena?: CombatArena;
+  private dangerZones?: DangerZoneController;
+  private potionKey: Phaser.Input.Keyboard.Key | null = null;
+  private potionCount = 0;
+  private potionCooldownMs = 0;
+  private potionsUsed = 0;
   private aliveLabel?: Phaser.GameObjects.Text;
   private combatConfig?: CombatConfig;
   private status: CombatStatus = 'RUNNING';
@@ -86,7 +95,13 @@ export class CombatScene extends Phaser.Scene {
     this.boss = undefined;
     this.bossHud = undefined;
     this.combatConfig = this.registry.get(COMBAT_CONFIG_REGISTRY_KEY) as CombatConfig | undefined;
-    this.cameras.main.setBackgroundColor('#1a1612');
+    this.arena = new CombatArena(this, this.combatConfig?.arenaId ?? 'forest_scouts_arena', this.combatConfig?.spawnBias ?? 'default');
+    this.dangerZones = new DangerZoneController(this);
+    this.potionCount = this.combatConfig?.player.healingPotions ?? 0;
+    this.potionCooldownMs = 0;
+    this.potionsUsed = 0;
+    this.potionKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.H) ?? null;
+    this.cameras.main.setBackgroundColor('#12100e');
     this.syncWorldBounds();
 
     const classId = resolvePlayerClassId(this.combatConfig?.player.classId ?? 'wanderer');
@@ -96,6 +111,8 @@ export class CombatScene extends Phaser.Scene {
     this.playerSize = appearance.size;
 
     const player = this.createPlayerVisual(appearance);
+    const spawn = this.arena?.view.playerSpawn ?? { x: this.scale.width / 2, y: this.scale.height / 2 };
+    player.setPosition(spawn.x, spawn.y);
     player.setAlpha(0);
     this.physics.add.existing(player);
 
@@ -105,6 +122,7 @@ export class CombatScene extends Phaser.Scene {
     this.controller = new PlayerController(this, body, {
       moveSpeed: this.combatConfig?.player.moveSpeed ?? classDefinition.baseStats.moveSpeed,
       dash,
+      clampBlink: (x, y, radius) => this.arena?.clampPoint(x, y, radius) ?? { x, y },
     });
     this.health = new PlayerHealthController(this, player, this.controller, {
       maxHp: this.combatConfig?.player.maxHp ?? PLAYER_MAX_HP,
@@ -140,12 +158,19 @@ export class CombatScene extends Phaser.Scene {
     });
     this.feedback = new CombatFeedback(this);
     this.enemyManager = new EnemyManager(this, player, () => !this.health?.isDead, this.handleEnemyRangedShot);
+    this.enemyManager.setWorldQueries(
+      () => ({ x: this.controller?.facing ? (player.body as Phaser.Physics.Arcade.Body).velocity.x : 0, y: (player.body as Phaser.Physics.Arcade.Body).velocity.y }),
+      (x, y, radius) => this.arena?.collidesCircle(x, y, radius) ?? false
+    );
     this.encounterManager = new EncounterManager(this.enemyManager);
     const encounterId =
       this.combatConfig?.encounterId ?? resolveEncounterId(this.combatConfig?.combatId ?? '') ?? ENCOUNTER_ID.RUINS_EASY_01;
+    const layout = this.arena?.layout;
     this.encounterManager.start(encounterId, {
-      width: this.scale.width,
-      height: this.scale.height,
+      width: layout?.width ?? this.scale.width,
+      height: layout?.height ?? this.scale.height,
+      originX: layout?.x ?? 0,
+      originY: layout?.y ?? 0,
       instanceIds: this.combatConfig?.enemies.map((enemy) => enemy.id),
     });
     this.spawnBossIfNeeded(player);
@@ -192,6 +217,7 @@ export class CombatScene extends Phaser.Scene {
     this.lastSlashAttackId = 0;
     this.wireEnemyCollisions(player);
     this.wireBossCollisions(player);
+    this.wireArenaColliders(player);
     this.aliveLabel = this.add.text(this.scale.width - 16, 16, '', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '13px',
@@ -228,7 +254,18 @@ export class CombatScene extends Phaser.Scene {
     }
 
     if (this.status === 'RUNNING') {
+      this.controller?.setCombatModifiers({
+        attackMoveMultiplier: this.attack?.isAttacking ? 0.72 : 1,
+        dashLocked: this.attack?.blocksDash === true,
+      });
+      if (this.controller?.isDashing && this.attack?.isAttacking && !this.attack.blocksDash) {
+        this.attack.cancel();
+      }
       this.controller?.update(delta);
+      this.tryUsePotion();
+      if (this.potionCooldownMs > 0) {
+        this.potionCooldownMs = Math.max(0, this.potionCooldownMs - delta);
+      }
       if (this.controller) {
         if (this.controller.isDashing && !this.wasDashing) {
           audioManager.playSfx(sfxForDash(this.controller.dashStyle));
@@ -264,6 +301,29 @@ export class CombatScene extends Phaser.Scene {
             audioManager.playSfx(SFX_ID.PLAYER_HIT);
           }
           this.checkCombatEnd();
+        },
+        this.arena?.solidRects
+      );
+      this.dangerZones?.update(
+        delta,
+        this.player && this.controller
+          ? {
+              x: this.player.x,
+              y: this.player.y,
+              radius: this.playerSize / 2,
+              isInvincible: this.controller.isInvincible,
+            }
+          : undefined,
+        (damage, attackId, dirX, dirY) => {
+          const applied = this.health?.takeDamage({
+            amount: damage,
+            attackId,
+            direction: new Phaser.Math.Vector2(dirX, dirY),
+          });
+          if (applied && this.player) {
+            this.feedback?.playReceivedHit(this.player, damage, this.playerHitOffset());
+            audioManager.playSfx(SFX_ID.PLAYER_HIT);
+          }
         }
       );
       this.syncSlashEffect();
@@ -280,7 +340,10 @@ export class CombatScene extends Phaser.Scene {
     }
 
     this.health?.update(delta);
-    this.encounterManager?.update(delta, { width: this.scale.width, height: this.scale.height });
+    this.encounterManager?.update(delta, {
+      width: this.arena?.layout.width ?? this.scale.width,
+      height: this.arena?.layout.height ?? this.scale.height,
+    });
     this.syncActorVisuals();
     this.syncCombatAudioCues();
     this.hud?.update();
@@ -316,7 +379,12 @@ export class CombatScene extends Phaser.Scene {
     if (!definition) {
       return;
     }
-    const point = resolveSpawnPoint(encounter.bossSpawn ?? { x: 0.72, y: 0.46 }, this.scale.width, this.scale.height);
+    const point = resolveSpawnPoint(
+      encounter.bossSpawn ?? { x: 0.55, y: 0.42 },
+      this.arena?.layout.width ?? this.scale.width,
+      this.arena?.layout.height ?? this.scale.height,
+      { x: this.arena?.layout.x ?? 0, y: this.arena?.layout.y ?? 0 }
+    );
     const visual = this.add.rectangle(point.x, point.y, definition.size, definition.size, definition.color);
     visual.setAlpha(0);
     this.physics.add.existing(visual);
@@ -326,7 +394,12 @@ export class CombatScene extends Phaser.Scene {
       definition,
       encounter.bossInstanceId ?? `${definition.id.toLowerCase()}_001`,
       () => ({ x: this.player?.x ?? 0, y: this.player?.y ?? 0 }),
-      () => ({ width: this.scale.width, height: this.scale.height }),
+      () => ({
+        width: this.arena?.layout.width ?? this.scale.width,
+        height: this.arena?.layout.height ?? this.scale.height,
+        originX: this.arena?.layout.x ?? 0,
+        originY: this.arena?.layout.y ?? 0,
+      }),
       (shot) => {
         this.projectiles?.spawnEnemyShot(shot);
         audioManager.playSfx(SFX_ID.GUARDIAN_PROJECTILE);
@@ -339,6 +412,9 @@ export class CombatScene extends Phaser.Scene {
         this.feedback?.playBossDeath();
         audioManager.playSfx(SFX_ID.GUARDIAN_DEATH);
         this.checkCombatEnd();
+      },
+      (x, y, radius, durationMs, damage, tickMs) => {
+        this.dangerZones?.spawn({ x, y, radius, durationMs, tickMs, damage });
       }
     );
     this.bossHud = new BossHud(this, this.boss);
@@ -442,6 +518,9 @@ export class CombatScene extends Phaser.Scene {
         maxMp: this.health.maxMp,
         dashCooldown: this.controller.dashCooldownRemainingMs,
         dashMaxCooldown: this.controller.dashCooldownMs,
+        potionCount: this.potionCount,
+        potionCooldown: this.potionCooldownMs,
+        potionMaxCooldown: POTION_COOLDOWN_MS,
         skills: this.skills?.getHudSlots() ?? [],
         boss: this.boss
           ? {
@@ -469,6 +548,17 @@ export class CombatScene extends Phaser.Scene {
 
   private isBossTarget(target: CombatHittable): boolean {
     return this.boss !== undefined && target.id === this.boss.id;
+  }
+
+  private wireArenaColliders(player: Phaser.GameObjects.Rectangle | Phaser.GameObjects.Arc): void {
+    const actors: Phaser.GameObjects.GameObject[] = [player];
+    for (const enemy of this.enemyManager?.getEnemies() ?? []) {
+      actors.push(enemy.gameObject);
+    }
+    if (this.boss) {
+      actors.push(this.boss.gameObject);
+    }
+    this.arena?.wireColliders(actors);
   }
 
   private wireEnemyCollisions(player: Phaser.GameObjects.Rectangle | Phaser.GameObjects.Arc): void {
@@ -641,6 +731,7 @@ export class CombatScene extends Phaser.Scene {
       },
       defeatedEnemyIds,
       defeatedEnemyTypes,
+      consumedItemIds: Array.from({ length: this.potionsUsed }, () => ITEM_ID.HEALING_POTION),
     };
 
     EventBus.emit(COMBAT_RESULT_EVENT, result);
@@ -773,7 +864,32 @@ export class CombatScene extends Phaser.Scene {
     this.aliveLabel?.setPosition(gameSize.width - 16, 16);
   }
 
+  private tryUsePotion(): void {
+    if (!this.potionKey || this.status !== 'RUNNING' || this.health?.isDead) {
+      return;
+    }
+    if (!Phaser.Input.Keyboard.JustDown(this.potionKey)) {
+      return;
+    }
+    if (this.potionCount <= 0 || this.potionCooldownMs > 0) {
+      return;
+    }
+    const heal = getItemDefinition(ITEM_ID.HEALING_POTION)?.healHp ?? 30;
+    const restored = this.health?.heal(heal) ?? 0;
+    if (restored <= 0 && (this.health?.currentHp ?? 0) >= (this.health?.maxHp ?? 0)) {
+      return;
+    }
+    this.potionCount -= 1;
+    this.potionsUsed += 1;
+    this.potionCooldownMs = POTION_COOLDOWN_MS;
+  }
+
   private syncWorldBounds(): void {
+    const layout = this.arena?.layout;
+    if (layout) {
+      this.physics.world.setBounds(layout.x, layout.y, layout.width, layout.height);
+      return;
+    }
     this.physics.world.setBounds(0, 0, this.scale.width, this.scale.height);
   }
 
@@ -785,8 +901,12 @@ export class CombatScene extends Phaser.Scene {
       return;
     }
 
-    const half = size / 2;
-    target.x = Phaser.Math.Clamp(target.x, half, this.scale.width - half);
-    target.y = Phaser.Math.Clamp(target.y, half, this.scale.height - half);
+    const layout = this.arena?.layout;
+    if (layout) {
+      const half = size / 2;
+      target.x = Phaser.Math.Clamp(target.x, layout.x + half, layout.x + layout.width - half);
+      target.y = Phaser.Math.Clamp(target.y, layout.y + half, layout.y + layout.height - half);
+      return;
+    }
   }
 }

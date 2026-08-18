@@ -1,6 +1,6 @@
 import type { GameState } from '@/game/core/game-state';
 import { getNpcProfile } from '@/game/npc/npc-profiles';
-import { attitudeFromRelationship } from '@/game/relationships/relationship-selectors';
+import { relationshipBandLabel } from '@/game/relationships/relationship-selectors';
 import { createRelationship } from '@/game/npc/relationship';
 import { getLocationDefinition } from '@/game/world/locations/location-definitions';
 import styles from '../story/StoryScreen.module.css';
@@ -11,24 +11,7 @@ interface PeoplePanelProps {
 }
 
 function attitudeLabel(npcId: string, state: GameState): string {
-  const value = state.relationships[npcId] ?? createRelationship();
-  const attitude = attitudeFromRelationship(value);
-  if (attitude === 'FRIENDLY') {
-    return '신뢰 있음';
-  }
-  if (attitude === 'SUSPICIOUS') {
-    return '경계';
-  }
-  if (attitude === 'HOSTILE') {
-    return '적대';
-  }
-  if (attitude === 'AFRAID') {
-    return '두려움';
-  }
-  if (attitude === 'RESPECTFUL') {
-    return '인정';
-  }
-  return '아는 사이';
+  return relationshipBandLabel(state.relationships[npcId] ?? createRelationship());
 }
 
 export function PeoplePanel({ state, onClose }: PeoplePanelProps) {

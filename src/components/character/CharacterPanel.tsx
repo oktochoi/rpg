@@ -13,6 +13,7 @@ import { PlayerVisualPreview } from './PlayerVisualPreview';
 import { derivedPlayerStats } from '@/game/inventory/derived-stats';
 import { equippedName } from '@/game/inventory/item-selectors';
 import { getItemDefinition } from '@/game/inventory/item-definitions';
+import { STAT_DESCRIPTION, STAT_IDS, STAT_LABEL } from '@/game/player/stats';
 import styles from './CharacterPanel.module.css';
 
 interface CharacterPanelProps {
@@ -36,6 +37,8 @@ export function CharacterPanel({ state, dispatch, onClose }: CharacterPanelProps
   const armorName = equippedName(player.equipment, 'armor', player.equipmentEnhancements);
   const accessoryName = equippedName(player.equipment, 'accessory', player.equipmentEnhancements);
   const weaponDef = player.equipment?.weapon ? getItemDefinition(player.equipment.weapon) : null;
+  const unspent = player.unspentStatPoints ?? 0;
+  const allocated = player.allocatedStats ?? { vit: 0, str: 0, int: 0, agi: 0 };
 
   return (
     <div className={styles.overlay}>
@@ -72,6 +75,25 @@ export function CharacterPanel({ state, dispatch, onClose }: CharacterPanelProps
             <p>HP {player.currentHp} / {derived.maxHp}</p>
             <p>MP {player.currentMp} / {derived.maxMp}</p>
             <p>Attack {derived.attackPower}</p>
+            <p className={styles.points}>남은 능력치 포인트: {unspent}</p>
+            <ul className={styles.statList}>
+              {STAT_IDS.map((statId) => (
+                <li key={statId} className={styles.statRow}>
+                  <span title={STAT_DESCRIPTION[statId]}>
+                    {STAT_LABEL[statId]} {allocated[statId]}
+                  </span>
+                  <button
+                    type="button"
+                    className={styles.plus}
+                    disabled={unspent <= 0}
+                    title={STAT_DESCRIPTION[statId]}
+                    onClick={() => dispatch({ type: 'ALLOCATE_STAT_POINT', statId })}
+                  >
+                    +
+                  </button>
+                </li>
+              ))}
+            </ul>
           </section>
           <section>
             <h3>장비</h3>

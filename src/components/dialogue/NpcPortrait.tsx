@@ -29,8 +29,8 @@ export function NpcPortrait({ npcName, npcId, emotion = 'neutral', role = null }
           <img className={styles.image} src={portrait.path} alt="" onError={() => setFailed(true)} />
         )}
       </div>
-      <p className={styles.name}>{npcName}</p>
-      {role ?? portrait.role ? <p className={styles.role}>{role ?? portrait.role}</p> : null}
+      <p className={styles.name}>{npcName || '\u00a0'}</p>
+      <p className={styles.role}>{role ?? portrait.role ?? '\u00a0'}</p>
     </div>
   );
 }

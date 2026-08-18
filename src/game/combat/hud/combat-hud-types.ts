@@ -25,6 +25,9 @@ export interface CombatHudState {
     maxMp: number;
     dashCooldown: number;
     dashMaxCooldown: number;
+    potionCount: number;
+    potionCooldown: number;
+    potionMaxCooldown: number;
     skills: CombatHudSkillSlot[];
   };
   boss?: {

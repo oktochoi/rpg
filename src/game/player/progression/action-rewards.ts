@@ -8,7 +8,7 @@ import { dayFromTotalMinutes, nextMorningTotalMinutes } from '../../time/clock-t
 import { eventsForExpGrant } from './progression-rules';
 import { ACTION_EXP } from './level-config';
 
-const REPEAT_EXP = 2;
+const REPEAT_EXP = 1;
 
 export function repeatKeyFor(state: Readonly<GameState>, actionType: string, targetId?: string): string {
   return `${actionType}:${targetId ?? state.world.currentLocationId}:${state.story.currentSceneId}`;
@@ -49,6 +49,12 @@ function moveTarget(incoming: readonly GameEvent[]): { fromId: string; toId: str
   };
 }
 
+function isSmallTalkTurn(incoming: readonly GameEvent[]): boolean {
+  return incoming.some(
+    (event) => event.type === 'SEMANTIC_ACTION_RECORDED' && event.semanticKey.startsWith('SMALL_TALK:')
+  );
+}
+
 export function eventsForTurnRewards(state: Readonly<GameState>, incoming: readonly GameEvent[]): GameEvent[] {
   if (incoming.length === 0) {
     return [];
@@ -56,7 +62,10 @@ export function eventsForTurnRewards(state: Readonly<GameState>, incoming: reado
   if (incoming.some((event) => event.type === 'GAME_STARTED' || event.type === 'GAME_LOADED' || event.type === 'TIME_ADVANCED')) {
     return [];
   }
-  if (incoming.some((event) => event.type === 'MENU_OPENED' || event.type === 'MENU_CLOSED')) {
+  if (incoming.some((event) => event.type === 'STORY_CONTINUED')) {
+    return [];
+  }
+  if (incoming.some((event) => event.type === 'MENU_OPENED' || event.type === 'MENU_CLOSED' || event.type === 'STAT_POINT_SPENT')) {
     return [];
   }
 
@@ -122,14 +131,12 @@ export function eventsForTurnRewards(state: Readonly<GameState>, incoming: reado
     const repeats = state.actionRepeatCounts?.[key] ?? 0;
     const base = ACTION_EXP[actionType as ActionType] ?? ACTION_EXP.STORY_CHOICE;
     const amount =
-      actionType === 'WAIT'
-        ? repeats === 0
-          ? 1
-          : 0
+      actionType === 'WAIT' || isSmallTalkTurn(incoming)
+        ? 0
         : repeats === 0
           ? base
           : actionType === 'TALK' || actionType === 'ASK'
-            ? 1
+            ? 0
             : REPEAT_EXP;
     pushExp(amount, `${sourceActionId}:action`, 'ACTION');
     outgoing.push({ type: 'ACTION_REPEAT_COUNTED', key });
@@ -143,7 +150,11 @@ export function eventsForTurnRewards(state: Readonly<GameState>, incoming: reado
       pushExp(ACTION_EXP.NEW_LOCATION, `exp:new-location:${event.locationId}`, 'DISCOVERY');
     }
     if (event.type === 'PLAYER_LEARNED_FACT') {
-      pushExp(ACTION_EXP.NEW_FACT, `exp:new-fact:${event.factId}`, 'DISCOVERY');
+      const fact = state.world.facts.find((item) => item.id === event.factId);
+      const rumor = fact?.tags.includes('rumor') === true || event.factId.includes('rumor');
+      if (!rumor) {
+        pushExp(ACTION_EXP.NEW_FACT, `exp:new-fact:${event.factId}`, 'DISCOVERY');
+      }
     }
   }
 

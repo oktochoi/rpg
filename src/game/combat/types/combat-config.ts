@@ -22,7 +22,9 @@ export interface CombatConfig {
     currentMp: number;
     moveSpeed: number;
     attackBonus?: number;
+    healingPotions?: number;
   };
   enemies: CombatEnemyConfig[];
   arenaId: string;
+  spawnBias?: 'default' | 'observed';
 }

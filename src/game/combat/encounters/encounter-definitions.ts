@@ -1,4 +1,4 @@
-import { TEST_GOBLIN_ARENA_ID, TEST_GOBLIN_COMBAT_ID, TEST_GOBLIN_ENEMY_ID } from '../../story/test-scenes';
+import { ARENA_ID } from '../arenas/arena-types';
 import { BOSS_ID, BOSS_INSTANCE_ID } from '../boss/boss-types';
 import { ENEMY_TYPE_ID } from '../enemies/enemy-types';
 import type { EncounterDefinition } from './encounter-types';
@@ -22,12 +22,13 @@ export type EncounterIdKey = (typeof ENCOUNTER_ID)[keyof typeof ENCOUNTER_ID];
 export const ENCOUNTERS: Record<EncounterIdKey, EncounterDefinition> = {
   [ENCOUNTER_ID.RUINS_EASY_01]: {
     id: ENCOUNTER_ID.RUINS_EASY_01,
-    arenaId: TEST_GOBLIN_ARENA_ID,
+    arenaId: ARENA_ID.RUINS_ENTRANCE,
     difficulty: 1,
+    difficultyTag: 'tutorial',
     enemies: [
       {
         enemyType: ENEMY_TYPE_ID.GOBLIN,
-        instanceId: TEST_GOBLIN_ENEMY_ID,
+        instanceId: 'goblin_01',
         spawnPosition: { x: 0.72, y: 0.45 },
       },
     ],
@@ -35,18 +36,19 @@ export const ENCOUNTERS: Record<EncounterIdKey, EncounterDefinition> = {
   },
   [ENCOUNTER_ID.FOREST_GOBLIN_01]: {
     id: ENCOUNTER_ID.FOREST_GOBLIN_01,
-    arenaId: TEST_GOBLIN_ARENA_ID,
+    arenaId: ARENA_ID.FOREST_SCOUTS,
     difficulty: 1,
+    difficultyTag: 'tutorial',
     enemies: [
       {
         enemyType: ENEMY_TYPE_ID.GOBLIN,
         instanceId: 'forest_goblin_001',
-        spawnPosition: { x: 0.68, y: 0.4 },
+        spawnPosition: { x: 0.64, y: 0.36 },
       },
       {
         enemyType: ENEMY_TYPE_ID.GOBLIN,
         instanceId: 'forest_goblin_002',
-        spawnPosition: { x: 0.78, y: 0.54 },
+        spawnPosition: { x: 0.7, y: 0.58 },
       },
     ],
     rewards: { gold: 18, items: [{ itemId: 'goblin_ear', quantity: 1 }] },
@@ -54,18 +56,19 @@ export const ENCOUNTERS: Record<EncounterIdKey, EncounterDefinition> = {
   },
   [ENCOUNTER_ID.CH1_FOREST_SCOUTS]: {
     id: ENCOUNTER_ID.CH1_FOREST_SCOUTS,
-    arenaId: TEST_GOBLIN_ARENA_ID,
+    arenaId: ARENA_ID.FOREST_SCOUTS,
     difficulty: 1,
+    difficultyTag: 'tutorial',
     enemies: [
       {
         enemyType: ENEMY_TYPE_ID.GOBLIN,
         instanceId: 'scout_goblin_001',
-        spawnPosition: { x: 0.66, y: 0.38 },
+        spawnPosition: { x: 0.62, y: 0.34 },
       },
       {
         enemyType: ENEMY_TYPE_ID.GOBLIN,
         instanceId: 'scout_goblin_002',
-        spawnPosition: { x: 0.76, y: 0.5 },
+        spawnPosition: { x: 0.7, y: 0.58 },
       },
     ],
     rewards: { gold: 18, items: [{ itemId: 'goblin_ear', quantity: 1 }] },
@@ -73,18 +76,19 @@ export const ENCOUNTERS: Record<EncounterIdKey, EncounterDefinition> = {
   },
   [ENCOUNTER_ID.CH1_FOREST_AMBUSH]: {
     id: ENCOUNTER_ID.CH1_FOREST_AMBUSH,
-    arenaId: TEST_GOBLIN_ARENA_ID,
+    arenaId: ARENA_ID.FOREST_AMBUSH,
     difficulty: 2,
+    difficultyTag: 'easy',
     enemies: [
       {
         enemyType: ENEMY_TYPE_ID.GOBLIN,
         instanceId: 'ambush_goblin_001',
-        spawnPosition: { x: 0.62, y: 0.36 },
+        spawnPosition: { x: 0.38, y: 0.32 },
       },
       {
         enemyType: ENEMY_TYPE_ID.ARCHER,
         instanceId: 'ambush_archer_001',
-        spawnPosition: { x: 0.82, y: 0.48 },
+        spawnPosition: { x: 0.8, y: 0.42 },
       },
     ],
     rewards: { gold: 22, items: [{ itemId: 'goblin_ear', quantity: 1 }] },
@@ -92,23 +96,29 @@ export const ENCOUNTERS: Record<EncounterIdKey, EncounterDefinition> = {
   },
   [ENCOUNTER_ID.CH1_GOBLIN_CAMP]: {
     id: ENCOUNTER_ID.CH1_GOBLIN_CAMP,
-    arenaId: TEST_GOBLIN_ARENA_ID,
+    arenaId: ARENA_ID.GOBLIN_CAMP,
     difficulty: 2,
+    difficultyTag: 'medium',
     enemies: [
       {
         enemyType: ENEMY_TYPE_ID.GOBLIN,
         instanceId: 'camp_goblin_001',
-        spawnPosition: { x: 0.6, y: 0.32 },
+        spawnPosition: { x: 0.4, y: 0.3 },
       },
       {
         enemyType: ENEMY_TYPE_ID.GOBLIN,
         instanceId: 'camp_goblin_002',
-        spawnPosition: { x: 0.7, y: 0.58 },
+        spawnPosition: { x: 0.42, y: 0.64 },
+      },
+      {
+        enemyType: ENEMY_TYPE_ID.GOBLIN,
+        instanceId: 'camp_goblin_003',
+        spawnPosition: { x: 0.52, y: 0.48 },
       },
       {
         enemyType: ENEMY_TYPE_ID.ARCHER,
         instanceId: 'camp_archer_001',
-        spawnPosition: { x: 0.84, y: 0.44 },
+        spawnPosition: { x: 0.82, y: 0.28 },
       },
     ],
     rewards: { gold: 28, items: [{ itemId: 'iron_fragment', quantity: 1 }] },
@@ -116,23 +126,24 @@ export const ENCOUNTERS: Record<EncounterIdKey, EncounterDefinition> = {
   },
   [ENCOUNTER_ID.CH1_RUINS_GATE]: {
     id: ENCOUNTER_ID.CH1_RUINS_GATE,
-    arenaId: TEST_GOBLIN_ARENA_ID,
+    arenaId: ARENA_ID.RUINS_ENTRANCE,
     difficulty: 3,
+    difficultyTag: 'medium_hard',
     enemies: [
       {
         enemyType: ENEMY_TYPE_ID.GOBLIN,
         instanceId: 'gate_goblin_001',
-        spawnPosition: { x: 0.58, y: 0.3 },
+        spawnPosition: { x: 0.48, y: 0.3 },
       },
       {
         enemyType: ENEMY_TYPE_ID.ARCHER,
         instanceId: 'gate_archer_001',
-        spawnPosition: { x: 0.84, y: 0.4 },
+        spawnPosition: { x: 0.82, y: 0.36 },
       },
       {
         enemyType: ENEMY_TYPE_ID.BRUTE,
         instanceId: 'gate_brute_001',
-        spawnPosition: { x: 0.7, y: 0.52 },
+        spawnPosition: { x: 0.62, y: 0.54 },
       },
     ],
     rewards: { gold: 36, items: [{ itemId: 'goblin_ear', quantity: 1 }] },
@@ -140,8 +151,9 @@ export const ENCOUNTERS: Record<EncounterIdKey, EncounterDefinition> = {
   },
   [ENCOUNTER_ID.RUINS_ARCHER_01]: {
     id: ENCOUNTER_ID.RUINS_ARCHER_01,
-    arenaId: TEST_GOBLIN_ARENA_ID,
+    arenaId: ARENA_ID.RUINS_ENTRANCE,
     difficulty: 1,
+    difficultyTag: 'tutorial',
     enemies: [
       {
         enemyType: ENEMY_TYPE_ID.ARCHER,
@@ -153,8 +165,9 @@ export const ENCOUNTERS: Record<EncounterIdKey, EncounterDefinition> = {
   },
   [ENCOUNTER_ID.RUINS_BRUTE_01]: {
     id: ENCOUNTER_ID.RUINS_BRUTE_01,
-    arenaId: TEST_GOBLIN_ARENA_ID,
+    arenaId: ARENA_ID.RUINS_ENTRANCE,
     difficulty: 2,
+    difficultyTag: 'medium',
     enemies: [
       {
         enemyType: ENEMY_TYPE_ID.BRUTE,
@@ -166,8 +179,9 @@ export const ENCOUNTERS: Record<EncounterIdKey, EncounterDefinition> = {
   },
   [ENCOUNTER_ID.RUINS_MIXED_01]: {
     id: ENCOUNTER_ID.RUINS_MIXED_01,
-    arenaId: TEST_GOBLIN_ARENA_ID,
+    arenaId: ARENA_ID.RUINS_ENTRANCE,
     difficulty: 2,
+    difficultyTag: 'medium',
     enemies: [
       {
         enemyType: ENEMY_TYPE_ID.GOBLIN,
@@ -189,7 +203,7 @@ export const ENCOUNTERS: Record<EncounterIdKey, EncounterDefinition> = {
   },
   [ENCOUNTER_ID.RUINS_HEAVY_01]: {
     id: ENCOUNTER_ID.RUINS_HEAVY_01,
-    arenaId: TEST_GOBLIN_ARENA_ID,
+    arenaId: ARENA_ID.RUINS_ENTRANCE,
     difficulty: 3,
     enemies: [
       {
@@ -212,8 +226,9 @@ export const ENCOUNTERS: Record<EncounterIdKey, EncounterDefinition> = {
   },
   [ENCOUNTER_ID.RUINS_BOSS_01]: {
     id: ENCOUNTER_ID.RUINS_BOSS_01,
-    arenaId: TEST_GOBLIN_ARENA_ID,
+    arenaId: ARENA_ID.RUINS_GUARDIAN,
     difficulty: 4,
+    difficultyTag: 'hard',
     bossId: BOSS_ID.RUINS_GUARDIAN,
     bossInstanceId: BOSS_INSTANCE_ID.RUINS_GUARDIAN,
     bossSpawn: { x: 0.72, y: 0.46 },
@@ -224,7 +239,7 @@ export const ENCOUNTERS: Record<EncounterIdKey, EncounterDefinition> = {
 };
 
 const COMBAT_TO_ENCOUNTER: Record<string, EncounterIdKey> = {
-  [TEST_GOBLIN_COMBAT_ID]: ENCOUNTER_ID.RUINS_EASY_01,
+  combat_goblin_ruins_01: ENCOUNTER_ID.RUINS_EASY_01,
   [ENCOUNTER_ID.RUINS_EASY_01]: ENCOUNTER_ID.RUINS_EASY_01,
   [ENCOUNTER_ID.FOREST_GOBLIN_01]: ENCOUNTER_ID.FOREST_GOBLIN_01,
   [ENCOUNTER_ID.CH1_FOREST_SCOUTS]: ENCOUNTER_ID.CH1_FOREST_SCOUTS,
@@ -256,6 +271,7 @@ export function cloneEncounter(definition: EncounterDefinition): EncounterDefini
     id: definition.id,
     arenaId: definition.arenaId,
     difficulty: definition.difficulty,
+    difficultyTag: definition.difficultyTag,
     bossId: definition.bossId,
     bossInstanceId: definition.bossInstanceId,
     bossSpawn: definition.bossSpawn ? { x: definition.bossSpawn.x, y: definition.bossSpawn.y } : undefined,
@@ -282,10 +298,11 @@ export function isBossEncounter(encounterId: string): boolean {
 export function resolveSpawnPoint(
   position: { x: number; y: number },
   width: number,
-  height: number
+  height: number,
+  origin: { x: number; y: number } = { x: 0, y: 0 }
 ): { x: number; y: number } {
   if (position.x >= 0 && position.x <= 1 && position.y >= 0 && position.y <= 1) {
-    return { x: position.x * width, y: position.y * height };
+    return { x: origin.x + position.x * width, y: origin.y + position.y * height };
   }
   return { x: position.x, y: position.y };
 }

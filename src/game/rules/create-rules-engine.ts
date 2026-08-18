@@ -3,7 +3,7 @@ import type { GameEvent } from '../core/event';
 import type { GameState } from '../core/game-state';
 import type { NpcId } from '../core/ids';
 import { sceneIdForAftermathChoice } from '../core/reducer';
-import { eventsForGrantFact, eventsForRecordedFact, eventsForShareFact } from '../knowledge/knowledge-service';
+import { eventsForGrantFact, eventsForPlayerDiscoveredFact, eventsForRecordedFact, eventsForShareFact } from '../knowledge/knowledge-service';
 import { actorKnowsFact } from '../knowledge/knowledge-selectors';
 import { isTalkChoice, npcIdFromTalkKey } from '../npc/talk-choices';
 import { eventsForBeginFreeAction, eventsForCommitFreeAction } from '../actions/action-rules';
@@ -12,11 +12,12 @@ import { eventsForUseItem } from '../inventory/item-rules';
 import { eventsForEquipItem, eventsForUnequipSlot, eventsForAdvancementStarter, canEquipItem } from '../inventory/equipment-rules';
 import { eventsForEnhanceEquipment, enhanceBlockedReason } from '../inventory/enhancement-rules';
 import { eventsForDialogueConsumption } from '../dialogue/dialogue-effects';
-import { shopUnlocked, currentShopId, eventsForBuyItem, buyBlockedReason, eventsForSellItem, sellBlockedReason } from '../economy/shop-rules';
+import { currentShopId, eventsForBuyItem, buyBlockedReason, eventsForSellItem, sellBlockedReason } from '../economy/shop-rules';
 import { isEncounterCleared } from '../combat/encounters/encounter-progress';
 import { playerHasItem } from '../player/player-state';
 import { canChooseFirstAdvancement } from '../player/classes/first-advancement';
 import { PLAYER_CLASS_ID } from '../player/classes';
+import { lookAroundResult } from '../world/living-luen';
 import { isNpcDuelCombatId } from '../actions/action-validator';
 import { ENCOUNTER_ID, isStartableCombatId } from '../combat/encounters/encounter-definitions';
 import { getQuestDefinition, QUEST_ID, RUINS_SEAL_FACT_ID } from '../quests/quest-definitions';
@@ -35,6 +36,7 @@ import {
   CHOICE_OPEN_SHOP,
   CHOICE_FIGHT_FOREST_GOBLIN,
   CHOICE_PASS_GATE,
+  CHOICE_REGISTER_GUILD,
   locationChoiceDestination,
 } from '../world/locations/location-story-choices';
 import { LOCATION_ID, WORLD_FLAG } from '../world/locations/location-definitions';
@@ -59,7 +61,7 @@ import {
 } from '../relationships/relationship-service';
 import { eventsForMemoryRecall, eventsForMemoryRequests } from '../npc/memory/memory-service';
 import { saveBlockedReason } from '../save/save-types';
-import { getStorySceneDefinition } from '../story/story-scene-definitions';
+import { getStorySceneDefinition, STORY_SCENE_ID } from '../story/story-scene-definitions';
 import { findAvailableChoiceDefinition } from '../story/story-choice-service';
 import type { StoryChoiceDefinition } from '../story/story-scene-types';
 import { candidateIdFromChoiceId, CHOICE_INTENT } from '../story/choices/choice-types';
@@ -67,6 +69,8 @@ import { findLiveCandidate, revalidateCandidate } from '../story/choices/choice-
 import type { MenuId } from '../core/command';
 import type { SaveSlotId } from '../core/ids';
 import type { RuleResult, RulesEngine } from './rules-engine';
+import { eventsForAllocateStat, canAllocateStat } from '../player/stats/stat-rules';
+import { isStatId } from '../player/stats/stat-types';
 
 function reject(reason: string): RuleResult {
   return { allowed: false, events: [], reason };
@@ -163,6 +167,10 @@ export function createRulesEngine(): RulesEngine {
           return evaluateSellItem(command.itemId, command.quantity ?? 1, state);
         case 'ENHANCE_EQUIPMENT':
           return evaluateEnhanceEquipment(command.itemId, state);
+        case 'ALLOCATE_STAT_POINT':
+          return evaluateAllocateStatPoint(command.statId, state);
+        case 'CONTINUE_STORY':
+          return evaluateContinueStory(state);
         case 'END_COMBAT':
           return reject('전투는 RESOLVE_COMBAT으로만 종료합니다.');
         default:
@@ -202,13 +210,16 @@ function evaluateResolveCombat(
     return reject('전투 ID가 일치하지 않습니다.');
   }
 
-  const remainingHp = Math.max(0, command.result.player.remainingHp);
+    const remainingHp = Math.max(0, command.result.player.remainingHp);
   const resourceEvents: GameEvent[] = [{ type: 'PLAYER_COMBAT_HP_UPDATED', currentHp: remainingHp }];
   if (typeof command.result.player.remainingMp === 'number') {
     resourceEvents.push({
       type: 'PLAYER_COMBAT_MP_UPDATED',
       currentMp: Math.max(0, command.result.player.remainingMp),
     });
+  }
+  for (const itemId of command.result.consumedItemIds ?? []) {
+    resourceEvents.push({ type: 'ITEM_CONSUMED', itemId });
   }
 
   if (command.result.outcome === 'VICTORY') {
@@ -367,6 +378,43 @@ function evaluateEnterStoryScene(sceneId: string, state: Readonly<GameState>): R
   return allow([{ type: 'STORY_SCENE_ENTERED', sceneId }]);
 }
 
+function evaluateContinueStory(state: Readonly<GameState>, nextSceneId?: string): RuleResult {
+  if (isStoryInputBlocked(state)) {
+    return reject('지금은 이야기를 이어갈 수 없습니다.');
+  }
+  if (state.mode !== 'STORY' && state.mode !== 'DIALOGUE') {
+    return reject('현재 모드에서는 이야기를 이어갈 수 없습니다.');
+  }
+  const scene = getStorySceneDefinition(state.story.currentSceneId);
+  const continueChoice = scene?.choices.find((choice) => choice.action.type === 'CONTINUE');
+  const next =
+    nextSceneId ??
+    scene?.continueTo ??
+    (continueChoice?.action.type === 'CONTINUE' ? continueChoice.action.nextSceneId : undefined);
+  if (!next && !scene?.autoContinue && !continueChoice) {
+    return reject('지금은 이어서 진행할 장면이 없다.');
+  }
+  const events: GameEvent[] = [{ type: 'STORY_CONTINUED', sceneId: next }];
+  if (next && next !== state.story.currentSceneId) {
+    events.push({ type: 'STORY_SCENE_ENTERED', sceneId: next });
+  }
+  return allow(events);
+}
+
+function evaluateAllocateStatPoint(statId: string, state: Readonly<GameState>): RuleResult {
+  if (isStoryInputBlocked(state)) {
+    return reject('지금은 능력치를 올릴 수 없습니다.');
+  }
+  const check = canAllocateStat(state, statId);
+  if (!check.allowed) {
+    return reject(check.reason ?? '남은 능력치 포인트가 없다.');
+  }
+  if (!isStatId(statId)) {
+    return reject('알 수 없는 능력치다.');
+  }
+  return allow(eventsForAllocateStat(state, statId));
+}
+
 function evaluateStoryChoice(
   choiceId: string,
   choice: StoryChoiceDefinition,
@@ -421,19 +469,10 @@ function evaluateStoryChoice(
     return evaluateInvestigateChoice(choiceId, state, action.targetId);
   }
   if (action.type === 'LOOK_AROUND') {
-    return allow([
-      { type: 'CHOICE_RESOLVED', choiceId },
-      {
-        type: 'ACTION_RESOLVED',
-        turnId: state.world.turn,
-        resolution: {
-          success: true,
-          actionType: 'INVESTIGATE',
-          narrative: '주변을 천천히 살핀다. 당장은 더 눈에 띄는 것이 없다.',
-          nextMode: 'STORY',
-        },
-      },
-    ]);
+    return allow(lookAroundEvents(choiceId, state));
+  }
+  if (action.type === 'CONTINUE') {
+    return evaluateContinueStory(state, action.nextSceneId ?? choice.nextSceneId);
   }
   if (action.type === 'REST') {
     const rested = evaluateRest(state);
@@ -493,8 +532,29 @@ function evaluateStoryChoice(
       },
     ]);
   }
-  if (action.type === 'NONE') {
-    return allow([{ type: 'CHOICE_RESOLVED', choiceId }]);
+  if (action.type === 'LEARN_FACT') {
+    const learned = eventsForPlayerDiscoveredFact(state, action.factId);
+    const events: GameEvent[] = [
+      { type: 'CHOICE_RESOLVED', choiceId },
+      ...learned,
+      {
+        type: 'ACTION_RESOLVED',
+        turnId: state.world.turn,
+        resolution: {
+          success: true,
+          actionType: 'ASK',
+          narrative: '그 선택은 기억에 남는다.',
+          nextMode: 'STORY',
+        },
+      },
+    ];
+    if (choice.nextSceneId) {
+      const entered = evaluateEnterStoryScene(choice.nextSceneId, state);
+      if (entered.allowed) {
+        events.push(...entered.events);
+      }
+    }
+    return allow(events);
   }
   if (choice.nextSceneId) {
     const entered = evaluateEnterStoryScene(choice.nextSceneId, state);
@@ -627,6 +687,16 @@ function evaluateSelectChoice(choiceId: string, state: Readonly<GameState>): Rul
     return evaluateStoryChoice(choiceId, storyChoice, state);
   }
 
+  if (choiceId === 'intro_square' || choiceId === 'intro_guild' || choiceId === 'intro_inn' || choiceId === 'intro_continue') {
+    return evaluateContinueStory(state, STORY_SCENE_ID.LUEN_VILLAGE_HUB);
+  }
+  if (choiceId === CHOICE_REGISTER_GUILD || choiceId === 'register_adventurer') {
+    if (worldFlag(state, WORLD_FLAG.GUILD_REGISTERED)) {
+      return allow([{ type: 'STORY_CONTINUED', sceneId: STORY_SCENE_ID.LUEN_GUILD }]);
+    }
+    return evaluateEnterStoryScene(STORY_SCENE_ID.LUEN_GUILD_REGISTER, state);
+  }
+
   const knownChoice =
     state.story.choices.some((choice) => choice.id === choiceId) ||
     storyChoicesForState(state).some((choice) => choice.id === choiceId);
@@ -656,19 +726,7 @@ function evaluateSelectChoice(choiceId: string, state: Readonly<GameState>): Rul
   }
 
   if (choiceId === CHOICE_LOOK_AROUND) {
-    return allow([
-      { type: 'CHOICE_RESOLVED', choiceId },
-      {
-        type: 'ACTION_RESOLVED',
-        turnId: state.world.turn,
-        resolution: {
-          success: true,
-          actionType: 'INVESTIGATE',
-          narrative: '주변을 천천히 살핀다. 당장은 더 눈에 띄는 것이 없다.',
-          nextMode: 'STORY',
-        },
-      },
-    ]);
+    return allow(lookAroundEvents(choiceId, state));
   }
 
   if (choiceId === CHOICE_PASS_GATE) {
@@ -866,7 +924,7 @@ function evaluateInvestigateChoice(choiceId: string, state: Readonly<GameState>,
       resolution: {
         success: true,
         actionType: 'INVESTIGATE',
-        narrative: '폐허 안쪽에서 왕실 문장이 새겨진 마법석을 발견했다.',
+        narrative: resolved.point.description,
         nextMode: 'STORY',
       },
     });
@@ -962,9 +1020,6 @@ function evaluateOpenMenu(menu: MenuId | undefined, state: Readonly<GameState>):
   if (menu === 'shop') {
     if (!currentShopId(state)) {
       return reject('상점 안에서만 거래할 수 있다.');
-    }
-    if (!shopUnlocked(state)) {
-      return reject('아직 상점을 이용할 때가 아니다.');
     }
   }
   return allow([{ type: 'MENU_OPENED', menu }]);
@@ -1099,6 +1154,24 @@ function evaluateSellItem(itemId: string, quantity: number, state: Readonly<Game
     return reject(blocked);
   }
   return allow(eventsForSellItem(state, itemId, quantity));
+}
+
+function lookAroundEvents(choiceId: string, state: Readonly<GameState>): GameEvent[] {
+  const result = lookAroundResult(state);
+  return [
+    { type: 'CHOICE_RESOLVED', choiceId },
+    ...result.events,
+    {
+      type: 'ACTION_RESOLVED',
+      turnId: state.world.turn,
+      resolution: {
+        success: true,
+        actionType: 'INVESTIGATE',
+        narrative: result.narrative,
+        nextMode: 'STORY',
+      },
+    },
+  ];
 }
 
 function parseFirstAdvancementInput(text: string): typeof PLAYER_CLASS_ID.WARRIOR | typeof PLAYER_CLASS_ID.MAGE | typeof PLAYER_CLASS_ID.ROGUE | 'invalid' | null {

@@ -113,6 +113,14 @@ export class PlayerAttackController {
     );
   }
 
+  get blocksDash(): boolean {
+    if (!this._isAttacking) {
+      return false;
+    }
+    const elapsed = this.profile.durationMs - this.attackRemainingMs;
+    return elapsed < this.profile.durationMs * 0.42;
+  }
+
   cancel(): void {
     this.endAttack();
   }

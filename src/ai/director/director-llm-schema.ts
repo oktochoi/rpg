@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { containsLeakedSecret } from '../../game/story/choices/choice-templates';
 import { choiceIdFor, type ChoiceCandidate, type DynamicChoice } from '../../game/story/choices/choice-types';
+import { resolvePlayerFacingChoiceLabel } from '../../game/story/choices/choice-label';
 import type { DirectorChoiceResponse } from './director-types';
 import { DirectorChoiceResponseSchema, parseDirectorChoiceResponse } from './director-schema';
 
@@ -46,7 +47,13 @@ export function hydrateDirectorLlmResponse(
     }
     choices.push({
       id: choiceIdFor(turnId, candidate.id),
-      text: item.text.trim(),
+      text: resolvePlayerFacingChoiceLabel({
+        text: item.text.trim(),
+        template: candidate.textTemplate,
+        actionType: candidate.actionType,
+        intent: candidate.intent,
+        candidateId: candidate.id,
+      }),
       intent: candidate.intent,
       actionType: candidate.actionType,
       targetId: candidate.targetId,

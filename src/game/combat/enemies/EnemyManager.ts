@@ -1,4 +1,5 @@
 import * as Phaser from 'phaser';
+import { AttackTokenBoard } from './attack-tokens';
 import { createEnemyBehavior } from './behaviors/create-enemy-behavior';
 import { getEnemyDefinition } from './enemy-definitions';
 import { computeSeparationDeltas } from './enemy-separation';
@@ -11,6 +12,9 @@ export class EnemyManager {
   private readonly enemies: EnemyController[] = [];
   private readonly usedIds = new Set<string>();
   private readonly visuals = new Map<string, EnemyVisual>();
+  private readonly tokens = new AttackTokenBoard(2);
+  private getPlayerVelocity: () => { x: number; y: number } = () => ({ x: 0, y: 0 });
+  private hitsObstacle: (x: number, y: number, radius: number) => boolean = () => false;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -18,6 +22,14 @@ export class EnemyManager {
     private readonly isPlayerAlive: () => boolean,
     private readonly onRangedShot: (shot: EnemyRangedShot) => void
   ) {}
+
+  setWorldQueries(
+    getPlayerVelocity: () => { x: number; y: number },
+    hitsObstacle: (x: number, y: number, radius: number) => boolean
+  ): void {
+    this.getPlayerVelocity = getPlayerVelocity;
+    this.hitsObstacle = hitsObstacle;
+  }
 
   spawnEnemy(request: EnemySpawnRequest): EnemyController {
     const visual = this.scene.add.rectangle(
@@ -36,6 +48,11 @@ export class EnemyManager {
       definition: request.definition,
       behavior: request.behavior,
       onRangedShot: this.onRangedShot,
+      canGrantMeleeToken: (id) => this.tokens.canGrantMelee(id),
+      tryAcquireMeleeToken: (id) => this.tokens.tryAcquireMelee(id),
+      releaseMeleeToken: (id) => this.tokens.release(id),
+      getPlayerVelocity: this.getPlayerVelocity,
+      hitsObstacle: this.hitsObstacle,
     });
     visual.setData('instanceId', request.instanceId);
     this.usedIds.add(request.instanceId);
@@ -122,6 +139,7 @@ export class EnemyManager {
     }
     this.enemies.length = 0;
     this.usedIds.clear();
+    this.tokens.reset();
   }
 
   private isEnemyTranslating(enemy: EnemyController): boolean {

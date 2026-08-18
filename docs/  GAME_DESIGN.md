@@ -1,14 +1,50 @@
 # AI RPG — Game Design
 
-## 현재 상태 (STEP 34)
+## 현재 상태 (STEP 34.10)
 
 플레이 가능한 범위는 **Chapter 1 — 폐허에서 깨어난 것**까지다. Chapter 2는 아직 없다.
+
+New Game부터 Chapter Complete까지 실제 플레이 기준으로 점검한 상태다. 다음 작업은 STEP 35 Chapter 2다.
+
+이 게임의 기본 정체성:
+
+**Main Story는 자연스럽게 이어지는 싱글플레이 Action RPG**
+
+Player가 선택하는 것은 Side Quest, 탐험, 추가 대화, 구매/강화, Stat 투자, 전직, 그리고 정말 중요한 Story Decision이다. Main Story 문장마다 1/2/3을 고르는 Visual Novel 방식은 쓰지 않는다.
+
+루엔은 작은 Hub다. Story / NPC / Shop / Inn / Quest / Exploration이 서로 반응한다.
 
 New Game은 **Lv1 모험가**, Gold 50, 낡은 검 / 여행자 옷으로 루엔에 도착한다. 직업은 캐릭터 생성에서 고르지 않는다. Chapter 1 후반, 길드 공적 인정 뒤 **Lv5 First Advancement**에서 검사 / 마법사 / 도적 중 하나를 고른다.
 
 Guardian을 잡았다고 Chapter가 끝나지 않는다. 조사 → 귀환 → 보고 → 휴식 → 길드 인정 → **전직** → 북문 Hook까지가 한 편이다.
 
-검증 기준: New Game부터 Debug 없이 이어지는 상태 플레이스루. (STEP 34 테스트: Lv6 검사, Chapter Complete)
+검증 기준: New Game부터 Debug 없이 이어지는 상태 플레이스루.
+
+---
+
+## Main Story Flow Philosophy
+
+- Main Story = 대부분 선형 Sequence. 다음이 명확하면 `[계속]` 또는 Gameplay Trigger로 이어진다.
+- Choice = 의미 있는 결정만. Roleplay / Decision. 의미 없는 Progression Choice는 제거한다.
+- Side Quest = 주요 optional agency. 수락/거절이 실제 선택이다.
+- Hub = 맵/NPC/상점/여관/인벤/캐릭터로 스스로 행동하는 자유 시간.
+- Continue는 선택이 아니다. EXP 없음, Time 없음.
+- Level Up 시 Stat Point +1. Player가 체력/힘/지능/민첩에 투자한다.
+- Rest는 푸른 달 여관. 10G. 에필로그 첫 숙박은 마르타가 무료 제공.
+- Relationship 숫자는 Player UI에 노출하지 않는다. 자연어 상태만 표시한다.
+
+권장 Chapter 1 흐름:
+
+```text
+New Game → Luen Arrival [계속] → Luen Hub
+ → Guild 직접 이동 → Doran Registration Story [계속/Roleplay]
+ → Starter Quest → Forest Gameplay → Combat → Return → Reward
+ → Luen Free Time (Shop / Side Quest / NPC / Rest)
+ → Seria → Preparation Free Time → Ruins → Combat / Investigation → Guardian
+ → Post Boss Story → Return → NPC Reports → Rest → Next Morning
+ → Guild Recognition → LEVEL 5 → First Advancement Decision
+ → New Class → Northern Gate Hook → Chapter Complete
+```
 
 ---
 
@@ -24,16 +60,20 @@ TITLE
  → 루엔 도착
 
 PHASE 1  루엔의 신참
- → 마을 둘러보기 (여관 마르타 / 광장 세리아 / 북문 레온)
- → 모험가 길드 등록 (도란)
-   목표: 루엔 모험가 길드에서 등록하세요.
+ → 루엔 도착 [계속]
+ → Luen Hub: Location Navigation으로 길드 / 여관 / 잡화점을 직접 이동
+ → 마을 탐색: 본 곳만 지도에 표시 (여관·길드·잡화점·북문)
+ → 소문: 고블린 증가 / 북쪽 상인 / 세리아와 폐허
+ → 마르타 첫 만남 (Roleplay, 언제든 대화 종료)
+ → 길드 등록 Story [계속 / 전투 경험 Roleplay] → 칠판 (강제 아님)
+   목표: 루엔을 둘러보거나 모험가 길드에서 등록하세요.
 
 PHASE 2  작은 의뢰
- → 길드 칠판: 숲길의 고블린 (첫 의뢰)
+ → 길드 칠판: 숲길의 고블린 (Main) / 마르타의 부탁 / 약초 채집 (Optional)
    목표: 길드에서 첫 의뢰를 맡으세요.
- → Forest Road · Goblin Scouts (Goblin 2, one-shot)
+ → Forest Road · 발자국/짐/소리 조사 후 Goblin Scouts
    목표: 숲길의 고블린을 처리하세요.
- → 길드 보고 → Gold 30 + EXP 20
+ → 전투 후 추가 조사 가능 → 길드 보고 (말한 정보만 공유) → Gold 30 + EXP 20
    목표: 길드로 돌아가 보상을 받으세요.
  → 이 시점에 상점 / 강화 Unlock
 
@@ -257,16 +297,30 @@ Leon이 해당 사실을 알기 위해서는:
 
 # 7. NPC Relationships
 
-NPC마다 Player를 다르게 평가한다.
+NPC마다 Player를 다르게 평가한다. 내부 수치는 유지하되, Player-facing UI에는 숫자를 보여주지 않는다.
 
 ```text
-Affection
-Trust
-Fear
-Respect
+Affection  개인적 호감. 부탁을 돕거나 배려 있게 행동하면 오른다.
+Trust      말과 행동에 대한 신뢰. 약속 이행, 정직한 보고, Quest 완료.
+Fear       위협감. 협박/폭력. 일반 정상 플레이에서는 거의 오르지 않는다.
+Respect    능력·실력·업적에 대한 인정. 호감과 다르다.
 ```
 
-범위:
+Respect가 오르는 경우: Goblin Camp 해결, 위험한 Quest 성공, Guardian 격파, 전투를 NPC가 목격, 신뢰할 만한 공식 보고.
+
+Respect가 오르지 않는 경우: 단순 TALK, 질문, 반복 대사, 상점 이용, Location 이동, Flavor 선택.
+
+People UI 예:
+
+```text
+낯선 사람
+조금 친숙함
+신뢰함
+경계함
+실력을 인정함
+```
+
+범위(내부):
 
 ```text
 -100 ~ +100
@@ -292,6 +346,8 @@ Fear       +60
 
 → 싫어하지만 함부로 대하지 못함
 ```
+
+모든 Relationship 변경 Event에는 reason / sourceEventId가 있다.
 
 ---
 
@@ -323,6 +379,74 @@ Skill 2
 초기 개발은 Placeholder 캐릭터로 진행한다.
 
 그래픽은 전투 시스템이 완성된 뒤 교체한다.
+
+## Chapter 1 Combat Design
+
+난이도는 HP/Damage 배수가 아니라 공간과 역할에서 나온다.
+
+### Arena identity
+
+- `forest_scouts_arena`: 나무/바위, 첫 전투 학습. 이동 가능 약 70%.
+- `forest_ambush_arena`: 중앙 바위·수레. 근접 압박 + 뒤쪽 Archer.
+- `goblin_camp_arena`: 목책/상자로 좌·중·우 통로. 관찰하면 측면 spawn.
+- `ruins_entrance`: 기둥/석상. 기둥이 화살을 막는다.
+- `ruins_guardian_arena`: 방 형태, 외곽 기둥, 제단. 가장자리 원형 도주가 안전하지 않다.
+
+Story 16:9 일러스트를 Combat map으로 stretch하지 않는다. Phaser primitive로 ground/wall/obstacle을 그린다.
+
+### Enemy roles
+
+- Goblin: chase / flank / lunge. 여러 마리는 겹치지 않고 각도를 나눠 접근.
+- Archer: preferred range 유지, 약한 velocity prediction, 무한 후퇴 금지.
+- Brute: 느린 이동, telegraph charge, 벽에 부딪히면 recovery.
+
+근접 동시 공격은 Attack Token 2개. Archer는 별도 cadence.
+
+### Difficulty curve
+
+1. Goblin Scouts — Tutorial Easy
+2. Forest Ambush — Easy-Medium
+3. Goblin Camp — Medium
+4. Ruins Entrance — Medium-Hard
+5. Guardian — Hard
+
+장비/강화는 체감되게 두고, Enemy는 authored difficulty만 쓴다.
+
+### Guardian patterns
+
+Phase 1: Slam / 3-way burst / 방향 lock Charge.
+Phase 2: Slam 후 residue zone, burst variant, Charge recovery 소폭 감소.
+같은 패턴 3연속 금지. 거리 weighted selection. 피할 틈이 있는 projectile.
+
+---
+
+# Chapter 1 — Living Luen
+
+루엔은 새 지역을 늘리지 않고, 있는 기능을 원인과 결과로 묶는다.
+
+## Hub interactions
+
+Village / Guild / Inn / Shop / Forest 각각 2~4개의 Interaction Point. 둘러보기는 상태·원샷이며 같은 문장을 반복하지 않는다. Location 설명은 ARRIVAL / AFTER_FIRST_QUEST / AFTER_GOBLIN_CAMP / POST_GUARDIAN variant.
+
+## NPC contextual dialogue
+
+INTRO / CONTEXT / REACTION / SMALL_TALK / EXIT. 중요 Topic은 ONCE. Small Talk는 반복 가능하되 최근 ID는 제외하고 EXP 0. Fingerprint가 바뀌면 contextual line. Public Event만 허용된 NPC가 안다. NPC는 서로에 대해 짧게 말한다.
+
+## Shop progression
+
+Phase A 소모품·중간 무기, Phase B 장비, Phase C 준비 물자. 첫 방문에 살 수 있는 Item이 최소 하나. 비싼 장비는 목표로 남긴다.
+
+## Micro events / optional secrets
+
+Chapter 1 authored 소사건과 비밀 몇 개. Rumor는 Fact가 아니다. Secret는 Knowledge / Dialogue unlock이 보상일 수 있다.
+
+## Quest connections / world reaction
+
+Goblin → Camp → Ruins 맥락. Side Quest는 선택. 완료하면 다른 NPC 대사가 바뀐다. 길드 게시판은 상태에 따라 바뀐다.
+
+## Interaction recovery
+
+선택 불가로 멈추지 않는다. RESOLVING은 finally에서 해제. Groq 실패는 fallback Candidate. Dialogue 소진 시 잡담 또는 종료.
 
 ---
 

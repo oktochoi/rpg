@@ -227,6 +227,16 @@ function parsePlayer(value: unknown): PlayerState | null {
           ? getPlayerClass(value.classId).baseStats.attackPower
           : 10,
     classRankId: typeof value.classRankId === 'string' ? value.classRankId : baseRankIdForClass(value.classId) ?? undefined,
+    unspentStatPoints:
+      typeof value.unspentStatPoints === 'number' && Number.isFinite(value.unspentStatPoints)
+        ? Math.max(0, Math.floor(value.unspentStatPoints))
+        : 0,
+    allocatedStats: {
+      vit: numberStat(value.allocatedStats, 'vit'),
+      str: numberStat(value.allocatedStats, 'str'),
+      int: numberStat(value.allocatedStats, 'int'),
+      agi: numberStat(value.allocatedStats, 'agi'),
+    },
   };
 }
 
@@ -622,6 +632,14 @@ function parseLastAction(value: unknown): ActionResolution | null | undefined {
 
 function isGameMode(value: unknown): value is GameMode {
   return isOneOf(value, GAME_MODES);
+}
+
+function numberStat(container: unknown, key: string): number {
+  if (!isRecord(container)) {
+    return 0;
+  }
+  const value = container[key];
+  return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
 }
 
 function parseStringNumberMap(value: unknown): Readonly<Record<string, number>> {

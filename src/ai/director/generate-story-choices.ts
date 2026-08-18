@@ -3,6 +3,7 @@ import { buildChoiceCandidates, type CandidateBuildOptions } from '../../game/st
 import { createFallbackCandidates } from '../../game/story/choices/choice-fallback';
 import { buildStoryDirectorContext } from '../../game/story/choices/director-context-builder';
 import { rankChoiceCandidates, toDynamicChoices } from '../../game/story/choices/choice-ranking';
+import { getStorySceneDefinition } from '../../game/story/story-scene-definitions';
 import { containsLeakedSecret } from '../../game/story/choices/choice-templates';
 import { shouldUseRealAiClient, type AiTransport } from '../client/ai-transport';
 import { parseDirectorChoiceResponse } from './director-schema';
@@ -31,11 +32,28 @@ export async function generateStoryChoices(
   const context = buildStoryDirectorContext(state);
   const candidates = buildChoiceCandidates(state, context, options);
   const fallback = fallbackResponse(state);
+  const scene = getStorySceneDefinition(state.story.currentSceneId);
+  const continueOnly =
+    scene?.autoContinue === true &&
+    candidates.length > 0 &&
+    candidates.every((candidate) => candidate.semanticKey === 'CONTINUE' || candidate.metadata?.semanticKey === 'CONTINUE');
+  const continueChoices = toDynamicChoices(state.world.turn, candidates.slice(0, 1));
+  if (continueOnly) {
+    try {
+      const raw = await director.generateChoices(context, candidates);
+      if (isStaleDirectorResponse(context.turnId, raw)) {
+        return { turnId: state.world.turn, choices: continueChoices, debugReason: 'stale_turn' };
+      }
+      return { turnId: state.world.turn, choices: continueChoices, debugReason: 'auto_continue' };
+    } catch {
+      return { turnId: state.world.turn, choices: continueChoices, debugReason: 'fallback' };
+    }
+  }
 
   try {
     const raw = await director.generateChoices(context, candidates);
     if (isStaleDirectorResponse(context.turnId, raw)) {
-      return { turnId: context.turnId, choices: [], debugReason: 'stale_turn' };
+      return { ...fallback, debugReason: 'stale_turn' };
     }
     const parsed = parseDirectorChoiceResponse(raw);
     if (!parsed) {

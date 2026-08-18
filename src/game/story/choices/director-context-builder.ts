@@ -150,6 +150,9 @@ export function choiceRefreshKey(state: Readonly<GameState>): string {
     state.world.currentLocationId,
     state.player.classId,
     state.knowledge.knownFactIds.join(','),
+    state.story.consumedTopicIds.join(','),
+    state.story.recentSemanticKeys.join(','),
+    state.story.currentNpcId ?? '',
     state.world.exploredPointIds.join(','),
     Object.entries(state.world.flags)
       .filter(([, value]) => value)

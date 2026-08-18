@@ -14,7 +14,7 @@ export class HeavyMeleeBehavior implements EnemyBehavior {
     if (!ctx.isPlayerAlive || ctx.isAttacking || ctx.knockbackActive) {
       return { vx: 0, vy: 0 };
     }
-    const target = surroundOffset(ctx, 48);
+    const target = surroundOffset(ctx, 56);
     const dir = directionToward(ctx.x, ctx.y, target.x, target.y);
     if (dir.dist <= ctx.definition.attackRange) {
       return { vx: 0, vy: 0 };
@@ -23,6 +23,11 @@ export class HeavyMeleeBehavior implements EnemyBehavior {
   }
 
   shouldStartAttack(ctx: EnemyBehaviorContext): boolean {
-    return ctx.isPlayerAlive && !ctx.isAttacking && ctx.distance <= ctx.definition.attackRange;
+    if (!ctx.isPlayerAlive || ctx.isAttacking || !ctx.hasMeleeToken) {
+      return false;
+    }
+    const chargeMin = ctx.definition.chargeRangeMin ?? 130;
+    const chargeMax = ctx.definition.chargeRangeMax ?? 300;
+    return ctx.distance <= ctx.definition.attackRange || (ctx.distance >= chargeMin && ctx.distance <= chargeMax);
   }
 }

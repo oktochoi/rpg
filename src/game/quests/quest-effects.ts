@@ -1,10 +1,11 @@
 import type { GameEvent } from '../core/event';
 import type { GameState } from '../core/game-state';
-import { eventsForRecordedFact } from '../knowledge/knowledge-service';
+import { eventsForPublicReveal, eventsForRecordedFact } from '../knowledge/knowledge-service';
 import { eventsForMemoryRequests } from '../npc/memory/memory-service';
 import { eventsForRelationshipRequests, relationshipRequestsForQuest } from '../relationships/relationship-service';
 import type { WorldFact } from '../world/facts/world-fact';
 import type { WorldFactType } from '../world/facts/world-fact';
+import { CHAPTER_FACT_ID } from '../knowledge/chapter-1-facts';
 import { getQuestDefinition } from './quest-definitions';
 import { QUEST_STATUS, type QuestEffect } from './quest-types';
 
@@ -18,6 +19,12 @@ export function eventsForQuestEffects(state: Readonly<GameState>, questId: strin
       if (!state.world.facts.some((item) => item.id === fact.id)) {
         events.push(...eventsForRecordedFact(fact));
         factIds.push(fact.id);
+        if (fact.id === 'fact_goblins_moving_near_ruins' || fact.id === CHAPTER_FACT_ID.PUBLIC_GOBLIN_CAMP_CLEARED) {
+          events.push(...eventsForPublicReveal(fact, ['innkeeper', 'guildmaster_doran', 'shopkeeper_elin']));
+        }
+        if (fact.id === CHAPTER_FACT_ID.PUBLIC_GOBLIN_ROAD_CLEARED) {
+          events.push(...eventsForPublicReveal(fact, ['innkeeper', 'shopkeeper_elin', 'leon']));
+        }
       }
       continue;
     }

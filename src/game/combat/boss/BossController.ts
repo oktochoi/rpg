@@ -13,6 +13,7 @@ import {
   ENEMY_KNOCKBACK_SPEED,
 } from '../enemies/EnemyConfig';
 import { RUINS_GUARDIAN_CONFIG, bossSlowMultiplier } from './boss-config';
+import { GUARDIAN_RESIDUE } from './pattern-selection';
 import { createBossRuntime, shouldTriggerPhase2 } from './boss-definitions';
 import { BossPatternController } from './BossPatternController';
 import type { BossDefinition, BossRuntimeState, BossState, BossDebugSnapshot } from './boss-types';
@@ -52,6 +53,7 @@ export class BossController implements CombatHittable {
   private slowMultiplier = 1;
   private halted = false;
   private _isHit = false;
+  private lastPlayerPos = { x: 0, y: 0 };
 
   constructor(
     scene: Phaser.Scene,
@@ -59,7 +61,7 @@ export class BossController implements CombatHittable {
     private readonly definition: BossDefinition,
     private readonly instanceId: string,
     private readonly getPlayerPosition: () => { x: number; y: number },
-    private readonly getBounds: () => { width: number; height: number },
+    private readonly getBounds: () => { width: number; height: number; originX?: number; originY?: number },
     private readonly fireEnemyShot: (shot: {
       x: number;
       y: number;
@@ -71,7 +73,8 @@ export class BossController implements CombatHittable {
       radius: number;
       sourceId?: string;
     }) => void,
-    private readonly onDeath?: () => void
+    private readonly onDeath?: () => void,
+    private readonly spawnDangerZone?: (x: number, y: number, radius: number, durationMs: number, damage: number, tickMs: number) => void
   ) {
     this.runtime = createBossRuntime(definition, instanceId);
     this.patternController = new BossPatternController(definition);
@@ -474,14 +477,21 @@ export class BossController implements CombatHittable {
 
   private patternContext(): BossPatternContext {
     const player = this.getPlayerPosition();
+    const playerVx = player.x - this.lastPlayerPos.x;
+    const playerVy = player.y - this.lastPlayerPos.y;
+    this.lastPlayerPos = player;
     const bounds = this.getBounds();
     return {
       x: this.visual.x,
       y: this.visual.y,
       playerX: player.x,
       playerY: player.y,
+      playerVx,
+      playerVy,
       width: bounds.width,
       height: bounds.height,
+      originX: bounds.originX ?? 0,
+      originY: bounds.originY ?? 0,
       size: this.definition.size,
       phase: this.runtime.currentPhase,
       lockDirection: (dirX, dirY) => {
@@ -537,6 +547,12 @@ export class BossController implements CombatHittable {
           });
         }
       },
+      spawnResidue: (x, y) => {
+        if (this.runtime.currentPhase !== 2) {
+          return;
+        }
+        this.spawnDangerZone?.(x, y, GUARDIAN_RESIDUE.radius, GUARDIAN_RESIDUE.durationMs, GUARDIAN_RESIDUE.damage, GUARDIAN_RESIDUE.tickMs);
+      },
       clampToArena: () => this.clampToArena(),
       sourceId: this.instanceId,
     };
@@ -545,10 +561,12 @@ export class BossController implements CombatHittable {
   private clampToArena(): boolean {
     const bounds = this.getBounds();
     const half = this.definition.size / 2;
-    const minX = half;
-    const maxX = bounds.width - half;
-    const minY = half;
-    const maxY = bounds.height - half;
+    const originX = bounds.originX ?? 0;
+    const originY = bounds.originY ?? 0;
+    const minX = originX + half;
+    const maxX = originX + bounds.width - half;
+    const minY = originY + half;
+    const maxY = originY + bounds.height - half;
     const hit =
       this.visual.x <= minX + 1 || this.visual.x >= maxX - 1 || this.visual.y <= minY + 1 || this.visual.y >= maxY - 1;
     this.visual.x = Phaser.Math.Clamp(this.visual.x, minX, maxX);

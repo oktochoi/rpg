@@ -93,21 +93,21 @@ export function storyChoicesForLocation(state: Readonly<GameState>): readonly [C
 
   if (locationId === LOCATION_ID.BLUE_MOON_INN) {
     return [
-      { id: CHOICE_MOVE_VILLAGE, label: '마을로 돌아간다' },
+      { id: CHOICE_REST_INN, label: '여관에서 쉰다' },
       present.has('innkeeper')
         ? { id: CHOICE_TALK_MARTA, label: '마르타에게 말을 건다' }
         : { id: CHOICE_LOOK_AROUND, label: '주변을 살핀다' },
-      { id: CHOICE_ASK_EVENT, label: '소문을 듣는다' },
+      { id: CHOICE_MOVE_VILLAGE, label: '마을로 돌아간다' },
     ];
   }
 
   if (locationId === LOCATION_ID.LUEN_ADVENTURERS_GUILD) {
     return [
-      worldFlag(state, WORLD_FLAG.GUILD_REGISTERED)
+      present.has('guildmaster_doran')
         ? { id: CHOICE_TALK_DORAN, label: '도란과 이야기한다' }
-        : { id: CHOICE_REGISTER_GUILD, label: '모험가로 등록한다' },
+        : { id: CHOICE_LOOK_AROUND, label: '길드 안을 둘러본다' },
+      { id: CHOICE_LOOK_AROUND, label: '칠판을 살펴본다' },
       { id: CHOICE_MOVE_VILLAGE, label: '마을로 돌아간다' },
-      { id: CHOICE_LOOK_AROUND, label: '길드 안을 둘러본다' },
     ];
   }
 

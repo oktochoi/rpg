@@ -3,6 +3,7 @@ import { audioManager, SFX_ID } from '@/game/audio';
 import type { CommandDispatcher } from '@/game/core/command';
 import type { Choice } from '@/game/story/choice';
 import { directorChoiceDebugEnabled } from '@/game/story/choices/choice-priority';
+import { resolvePlayerFacingChoiceLabel } from '@/game/story/choices/choice-label';
 import { FreeActionInput } from './FreeActionInput';
 import styles from './ChoicePanel.module.css';
 
@@ -11,14 +12,32 @@ interface ChoicePanelProps {
   dispatch: CommandDispatcher;
   disabled?: boolean;
   turnId: number;
+  lockToken?: string;
+  debugReason?: string | null;
 }
 
-export function ChoicePanel({ choices, dispatch, disabled = false, turnId }: ChoicePanelProps) {
+export function ChoicePanel({
+  choices,
+  dispatch,
+  disabled = false,
+  turnId,
+  lockToken = '',
+  debugReason = null,
+}: ChoicePanelProps) {
   const [locked, setLocked] = useState(false);
+  const choiceIds = choices.map((choice) => choice.id).join('|');
 
   useEffect(() => {
     setLocked(false);
-  }, [turnId, disabled]);
+  }, [turnId, disabled, lockToken, choiceIds]);
+
+  useEffect(() => {
+    if (!locked) {
+      return;
+    }
+    const timer = window.setTimeout(() => setLocked(false), 8000);
+    return () => window.clearTimeout(timer);
+  }, [locked]);
 
   const inactive = disabled || locked;
 
@@ -60,24 +79,33 @@ export function ChoicePanel({ choices, dispatch, disabled = false, turnId }: Cho
     return () => window.removeEventListener('keydown', onKey);
   }, [choices, inactive, turnId]);
 
+  const continueOnly =
+    choices.length === 1 &&
+    (choices[0]?.label === '계속' || choices[0]?.candidateId === 'story_continue' || choices[0]?.candidateId === 'intro_continue');
+
   return (
-    <section className={styles.panel} aria-label="선택지">
+    <section className={`${styles.panel} ${continueOnly ? styles.continuePanel : ''}`} aria-label="선택지">
       {choices.map((choice, index) => (
         <button
-          className={styles.choice}
+          className={`${styles.choice} ${continueOnly ? styles.continue : ''}`}
           key={choice.id}
           type="button"
           disabled={inactive}
           onClick={() => selectChoice(choice)}
         >
-          <span className={styles.index}>{index + 1}</span>
-          <span className={styles.label}>{choice.label}</span>
+          {continueOnly ? null : <span className={styles.index}>{index + 1}</span>}
+          <span className={styles.label}>
+            {resolvePlayerFacingChoiceLabel({ text: choice.label, candidateId: choice.candidateId })}
+          </span>
           {directorChoiceDebugEnabled() && choice.source ? (
             <span className={styles.source}>[{choice.source}]</span>
           ) : null}
         </button>
       ))}
-      <FreeActionInput dispatch={dispatch} disabled={inactive} turnId={turnId} />
+      <FreeActionInput dispatch={dispatch} disabled={inactive} turnId={turnId} lockToken={lockToken} />
+      {directorChoiceDebugEnabled() && debugReason ? (
+        <p className={styles.source}>lock {debugReason} turn {turnId}</p>
+      ) : null}
     </section>
   );
 }

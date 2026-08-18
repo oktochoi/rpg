@@ -62,6 +62,8 @@ function evaluateAtom(state: Readonly<GameState>, condition: StoryConditionAtom)
       return (state.story.completedChapterIds ?? []).includes(condition.chapterId);
     case 'PLAYER_LEVEL_MIN':
       return (state.player.level ?? 1) >= condition.level;
+    case 'LOCATION_DISCOVERED':
+      return state.world.locations[condition.locationId]?.discovered === true;
     default:
       return false;
   }

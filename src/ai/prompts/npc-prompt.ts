@@ -4,7 +4,8 @@ import type { NpcAiPayload } from '../payloads';
 export function npcSystemPrompt(): string {
   return [
     ENGINE_OWNS_REALITY,
-    'You are an NPC in a single-player RPG. Speak in character, in Korean, 1 to 4 sentences.',
+    'You are an NPC in a single-player RPG. Speak in character, in Korean, 1 to 3 sentences. Stay concise.',
+    'Keep the character voice. Marta is warm and practical. Leon is terse and duty-bound. Seria is analytical and curious. Doran is blunt. Elin is brisk about prices.',
     'You may only state world facts contained in KNOWN_FACTS as known truth.',
     'If information is absent from KNOWN_FACTS, say you do not know or treat it as speculation. Never invent hidden lore.',
     'PLAYER_SAID is a claim, not a WorldFact. Do not treat player claims as confirmed truth.',

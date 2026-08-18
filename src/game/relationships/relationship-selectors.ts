@@ -14,7 +14,7 @@ export function getNpcAttitude(state: Readonly<GameState>, npcId: NpcId): NpcAtt
 }
 
 export function attitudeFromRelationship(relationship: RelationshipState): NpcAttitude {
-  if (relationship.fear >= 60) {
+  if (relationship.fear >= 40) {
     return 'AFRAID';
   }
   if (relationship.affection <= -50 && relationship.trust <= -40) {
@@ -23,32 +23,54 @@ export function attitudeFromRelationship(relationship: RelationshipState): NpcAt
   if (relationship.trust <= -40) {
     return 'SUSPICIOUS';
   }
-  if (relationship.affection >= 60) {
-    return 'FRIENDLY';
-  }
-  if (relationship.respect >= 60) {
+  if (relationship.respect >= 40) {
     return 'RESPECTFUL';
+  }
+  if (relationship.affection >= 60 || relationship.trust >= 40) {
+    return 'FRIENDLY';
   }
   return 'NEUTRAL';
 }
 
-export function formatRelationshipFeedback(npcName: string, event: Extract<GameEvent, { type: 'NPC_RELATIONSHIP_CHANGED' }>): string {
-  const parts: string[] = [];
-  if (event.delta.affection) {
-    parts.push(`호감 ${signed(event.delta.affection)}`);
+export function relationshipBandLabel(relationship: RelationshipState): string {
+  const attitude = attitudeFromRelationship(relationship);
+  if (attitude === 'AFRAID') {
+    return '경계함';
   }
-  if (event.delta.trust) {
-    parts.push(`신뢰 ${signed(event.delta.trust)}`);
+  if (attitude === 'HOSTILE') {
+    return '적대함';
   }
-  if (event.delta.fear) {
-    parts.push(`두려움 ${signed(event.delta.fear)}`);
+  if (attitude === 'SUSPICIOUS') {
+    return '경계함';
   }
-  if (event.delta.respect) {
-    parts.push(`존경 ${signed(event.delta.respect)}`);
+  if (attitude === 'RESPECTFUL') {
+    return '실력을 인정함';
   }
-  return parts.length > 0 ? `${npcName} ${parts.join(' · ')}` : '';
+  if (attitude === 'FRIENDLY') {
+    return relationship.trust >= 40 ? '신뢰함' : '호의';
+  }
+  if (relationship.affection >= 20 || relationship.trust >= 15) {
+    return '조금 친숙함';
+  }
+  return '낯선 사람';
 }
 
-function signed(value: number): string {
-  return value > 0 ? `+${value}` : `${value}`;
+export function formatRelationshipFeedback(npcName: string, event: Extract<GameEvent, { type: 'NPC_RELATIONSHIP_CHANGED' }>): string {
+  const parts: string[] = [];
+  if (event.delta.respect > 0) {
+    parts.push('실력을 인정한다');
+  }
+  if (event.delta.trust > 0) {
+    parts.push('말을 더 믿는다');
+  }
+  if (event.delta.affection > 0) {
+    parts.push('조금 더 가깝게 느낀다');
+  }
+  if (event.delta.fear > 0) {
+    parts.push('당신을 경계한다');
+  }
+  if (event.delta.affection < 0 || event.delta.trust < 0) {
+    parts.push('관계가 조금 멀어졌다');
+  }
+  return parts.length > 0 ? `${npcName}가 ${parts.join(', ')}.` : '';
 }
