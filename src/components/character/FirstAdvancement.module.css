@@ -1,0 +1,48 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 6, 4, 0.8);
+}
+
+.panel {
+  width: min(920px, calc(100vw - 32px));
+  padding: 24px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel);
+}
+
+.kicker {
+  color: var(--gold);
+  letter-spacing: 0.12em;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.fromTo {
+  margin: 0 0 8px;
+  color: var(--gold);
+  font-size: 13px;
+}
+
+.card {
+  text-align: left;
+  padding: 16px;
+  border: 1px solid var(--panel-border);
+  background: #1a1612;
+  color: inherit;
+  cursor: pointer;
+}
+
+@media (max-width: 800px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

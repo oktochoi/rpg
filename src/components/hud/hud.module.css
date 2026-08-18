@@ -61,6 +61,21 @@
     gap: 4px;
 }
 
+.identityButton {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.identityButton:focus-visible {
+    outline: 1px solid var(--gold);
+}
+
 .name {
     margin: 0;
     font-size: 18px;
@@ -70,6 +85,13 @@
     margin: 0;
     color: var(--text-dim);
     font-size: 13px;
+}
+
+.gold {
+    margin: 4px 0 0;
+    color: var(--gold);
+    font-size: 13px;
+    letter-spacing: 0.04em;
 }
 
 .bars {
@@ -110,6 +132,10 @@
     background: var(--mp);
 }
 
+.exp {
+    background: var(--gold);
+}
+
 .statsTitle {
     margin: 0 0 8px;
     color: var(--gold);
@@ -142,18 +168,27 @@
 }
 
 .nav {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 8px;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 6px;
+    overflow-x: auto;
 }
 
 .navButton {
-    min-height: 44px;
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 40px;
+    padding: 0 6px;
     border: 1px solid var(--panel-border);
     background: var(--panel-raised);
     color: var(--text);
     font: inherit;
-    letter-spacing: 0.08em;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     cursor: pointer;
 }
 
@@ -162,14 +197,4 @@
     border-color: var(--gold);
     color: var(--gold);
     outline: none;
-}
-
-@media (max-width: 720px) {
-    .nav {
-        grid-template-columns: 1fr 1fr;
-    }
-
-    .navButton:last-child {
-        grid-column: 1 / -1;
-    }
 }

@@ -1,0 +1,19 @@
+.title {
+    position: absolute;
+    left: 50%;
+    top: 18%;
+    z-index: 3;
+    transform: translateX(-50%);
+    pointer-events: none;
+    opacity: 0;
+    color: var(--gold);
+    letter-spacing: 0.22em;
+    font-family: var(--font-story), serif;
+    font-size: 22px;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
+    transition: opacity 220ms ease;
+}
+
+.visible {
+    opacity: 1;
+}

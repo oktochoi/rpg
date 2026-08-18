@@ -8,3 +8,5 @@ export type EncounterId = string;
 export type SaveSlotId = string;
 export type ChoiceId = string;
 export type MemoryId = string;
+export type FactId = string;
+export type ActorId = PlayerId | NpcId;

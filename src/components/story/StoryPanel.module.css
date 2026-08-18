@@ -18,26 +18,12 @@
     align-items: flex-end;
     justify-content: center;
     padding: 16px;
-    background:
-        linear-gradient(180deg, rgba(14, 12, 10, 0.15), rgba(14, 12, 10, 0.72)),
-        repeating-linear-gradient(
-            135deg,
-            #2a2318 0 12px,
-            #241e16 12px 24px
-        );
-}
-
-.backgroundLabel {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    font-size: 11px;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--text-dim);
+    overflow: hidden;
 }
 
 .portraitWrap {
+    position: relative;
+    z-index: 1;
     width: min(42%, 180px);
 }
 
@@ -55,4 +41,73 @@
     font-size: 14px;
     line-height: 1.7;
     color: var(--text-dim);
+    overflow-wrap: anywhere;
+    word-break: keep-all;
+}
+
+.actionResult {
+    margin: 0;
+    font-family: var(--font-story), "Apple SD Gothic Neo", serif;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--gold);
+}
+
+.thinking {
+    margin: 0;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    color: var(--highlight);
+    animation: thinkPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes thinkPulse {
+    0%,
+    100% {
+        opacity: 0.55;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+.transcript {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.playerTurn,
+.npcTurn {
+    margin: 0;
+    font-family: var(--font-story), "Apple SD Gothic Neo", serif;
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+.playerTurn {
+    color: var(--text-dim);
+}
+
+.npcTurn {
+    color: var(--text);
+    animation: lineIn 200ms ease;
+}
+
+@keyframes lineIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.speaker {
+    display: block;
+    margin-bottom: 2px;
+    color: var(--gold);
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
 }

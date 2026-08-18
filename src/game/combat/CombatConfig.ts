@@ -1,0 +1,21 @@
+import { COMBAT_FEEL } from './effects/CombatFeelConfig';
+
+export const BASIC_ATTACK_DAMAGE = 25;
+export const ENEMY_ATTACK_DAMAGE = 20;
+export const PLAYER_MAX_HP = 100;
+export const PLAYER_HIT_INVINCIBLE_MS = 600;
+export const PLAYER_HIT_FLASH_MS = COMBAT_FEEL.playerHitFlashMs;
+export const PLAYER_DEATH_FADE_MS = COMBAT_FEEL.playerDeathFadeMs;
+export const PLAYER_KNOCKBACK_SPEED = 380;
+export const PLAYER_KNOCKBACK_DURATION_MS = 110;
+export const PLAYER_COLOR = 0xc4a574;
+export const PLAYER_HIT_COLOR = COMBAT_FEEL.playerHitColor;
+export const PLAYER_DEATH_COLOR = COMBAT_FEEL.playerDeathColor;
+export const PLAYER_DEATH_ALPHA = COMBAT_FEEL.playerDeathAlpha;
+export const PLAYER_HP_BAR_WIDTH = 36;
+export const PLAYER_HP_BAR_HEIGHT = 4;
+export const PLAYER_HP_BAR_OFFSET_Y = 10;
+export const PLAYER_HP_BAR_BG = 0x3a2a24;
+export const PLAYER_HP_BAR_FILL = 0xc4a574;
+export const PLAYER_MP_BAR_FILL = 0x6b8cce;
+export const PLAYER_SIZE = 32;

@@ -1,0 +1,59 @@
+.panel {
+    position: fixed;
+    left: 16px;
+    bottom: 16px;
+    z-index: 20;
+    max-width: 320px;
+    padding: 12px 14px;
+    border: 1px dashed var(--panel-border);
+    background: color-mix(in srgb, var(--panel) 92%, black);
+    color: var(--text);
+    font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.title {
+    margin: 0 0 8px;
+    color: var(--gold);
+    letter-spacing: 0.04em;
+}
+
+.list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.share {
+    margin-top: 10px;
+    min-height: 32px;
+    padding: 0 10px;
+    border: 1px solid var(--panel-border);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+}
+
+.share:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.share:not(:disabled):hover,
+.share:not(:disabled):focus-visible {
+    border-color: var(--gold);
+    color: var(--gold);
+    outline: none;
+}
+
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.meta {
+    margin: 8px 0 0;
+    color: #9a8f7d;
+}

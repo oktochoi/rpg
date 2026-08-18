@@ -1,0 +1,236 @@
+.hud {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    color: var(--text);
+    font-family: var(--font-ui), "Apple SD Gothic Neo", sans-serif;
+}
+
+.player {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    min-width: 220px;
+    max-width: min(320px, 42vw);
+    padding: 12px 14px;
+    border: 1px solid var(--panel-border);
+    background: color-mix(in srgb, var(--panel) 88%, transparent);
+    box-shadow: 0 10px 24px var(--shadow);
+}
+
+.className {
+    margin: 0 0 8px;
+    color: var(--gold);
+    letter-spacing: 0.08em;
+    font-size: 13px;
+}
+
+.barRow {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    gap: 8px;
+    align-items: center;
+    margin-top: 6px;
+}
+
+.barLabel {
+    font-size: 11px;
+    color: var(--text-dim);
+}
+
+.barTrack {
+    height: 8px;
+    border: 1px solid var(--panel-border);
+    background: var(--choice);
+    overflow: hidden;
+}
+
+.barFill {
+    height: 100%;
+    width: 0;
+    transition: width 120ms linear;
+}
+
+.hp {
+    background: var(--hp);
+}
+
+.mp {
+    background: var(--mp);
+}
+
+.barValue {
+    font-size: 11px;
+    color: var(--text);
+    min-width: 64px;
+    text-align: right;
+}
+
+.boss {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(520px, 70vw);
+    text-align: center;
+}
+
+.bossRule {
+    margin: 0;
+    color: var(--gold-dim);
+    letter-spacing: 0.28em;
+    font-size: 10px;
+}
+
+.bossName {
+    margin: 4px 0 2px;
+    color: var(--text);
+    font-size: 16px;
+}
+
+.bossSub {
+    margin: 0 0 8px;
+    color: var(--gold);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+}
+
+.bossTrack {
+    height: 12px;
+    border: 1px solid var(--panel-border);
+    background: var(--choice);
+    overflow: hidden;
+}
+
+.bossFill {
+    height: 100%;
+    background: var(--danger);
+    transition: width 120ms linear;
+}
+
+.bossPhase {
+    margin: 6px 0 0;
+    color: var(--highlight);
+    font-size: 12px;
+    letter-spacing: 0.16em;
+}
+
+.skills {
+    position: absolute;
+    left: 50%;
+    bottom: 18px;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+}
+
+.slot {
+    width: 92px;
+    padding: 8px 8px 10px;
+    border: 1px solid var(--panel-border);
+    background: color-mix(in srgb, var(--panel) 90%, transparent);
+    text-align: center;
+}
+
+.slotDisabled {
+    opacity: 0.55;
+    border-color: var(--disabled);
+}
+
+.slotKey {
+    margin: 0;
+    color: var(--gold);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+}
+
+.slotName {
+    margin: 4px 0 6px;
+    font-size: 12px;
+}
+
+.icon {
+    width: 28px;
+    height: 28px;
+    margin: 0 auto 6px;
+    border: 1px solid var(--gold-dim);
+    position: relative;
+}
+
+.icon::after {
+    content: "";
+    position: absolute;
+    inset: 6px;
+    background: var(--gold);
+}
+
+.icon[data-icon='slash']::after {
+    clip-path: polygon(10% 80%, 80% 10%, 90% 20%, 20% 90%);
+}
+
+.icon[data-icon='shield']::after {
+    clip-path: polygon(50% 8%, 88% 24%, 78% 78%, 50% 94%, 22% 78%, 12% 24%);
+}
+
+.icon[data-icon='fire']::after {
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+}
+
+.icon[data-icon='frost']::after {
+    border-radius: 50%;
+}
+
+.icon[data-icon='dash']::after {
+    clip-path: polygon(10% 40%, 70% 40%, 70% 20%, 95% 50%, 70% 80%, 70% 60%, 10% 60%);
+}
+
+.icon[data-icon='dagger']::after {
+    clip-path: polygon(50% 8%, 62% 50%, 50% 92%, 38% 50%);
+}
+
+.cooldown {
+    position: relative;
+}
+
+.cooldownOverlay {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, var(--bg) 62%, transparent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: var(--text);
+}
+
+.hint {
+    position: absolute;
+    right: 16px;
+    bottom: 18px;
+    margin: 0;
+    color: var(--text-dim);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+}
+
+@media (max-width: 720px) {
+    .player {
+        min-width: 160px;
+        padding: 8px;
+    }
+
+    .skills {
+        gap: 6px;
+        bottom: 10px;
+    }
+
+    .slot {
+        width: 72px;
+        padding: 6px;
+    }
+
+    .hint {
+        display: none;
+    }
+}

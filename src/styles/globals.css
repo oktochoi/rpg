@@ -25,6 +25,12 @@ body {
     --mp: #3d6ea6;
     --choice: #241f19;
     --shadow: rgba(0, 0, 0, 0.45);
+    --textPrimary: #ece6d9;
+    --textSecondary: #9a8f7d;
+    --danger: #a63d3d;
+    --mana: #3d6ea6;
+    --disabled: #5a5348;
+    --highlight: #e0c080;
 }
 
 #app {

@@ -4,7 +4,7 @@
     height: 100%;
     min-height: 100vh;
     overflow: hidden;
-    background: #0e0c0a;
+    background: var(--bg);
 }
 
 .canvas {
@@ -13,24 +13,67 @@
     min-height: 100vh;
 }
 
-.close {
+.hudLayer {
     position: absolute;
-    top: 16px;
-    right: 16px;
+    inset: 0;
+    pointer-events: none;
     z-index: 2;
-    min-height: 40px;
-    padding: 0 14px;
-    border: 1px solid var(--panel-border);
-    background: var(--panel);
+}
+
+.fade {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    pointer-events: none;
+    background: #000;
+    opacity: 0;
+    transition: opacity 280ms ease;
+}
+
+.fadeOn {
+    opacity: 0.55;
+}
+
+.encounterTitle {
+    position: absolute;
+    left: 50%;
+    top: 22%;
+    z-index: 5;
+    transform: translateX(-50%);
+    margin: 0;
+    pointer-events: none;
+    color: var(--gold);
+    letter-spacing: 0.18em;
+    font-family: var(--font-story), serif;
+    font-size: 28px;
+    text-shadow: 0 2px 16px rgba(0, 0, 0, 0.8);
+}
+
+.error {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    display: grid;
+    place-items: center;
+    background: color-mix(in srgb, black 62%, transparent);
     color: var(--text);
+    text-align: center;
+}
+
+.error button {
+    min-height: 40px;
+    margin-top: 12px;
+    padding: 0 16px;
+    border: 1px solid var(--gold);
+    background: transparent;
+    color: var(--gold);
     font: inherit;
-    letter-spacing: 0.08em;
     cursor: pointer;
 }
 
-.close:hover,
-.close:focus-visible {
-    border-color: var(--gold);
-    color: var(--gold);
-    outline: none;
+.error button:hover,
+.error button:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
 }
+

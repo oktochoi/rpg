@@ -1,6 +1,11 @@
-export type { ChoiceId, EncounterId, ItemId, LocationId, MemoryId, NpcId, PlayerId, QuestId, SaveSlotId, SceneId } from './ids';
+export type { GameMode } from './game-mode';
+export type { ChoiceId, EncounterId, FactId, ItemId, LocationId, MemoryId, NpcId, PlayerId, QuestId, SaveSlotId, SceneId } from './ids';
 export type { Command, CommandDispatcher, MenuId } from './command';
 export type { GameEvent } from './event';
 export type { GameState } from './game-state';
-export type { GameOrchestrator } from './orchestrator';
+export { createInitialGameState } from './initial-state';
+export { applyEvents } from './reducer';
+export { createGameOrchestrator } from './orchestrator';
+export type { GameOrchestrator, GameOrchestratorOptions } from './orchestrator';
 export type { WorldState } from './world-state';
+export type { PlayerKnowledge } from '../knowledge/player-knowledge';

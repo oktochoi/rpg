@@ -1,0 +1,30 @@
+.image,
+.fallback {
+  display: block;
+  object-fit: contain;
+  background: #120e0c;
+  border: 1px solid var(--panel-border, #3a3228);
+}
+
+.sm {
+  width: 72px;
+  height: 72px;
+}
+
+.md {
+  width: 96px;
+  height: 96px;
+}
+
+.lg {
+  width: 100%;
+  height: 168px;
+}
+
+.rect {
+  border-radius: 4px;
+}
+
+.circle {
+  border-radius: 50%;
+}

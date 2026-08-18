@@ -1,4 +1,6 @@
 import * as Phaser from 'phaser';
+import type { DashProfile } from '../../player/classes/class-types';
+import { PLAYER_KNOCKBACK_DURATION_MS, PLAYER_KNOCKBACK_SPEED } from '../CombatConfig';
 
 type MoveKeys = {
   up: Phaser.Input.Keyboard.Key;
@@ -8,12 +10,21 @@ type MoveKeys = {
 };
 
 const MOVE_SPEED = 220;
-const DASH_SPEED = 620;
-const DASH_DURATION_MS = 160;
-const DASH_COOLDOWN_MS = 550;
-const INVINCIBLE_DURATION_MS = 120;
+const DEFAULT_DASH: DashProfile = {
+  id: 'default_dash',
+  speed: 620,
+  durationMs: 160,
+  cooldownMs: 550,
+  invincibleMs: 120,
+  style: 'dash',
+};
 const DASH_ALPHA = 0.45;
 const IDLE_ALPHA = 1;
+
+export interface PlayerMovementOptions {
+  moveSpeed?: number;
+  dash?: DashProfile;
+}
 
 export class PlayerController {
   private readonly keys: MoveKeys | null;
@@ -21,19 +32,30 @@ export class PlayerController {
   private readonly moveInput = new Phaser.Math.Vector2();
   private readonly lastDirection = new Phaser.Math.Vector2(1, 0);
   private readonly dashDirection = new Phaser.Math.Vector2(1, 0);
+  private readonly speed: number;
+  private readonly dash: DashProfile;
 
+  private readonly knockbackVelocity = new Phaser.Math.Vector2();
   private dashRemainingMs = 0;
   private cooldownRemainingMs = 0;
   private invincibleRemainingMs = 0;
+  private knockbackRemainingMs = 0;
 
   private _isDashing = false;
   private _isInvincible = false;
+  private _isDead = false;
+  private _combatLocked = false;
+  private skillMoveRemainingMs = 0;
+  private readonly skillMoveDirection = new Phaser.Math.Vector2(1, 0);
+  private skillMoveSpeed = 0;
 
   constructor(
     scene: Phaser.Scene,
     private readonly body: Phaser.Physics.Arcade.Body,
-    private readonly speed: number = MOVE_SPEED
+    options?: PlayerMovementOptions
   ) {
+    this.speed = options?.moveSpeed ?? MOVE_SPEED;
+    this.dash = options?.dash ?? DEFAULT_DASH;
     this.body.setAllowGravity(false);
     this.body.setCollideWorldBounds(true);
 
@@ -66,12 +88,106 @@ export class PlayerController {
     return this._isDashing;
   }
 
+  get isSkillMoving(): boolean {
+    return this.skillMoveRemainingMs > 0;
+  }
+
+  get isEvasive(): boolean {
+    return this._isDashing || this.skillMoveRemainingMs > 0;
+  }
+
+  get dashStyle(): DashProfile['style'] {
+    return this.dash.style;
+  }
+
+  get facing(): Phaser.Math.Vector2 {
+    return this.lastDirection.clone();
+  }
+
+  get dashCooldownRemainingMs(): number {
+    return this.cooldownRemainingMs;
+  }
+
+  get dashCooldownMs(): number {
+    return this.dash.cooldownMs;
+  }
+
+  get isMoving(): boolean {
+    return this.body.velocity.lengthSq() > 4;
+  }
+
   get isInvincible(): boolean {
     return this._isInvincible;
   }
 
+  get isDead(): boolean {
+    return this._isDead;
+  }
+
+  get isCombatLocked(): boolean {
+    return this._combatLocked;
+  }
+
+  lockCombat(): void {
+    this._combatLocked = true;
+    this._isDashing = false;
+    this.skillMoveRemainingMs = 0;
+    this.knockbackRemainingMs = 0;
+    this.knockbackVelocity.set(0, 0);
+    this.body.setVelocity(0, 0);
+    this.syncVisual();
+  }
+
+  applyKnockback(direction: Phaser.Math.Vector2): void {
+    if (this._isDead || this._isDashing || this.skillMoveRemainingMs > 0 || this._combatLocked) {
+      return;
+    }
+
+    if (direction.x === 0 && direction.y === 0) {
+      return;
+    }
+
+    this.knockbackVelocity.copy(direction).normalize().scale(PLAYER_KNOCKBACK_SPEED);
+    this.knockbackRemainingMs = PLAYER_KNOCKBACK_DURATION_MS;
+  }
+
+  grantInvincible(durationMs: number): void {
+    this.invincibleRemainingMs = Math.max(this.invincibleRemainingMs, durationMs);
+    this._isInvincible = this.invincibleRemainingMs > 0;
+  }
+
+  startForcedMove(direction: Phaser.Math.Vector2, speed: number, durationMs: number, invincibleMs = 0): void {
+    if (this._isDead || this._combatLocked) {
+      return;
+    }
+    if (direction.x === 0 && direction.y === 0) {
+      this.skillMoveDirection.copy(this.lastDirection);
+    } else {
+      this.skillMoveDirection.copy(direction).normalize();
+    }
+    this.lastDirection.copy(this.skillMoveDirection);
+    this._isDashing = false;
+    this.dashRemainingMs = 0;
+    this.knockbackRemainingMs = 0;
+    this.knockbackVelocity.set(0, 0);
+    this.skillMoveSpeed = speed;
+    this.skillMoveRemainingMs = durationMs;
+    if (invincibleMs > 0) {
+      this.grantInvincible(invincibleMs);
+    }
+  }
+
+  markDead(): void {
+    this._isDead = true;
+    this._isDashing = false;
+    this.skillMoveRemainingMs = 0;
+    this.knockbackRemainingMs = 0;
+    this.knockbackVelocity.set(0, 0);
+    this.body.setVelocity(0, 0);
+  }
+
   update(delta: number): void {
-    if (!this.keys) {
+    if (this._isDead || this._combatLocked || !this.keys) {
       this.body.setVelocity(0, 0);
       return;
     }
@@ -80,11 +196,31 @@ export class PlayerController {
     this.tickTimers(delta);
     this.tryStartDash();
 
-    if (this._isDashing) {
+    if (this.skillMoveRemainingMs > 0) {
       this.body.setVelocity(
-        this.dashDirection.x * DASH_SPEED,
-        this.dashDirection.y * DASH_SPEED
+        this.skillMoveDirection.x * this.skillMoveSpeed,
+        this.skillMoveDirection.y * this.skillMoveSpeed
       );
+      this.syncVisual();
+      return;
+    }
+
+    if (this._isDashing) {
+      if (this.dash.style === 'blink') {
+        this.body.setVelocity(0, 0);
+        this.syncVisual();
+        return;
+      }
+      this.body.setVelocity(
+        this.dashDirection.x * this.dash.speed,
+        this.dashDirection.y * this.dash.speed
+      );
+      this.syncVisual();
+      return;
+    }
+
+    if (this.knockbackRemainingMs > 0) {
+      this.body.setVelocity(this.knockbackVelocity.x, this.knockbackVelocity.y);
       this.syncVisual();
       return;
     }
@@ -118,6 +254,13 @@ export class PlayerController {
       }
     }
 
+    if (this.skillMoveRemainingMs > 0) {
+      this.skillMoveRemainingMs -= delta;
+      if (this.skillMoveRemainingMs < 0) {
+        this.skillMoveRemainingMs = 0;
+      }
+    }
+
     if (this.invincibleRemainingMs > 0) {
       this.invincibleRemainingMs -= delta;
       if (this.invincibleRemainingMs <= 0) {
@@ -132,10 +275,18 @@ export class PlayerController {
         this.cooldownRemainingMs = 0;
       }
     }
+
+    if (this.knockbackRemainingMs > 0) {
+      this.knockbackRemainingMs -= delta;
+      if (this.knockbackRemainingMs < 0) {
+        this.knockbackRemainingMs = 0;
+        this.knockbackVelocity.set(0, 0);
+      }
+    }
   }
 
   private tryStartDash(): void {
-    if (!this.spaceKey || this._isDashing || this.cooldownRemainingMs > 0) {
+    if (!this.spaceKey || this._isDead || this._combatLocked || this._isDashing || this.skillMoveRemainingMs > 0 || this.cooldownRemainingMs > 0) {
       return;
     }
 
@@ -149,11 +300,38 @@ export class PlayerController {
       this.dashDirection.copy(this.lastDirection);
     }
 
+    this.knockbackRemainingMs = 0;
+    this.knockbackVelocity.set(0, 0);
+    this.cooldownRemainingMs = this.dash.cooldownMs;
+    this.grantInvincible(this.dash.invincibleMs);
+
+    if (this.dash.style === 'blink') {
+      this.applyBlink();
+      return;
+    }
+
     this._isDashing = true;
-    this._isInvincible = true;
-    this.dashRemainingMs = DASH_DURATION_MS;
-    this.invincibleRemainingMs = INVINCIBLE_DURATION_MS;
-    this.cooldownRemainingMs = DASH_COOLDOWN_MS;
+    this.dashRemainingMs = this.dash.durationMs;
+  }
+
+  private applyBlink(): void {
+    const distance = this.dash.speed * (this.dash.durationMs / 1000);
+    const half = this.body.halfWidth;
+    const bounds = this.body.world.bounds;
+    const nextX = Phaser.Math.Clamp(
+      this.body.center.x + this.dashDirection.x * distance,
+      bounds.x + half,
+      bounds.right - half
+    );
+    const nextY = Phaser.Math.Clamp(
+      this.body.center.y + this.dashDirection.y * distance,
+      bounds.y + half,
+      bounds.bottom - half
+    );
+    this.body.reset(nextX, nextY);
+    this._isDashing = true;
+    this.dashRemainingMs = this.dash.durationMs;
+    this.body.setVelocity(0, 0);
   }
 
   private applyWalkMovement(): void {
@@ -167,10 +345,13 @@ export class PlayerController {
   }
 
   private syncVisual(): void {
+    if (this._isDead) {
+      return;
+    }
     const visual = this.body.gameObject as Phaser.GameObjects.GameObject & {
       setAlpha?: (value: number) => unknown;
     };
 
-    visual.setAlpha?.(this._isDashing ? DASH_ALPHA : IDLE_ALPHA);
+    visual.setAlpha?.(this._isDashing || this.skillMoveRemainingMs > 0 ? DASH_ALPHA : IDLE_ALPHA);
   }
 }

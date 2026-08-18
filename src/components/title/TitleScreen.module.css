@@ -1,0 +1,90 @@
+.screen {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+  background:
+    radial-gradient(ellipse at top, #1c1710 0%, transparent 55%),
+    var(--bg);
+}
+
+.panel {
+  width: min(520px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 36px 32px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel);
+}
+
+.kicker {
+  margin: 0;
+  color: var(--gold);
+  letter-spacing: 0.22em;
+  font-size: 12px;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-story), serif;
+  font-size: 36px;
+  letter-spacing: 0.12em;
+}
+
+.lore {
+  margin: 0;
+  color: var(--text-dim);
+  line-height: 1.7;
+  white-space: pre-line;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.actions button,
+.primary,
+.ghost {
+  min-height: 48px;
+  border: 1px solid var(--panel-border);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+}
+
+.actions button:hover,
+.primary:hover,
+.ghost:hover,
+.actions button:focus-visible {
+  border-color: var(--gold);
+  color: var(--gold);
+  outline: none;
+}
+
+.actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.back {
+  align-self: flex-start;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--panel-border);
+  background: transparent;
+  color: var(--text-dim);
+  font: inherit;
+  cursor: pointer;
+}

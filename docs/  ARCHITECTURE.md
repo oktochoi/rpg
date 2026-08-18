@@ -78,6 +78,9 @@ State Update
 * Reducer
 * Game Orchestrator
 * 게임 모드 전환
+* Game Clock (`world.totalMinutes`)
+* Player Turn Pipeline (`resolvePlayerTurnEvents`)
+* Job vs Combat Family
 
 Game Core가 게임의 Single Source of Truth이다.
 
@@ -509,3 +512,73 @@ src/
 8. 전투 State와 Main GameState를 분리한다.
 9. 새로운 기능은 기존 시스템을 직접 침범하지 않는다.
 10. Architecture 변경은 명시적인 결정 없이 진행하지 않는다.
+
+---
+
+# 14. Audio System
+
+Audio는 GameState가 아니다. React Story와 Phaser Combat이 같은 `AudioManager`를 공유한다.
+
+```text
+User Gesture
+  ↓
+AudioManager.unlock
+  ↓
+playBgmContext / playSfx
+```
+
+규칙:
+
+* BGM/SFX 경로는 Registry에만 둔다.
+* Volume/Mute는 `localStorage` 키 `audio_settings`에 저장한다. Save Slot과 분리한다.
+* Missing file은 no-op이다. Game Crash 금지.
+* SFX가 Damage/Timing을 결정하지 않는다. Logic Event 이후 Presentation으로만 재생한다.
+* Loop BGM은 하나만 활성. 전환 시 Fade Out 후 교체한다.
+* 페이지 로드 즉시 AudioContext를 강제하지 않는다. 첫 클릭/키 입력 후 unlock.
+
+BGM Context:
+
+* STORY_SAFE / STORY_MYSTERY
+* COMBAT_NORMAL / COMBAT_BOSS
+* VICTORY / DEFEAT
+
+LocationDefinition의 `audioTheme`은 Presentation optional 값이다. Story Logic이 BGM에 의존하지 않는다.
+
+---
+
+# 15. Production / Vercel AI Boundary
+
+* Game State는 Client/Game Core에만 있다. Serverless Route에 Player Save를 저장하지 않는다.
+* `/api/ai`는 AI 모듈만 import한다. Phaser / Combat Asset / `public/game-assets`를 넣지 않는다.
+* `GROQ_API_KEY` / `GROQ_MODEL` / `GROQ_TIMEOUT_MS`는 서버 전용이다. `NEXT_PUBLIC_GROQ_API_KEY`는 사용하지 않는다.
+* `LLM_API_KEY` / `LLM_MODEL` / `LLM_TIMEOUT_MS`는 동일 설정의 별칭이다.
+* `AI_MODE` + API Key가 없으면 Mock fallback. Build는 Key 없이 성공해야 한다.
+* Production에서 AI Prompt, NPC Memory 전체, SaveData 전체를 console에 출력하지 않는다.
+* Debug Panel / Combat 테스트 버튼 / Director source tag는 Production 기본 OFF. Development에서도 `?debug=1` 또는 `localStorage ai-rpg-debug=1`일 때만 표시한다.
+
+---
+
+# 16. AppPhase vs GameMode
+
+AppPhase는 화면 진입 흐름이다. GameState의 GameMode와 섞지 않는다.
+
+```text
+AppPhase: TITLE | CHARACTER_CREATION | GAME
+GameMode: STORY | DIALOGUE | RESOLVING | COMBAT | MENU
+```
+
+Day 변경은 `DAY_ADVANCED` Event만 사용한다. React에서 `day += 1` 금지.
+`world.totalMinutes`가 Game Clock의 Single Source다. day/hour/minute는 derive한다.
+의미 있는 행동의 시간/EXP는 `resolvePlayerTurnEvents` 파이프라인에서만 지급한다. 같은 `sourceActionId`는 중복 지급하지 않는다.
+Job(모험가/검사/…)과 Combat Family(adventurer/warrior/mage/rogue)는 분리한다. 기존 Warrior/Mage/Rogue combat ID는 rename하지 않는다.
+Level/EXP/Chapter/Time/Job도 Game Engine Event만 변경한다. Groq는 읽기 전용 context(day, timeOfDay, current job)만 받는다.
+하단 Navigation Panel은 UI state(`activeMenu`)이며 Story Scene을 바꾸지 않는다.
+
+Economy는 Game Core다. Shop UI / Inventory UI는 State mutation authority가 아니다.
+Gold는 `PLAYER_GOLD_GAINED` / `PLAYER_GOLD_SPENT`만 변경한다. `processedRewardIds`로 보상 중복을 막는다.
+Equipment Derived Stats = Base Stats + Level Growth + Job/Rank Bonus + Equipment Bonus.
+CombatConfig.player는 Derived HP/MP와 `attackBonus`(장비 Attack)를 사용한다. Move Speed는 Class 값 유지.
+Item Definition은 Save하지 않는다. Save에는 itemId/quantity/equipped slot ids만 남긴다.
+Groq는 상점 가격과 Item Registry의 authority가 아니다. 존재하지 않는 Item을 GameState에 생성하지 않는다.
+
+

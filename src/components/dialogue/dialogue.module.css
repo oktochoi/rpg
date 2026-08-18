@@ -28,9 +28,49 @@
     position: absolute;
     top: 8px;
     left: 8px;
-    font-size: 10px;
-    letter-spacing: 0.14em;
-    color: var(--text-dim);
+    z-index: 1;
+    font-size: 22px;
+    letter-spacing: 0.08em;
+    color: var(--gold);
+}
+
+.image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center bottom;
+}
+
+.probe {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.npcSeria {
+    background:
+        linear-gradient(180deg, #4a3870 0%, #1a1612 100%);
+}
+
+.npcLeon {
+    background:
+        linear-gradient(180deg, #3d4a68 0%, #1a1612 100%);
+}
+
+.npcMarta {
+    background:
+        linear-gradient(180deg, #6a4a28 0%, #1a1612 100%);
+}
+
+.role {
+    margin: 0;
+    text-align: center;
+    font-size: 11px;
+    color: var(--textSecondary);
 }
 
 .name {

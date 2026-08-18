@@ -1,3 +1,10 @@
 export type { Choice } from './choice';
 export type { QuestState, QuestStatus } from './quest-state';
 export type { StoryState } from './story-state';
+export { toStoryScreenView } from './story-view';
+export { TEST_GOBLIN_COMBAT_ID } from './test-scenes';
+export { STORY_SCENE_ID, STORY_SCENES, getStorySceneDefinition } from './story-scene-definitions';
+export { getAvailableScenes, getCurrentScene, canEnterScene, resolveNextScene } from './story-scene-resolver';
+export { getAvailableChoices } from './story-choice-service';
+export { buildStoryContext } from './story-context';
+export { buildChoiceCandidates, buildStoryDirectorContext, choiceRefreshKey } from './choices';

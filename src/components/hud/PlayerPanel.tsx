@@ -3,6 +3,7 @@ import styles from './hud.module.css';
 
 interface PlayerPanelProps {
   player: PlayerPanelView;
+  onOpenCharacter?: () => void;
 }
 
 function ResourceBar({
@@ -33,15 +34,45 @@ function ResourceBar({
   );
 }
 
-export function PlayerPanel({ player }: PlayerPanelProps) {
+export function PlayerPanel({ player, onOpenCharacter }: PlayerPanelProps) {
+  const expToNext = player.expToNext ?? 0;
+  const expPercent = expToNext > 0 ? Math.min(100, Math.max(0, ((player.exp ?? 0) / expToNext) * 100)) : 100;
+
   return (
     <aside className={styles.player} aria-label="플레이어 정보">
-      <div className={styles.identity}>
-        <h2 className={styles.name}>{player.name}</h2>
-        <p className={styles.job}>
-          {player.job} / Level {player.level}
-        </p>
-      </div>
+      <button
+        type="button"
+        className={styles.identityButton}
+        onClick={onOpenCharacter}
+        aria-label="캐릭터 화면 열기"
+      >
+        <div className={styles.identity}>
+          <h2 className={styles.name}>{player.name}</h2>
+          <p className={styles.job}>
+            Lv.{player.level} {player.job}
+          </p>
+          {expToNext ? (
+            <div className={styles.barBlock}>
+              <div className={styles.barMeta}>
+                <span>EXP</span>
+                <span>
+                  {player.exp ?? 0} / {expToNext}
+                </span>
+              </div>
+              <div className={styles.track} aria-hidden="true">
+                <div className={`${styles.fill} ${styles.exp}`} style={{ width: `${expPercent}%` }} />
+              </div>
+            </div>
+          ) : null}
+          {player.nextRank ? (
+            <p className={styles.job}>
+              다음 전직: {player.nextRank}
+              {player.nextRankHint ? ` (${player.nextRankHint})` : ''}
+            </p>
+          ) : null}
+          <p className={styles.gold}>Gold {player.gold ?? 0} G</p>
+        </div>
+      </button>
       <div className={styles.bars}>
         <ResourceBar label="HP" current={player.hp} max={player.maxHp} fillClassName={styles.hp} />
         <ResourceBar label="MP" current={player.mp} max={player.maxMp} fillClassName={styles.mp} />

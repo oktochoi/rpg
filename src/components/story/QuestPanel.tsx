@@ -11,7 +11,18 @@ export function QuestPanel({ quest }: QuestPanelProps) {
       <p className={styles.sectionTitle}>현재 Quest</p>
       <h2 className={styles.questTitle}>{quest.title}</h2>
       <p className={styles.status}>{quest.status}</p>
-      <p className={styles.summary}>{quest.summary}</p>
+      {quest.currentObjective ? <p className={styles.current}>현재 목표 · {quest.currentObjective}</p> : null}
+      {quest.objectives.length > 0 ? (
+        <ul className={styles.objectives}>
+          {quest.objectives.map((objective) => (
+            <li key={objective.id}>
+              {objective.completed ? '✓' : '□'} {objective.description}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className={styles.summary}>{quest.summary}</p>
+      )}
     </section>
   );
 }
