@@ -25,10 +25,12 @@
     "dev": "node log.js dev & next dev -p 8080",
     "build": "node log.js build & next build",
     "dev-nolog": "next dev -p 8080",
-    "build-nolog": "next build"
+    "build-nolog": "next build",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "next": "15.3.1",
+    "next": "^15.5.23",
     "phaser": "4.0.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",
@@ -38,6 +40,8 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^15.5.23",
     "typescript": "^5"
   }
 }
