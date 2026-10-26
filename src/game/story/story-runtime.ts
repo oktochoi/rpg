@@ -4,13 +4,18 @@ import { getStoryScene } from './test-scenes';
 import { getStorySceneDefinition } from './story-scene-definitions';
 import { isCurrentSceneValid, resolveFallbackScene } from './story-scene-resolver';
 import { CHAPTER_ID } from './chapters/chapter-types';
+import {
+  appendStoryLog,
+  resolveStoryFlowOnSceneEnter,
+  STORY_FLOW_MODE,
+} from './sequences';
 
-function presentNpcId(state: GameState, preferred?: string | null): string | null {
-  const present = Object.values(state.npcs).filter((npc) => npc.locationId === state.world.currentLocationId);
-  if (preferred && present.some((npc) => npc.id === preferred)) {
-    return preferred;
+function sceneSpeakerId(state: GameState, authoredNpcId: string | null): string | null {
+  if (authoredNpcId) {
+    return authoredNpcId;
   }
-  return present[0]?.id ?? preferred ?? null;
+  const present = Object.values(state.npcs).filter((npc) => npc.locationId === state.world.currentLocationId);
+  return present[0]?.id ?? null;
 }
 
 export function withEnteredStoryScene(
@@ -30,6 +35,11 @@ export function withEnteredStoryScene(
   }
   const definition = getStorySceneDefinition(sceneId);
   const legacy = definition ? null : getStoryScene(sceneId);
+  const narrative = definition?.narrative ?? legacy?.narration ?? state.story.narration;
+  const flow = resolveStoryFlowOnSceneEnter(state, sceneId, {
+    alreadyCurrent,
+    narrative,
+  });
   const presented: GameState = {
     ...state,
     mode: state.mode === 'COMBAT' ? state.mode : 'STORY',
@@ -40,9 +50,14 @@ export function withEnteredStoryScene(
       visitedSceneIds: visited,
       sceneVisitCount: counts,
       enteredAtTurn: alreadyCurrent ? state.story.enteredAtTurn : state.world.turn,
-      currentNpcId: presentNpcId(state, definition?.npcId ?? state.story.currentNpcId),
-      narration: definition?.narrative ?? legacy?.narration ?? state.story.narration,
+      currentNpcId: sceneSpeakerId(state, definition?.npcId ?? null),
+      narration: narrative,
+      dialogue: alreadyCurrent ? state.story.dialogue : [],
       flags: state.story.flags ?? {},
+      flowMode: flow.flowMode,
+      currentSequenceId: flow.currentSequenceId,
+      completedSequenceIds: flow.completedSequenceIds,
+      storyLog: appendStoryLog(state.story.storyLog, flow.logEntries),
     },
   };
   return {
@@ -66,6 +81,10 @@ export function sanitizeStoryState(state: GameState): GameState {
       completedChapterIds: state.story.completedChapterIds ?? [],
       consumedTopicIds: state.story.consumedTopicIds ?? [],
       recentSemanticKeys: state.story.recentSemanticKeys ?? [],
+      flowMode: state.story.flowMode ?? STORY_FLOW_MODE.FREE_ROAM,
+      currentSequenceId: state.story.currentSequenceId ?? null,
+      completedSequenceIds: state.story.completedSequenceIds ?? [],
+      storyLog: state.story.storyLog ?? [],
     },
     world: {
       ...state.world,

@@ -10,12 +10,31 @@
     position: absolute;
     top: 16px;
     left: 16px;
-    min-width: 220px;
-    max-width: min(320px, 42vw);
-    padding: 12px 14px;
-    border: 1px solid var(--panel-border);
-    background: color-mix(in srgb, var(--panel) 88%, transparent);
-    box-shadow: 0 10px 24px var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 280px;
+    max-width: min(420px, 52vw);
+}
+
+.playerBody {
+    composes: hudStrip from '../ui/ui-kit.module.css';
+    flex: 1;
+    min-width: 180px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 2px 8px 4px;
+}
+
+.portrait {
+    width: 88px;
+    height: 88px;
+    object-fit: cover;
+    object-position: 50% 18%;
+    border-radius: 8px;
+    flex: 0 0 auto;
+    background: #1a1612;
 }
 
 .className {
@@ -27,10 +46,14 @@
 
 .barRow {
     display: grid;
-    grid-template-columns: 28px 1fr auto;
-    gap: 8px;
+    grid-template-columns: 1fr auto;
+    gap: 2px 8px;
     align-items: center;
-    margin-top: 6px;
+    margin-top: 4px;
+}
+
+.barRow > div {
+    grid-column: 1 / -1;
 }
 
 .barLabel {
@@ -68,51 +91,71 @@
 
 .boss {
     position: absolute;
-    top: 12px;
+    top: 8px;
     left: 50%;
     transform: translateX(-50%);
-    width: min(520px, 70vw);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    width: min(560px, 78vw);
+    aspect-ratio: 352 / 108;
+    padding: 8px 10% 10px 27%;
+    box-sizing: border-box;
     text-align: center;
-}
-
-.bossRule {
-    margin: 0;
-    color: var(--gold-dim);
-    letter-spacing: 0.28em;
-    font-size: 10px;
+    background: url('/assets/ui/dark-fantasy/boss_frame.png') center / contain no-repeat;
 }
 
 .bossName {
-    margin: 4px 0 2px;
+    position: absolute;
+    top: 10%;
+    left: 30%;
+    right: 8%;
+    z-index: 2;
+    margin: 0;
     color: var(--text);
-    font-size: 16px;
-}
-
-.bossSub {
-    margin: 0 0 8px;
-    color: var(--gold);
-    font-size: 11px;
-    letter-spacing: 0.12em;
-}
-
-.bossTrack {
-    height: 12px;
-    border: 1px solid var(--panel-border);
-    background: var(--choice);
-    overflow: hidden;
-}
-
-.bossFill {
-    height: 100%;
-    background: var(--danger);
-    transition: width 120ms linear;
+    font-size: 15px;
 }
 
 .bossPhase {
-    margin: 6px 0 0;
+    position: absolute;
+    top: 30%;
+    left: 30%;
+    right: 8%;
+    z-index: 2;
+    margin: 0;
     color: var(--highlight);
     font-size: 12px;
     letter-spacing: 0.16em;
+}
+
+.bossMeter {
+    position: absolute;
+    left: 28%;
+    right: 9%;
+    top: 46%;
+    height: 24%;
+    z-index: 2;
+    overflow: hidden;
+    background: #120606;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.8);
+}
+
+.bossMeterFill {
+    height: 100%;
+    background: linear-gradient(180deg, #ff8d8d 0%, #d41818 52%, #6e0c0c 100%);
+}
+
+.bossMeterValue {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff6f2;
+    font-size: 12px;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
 }
 
 .skills {
@@ -125,23 +168,31 @@
 }
 
 .slot {
-    width: 92px;
-    padding: 8px 8px 10px;
-    border: 1px solid var(--panel-border);
-    background: color-mix(in srgb, var(--panel) 90%, transparent);
+    width: 78px;
+    min-height: 92px;
+    padding: 8px 6px 10px;
+    border: 0;
+    background: url('/assets/ui/dark-fantasy/skill_slot_base.png') center / contain no-repeat;
     text-align: center;
 }
 
+.slot:not(.slotDisabled) {
+    background-image: url('/assets/ui/dark-fantasy/skill_slot_active.png');
+}
+
 .slotDisabled {
-    opacity: 0.55;
-    border-color: var(--disabled);
+    background-image: url('/assets/ui/dark-fantasy/skill_slot_cooldown.png');
+    opacity: 1;
 }
 
 .slotKey {
     margin: 0;
     color: var(--gold);
-    font-size: 11px;
-    letter-spacing: 0.08em;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0;
+    font-variant-ligatures: none;
 }
 
 .slotName {

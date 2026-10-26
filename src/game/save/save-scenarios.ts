@@ -5,6 +5,7 @@ import { createInitialGameState } from '../core/initial-state';
 import { eventsForRecordedFact } from '../knowledge/knowledge-service';
 import { doesNpcKnowFact } from '../knowledge/knowledge-selectors';
 import { getMemoriesForNpc } from '../npc/memory/memory-selectors';
+import { withAuthoredRescue } from '../npc/memory/authored-rescue';
 import { TEST_GOBLIN_COMBAT_ID } from '../story/test-scenes';
 import type { WorldFact } from '../world/facts/world-fact';
 import { createMemoryStorage, createSaveService, storageKeyForSlot } from '../save';
@@ -69,8 +70,7 @@ export async function runStep18SaveScenarios(): Promise<string[]> {
   }
 
   const storageC = createMemoryStorage();
-  const orchC = createGameOrchestrator(createInitialGameState(), undefined, { saveService: createSaveService(storageC) });
-  await orchC.dispatch({ type: 'FREE_ACTION', turnId: 1, input: '세리아를 구한다.' });
+  const orchC = createGameOrchestrator(withAuthoredRescue(createInitialGameState()), undefined, { saveService: createSaveService(storageC) });
   await orchC.dispatch({ type: 'SAVE_GAME', slotId: 'slot_2' });
   await orchC.dispatch({ type: 'NEW_GAME' });
   await orchC.dispatch({ type: 'LOAD_GAME', slotId: 'slot_2' });

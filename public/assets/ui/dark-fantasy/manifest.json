@@ -1,0 +1,358 @@
+{
+  "style": "dark fantasy semi-realistic UI kit",
+  "source": "a_clean_high_resolution_game_ui_asset_pack_sheet.png",
+  "items": {
+    "player_portrait_frame": {
+      "file": "player_portrait_frame.png",
+      "size": [
+        92,
+        89
+      ],
+      "nineSlice": {
+        "left": 18,
+        "top": 18,
+        "right": 18,
+        "bottom": 18
+      }
+    },
+    "player_panel_frame": {
+      "file": "player_panel_frame.png",
+      "size": [
+        122,
+        38
+      ],
+      "nineSlice": {
+        "left": 18,
+        "top": 12,
+        "right": 18,
+        "bottom": 12
+      }
+    },
+    "hp_bar_bg": {
+      "file": "hp_bar_bg.png",
+      "size": [
+        63,
+        21
+      ],
+      "nineSlice": {
+        "left": 8,
+        "top": 5,
+        "right": 8,
+        "bottom": 5
+      }
+    },
+    "hp_bar_fill": {
+      "file": "hp_bar_fill.png",
+      "size": [
+        117,
+        22
+      ],
+      "nineSlice": {
+        "left": 8,
+        "top": 5,
+        "right": 8,
+        "bottom": 5
+      }
+    },
+    "hp_bar_fill_alt": {
+      "file": "hp_bar_fill_alt.png",
+      "size": [
+        123,
+        22
+      ],
+      "nineSlice": {
+        "left": 8,
+        "top": 5,
+        "right": 8,
+        "bottom": 5
+      }
+    },
+    "mp_bar_bg": {
+      "file": "mp_bar_bg.png",
+      "size": [
+        116,
+        23
+      ],
+      "nineSlice": {
+        "left": 8,
+        "top": 5,
+        "right": 8,
+        "bottom": 5
+      }
+    },
+    "mp_bar_fill": {
+      "file": "mp_bar_fill.png",
+      "size": [
+        122,
+        23
+      ],
+      "nineSlice": {
+        "left": 8,
+        "top": 5,
+        "right": 8,
+        "bottom": 5
+      }
+    },
+    "skill_slot_base": {
+      "file": "skill_slot_base.png",
+      "size": [
+        61,
+        73
+      ],
+      "nineSlice": {
+        "left": 12,
+        "top": 12,
+        "right": 12,
+        "bottom": 12
+      }
+    },
+    "skill_slot_active": {
+      "file": "skill_slot_active.png",
+      "size": [
+        64,
+        73
+      ],
+      "nineSlice": {
+        "left": 12,
+        "top": 12,
+        "right": 12,
+        "bottom": 12
+      }
+    },
+    "skill_slot_cooldown": {
+      "file": "skill_slot_cooldown.png",
+      "size": [
+        64,
+        73
+      ],
+      "nineSlice": {
+        "left": 12,
+        "top": 12,
+        "right": 12,
+        "bottom": 12
+      }
+    },
+    "boss_frame": {
+      "file": "boss_frame.png",
+      "size": [
+        352,
+        108
+      ],
+      "nineSlice": {
+        "left": 35,
+        "top": 26,
+        "right": 35,
+        "bottom": 26
+      }
+    },
+    "boss_hp_bg": {
+      "file": "boss_hp_bg.png",
+      "size": [
+        132,
+        34
+      ],
+      "nineSlice": {
+        "left": 15,
+        "top": 8,
+        "right": 15,
+        "bottom": 8
+      }
+    },
+    "boss_hp_fill": {
+      "file": "boss_hp_fill.png",
+      "size": [
+        134,
+        34
+      ],
+      "nineSlice": {
+        "left": 15,
+        "top": 8,
+        "right": 15,
+        "bottom": 8
+      }
+    },
+    "dialog_frame": {
+      "file": "dialog_frame.png",
+      "size": [
+        370,
+        113
+      ],
+      "nineSlice": {
+        "left": 28,
+        "top": 22,
+        "right": 28,
+        "bottom": 22
+      }
+    },
+    "nameplate_frame": {
+      "file": "nameplate_frame.png",
+      "size": [
+        194,
+        43
+      ],
+      "nineSlice": {
+        "left": 18,
+        "top": 10,
+        "right": 18,
+        "bottom": 10
+      }
+    },
+    "choice_button_normal": {
+      "file": "choice_button_normal.png",
+      "size": [
+        212,
+        44
+      ],
+      "nineSlice": {
+        "left": 22,
+        "top": 10,
+        "right": 22,
+        "bottom": 10
+      }
+    },
+    "choice_button_hover": {
+      "file": "choice_button_hover.png",
+      "size": [
+        212,
+        45
+      ],
+      "nineSlice": {
+        "left": 22,
+        "top": 10,
+        "right": 22,
+        "bottom": 10
+      }
+    },
+    "objective_card_frame": {
+      "file": "objective_card_frame.png",
+      "size": [
+        189,
+        77
+      ],
+      "nineSlice": {
+        "left": 22,
+        "top": 18,
+        "right": 22,
+        "bottom": 18
+      }
+    },
+    "encounter_enemy_banner": {
+      "file": "encounter_enemy_banner.png",
+      "size": [
+        201,
+        77
+      ],
+      "nineSlice": {
+        "left": 28,
+        "top": 16,
+        "right": 28,
+        "bottom": 16
+      }
+    },
+    "encounter_boss_banner": {
+      "file": "encounter_boss_banner.png",
+      "size": [
+        244,
+        78
+      ],
+      "nineSlice": {
+        "left": 28,
+        "top": 16,
+        "right": 28,
+        "bottom": 16
+      }
+    },
+    "victory_frame": {
+      "file": "victory_frame.png",
+      "size": [
+        181,
+        78
+      ],
+      "nineSlice": {
+        "left": 24,
+        "top": 16,
+        "right": 24,
+        "bottom": 16
+      }
+    },
+    "defeat_frame": {
+      "file": "defeat_frame.png",
+      "size": [
+        206,
+        78
+      ],
+      "nineSlice": {
+        "left": 24,
+        "top": 16,
+        "right": 24,
+        "bottom": 16
+      }
+    },
+    "reward_panel_frame": {
+      "file": "reward_panel_frame.png",
+      "size": [
+        217,
+        83
+      ],
+      "nineSlice": {
+        "left": 24,
+        "top": 18,
+        "right": 24,
+        "bottom": 18
+      }
+    },
+    "reward_item_slot_1": {
+      "file": "reward_item_slot_1.png",
+      "size": [
+        49,
+        57
+      ],
+      "nineSlice": {
+        "left": 10,
+        "top": 10,
+        "right": 10,
+        "bottom": 10
+      }
+    },
+    "reward_item_slot_2": {
+      "file": "reward_item_slot_2.png",
+      "size": [
+        49,
+        57
+      ],
+      "nineSlice": {
+        "left": 10,
+        "top": 10,
+        "right": 10,
+        "bottom": 10
+      }
+    },
+    "reward_item_slot_3": {
+      "file": "reward_item_slot_3.png",
+      "size": [
+        49,
+        57
+      ],
+      "nineSlice": {
+        "left": 10,
+        "top": 10,
+        "right": 10,
+        "bottom": 10
+      }
+    },
+    "gold_icon": {
+      "file": "gold_icon.png",
+      "size": [
+        70,
+        66
+      ]
+    },
+    "exp_icon": {
+      "file": "exp_icon.png",
+      "size": [
+        62,
+        68
+      ]
+    }
+  }
+}

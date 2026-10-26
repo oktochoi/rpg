@@ -1,0 +1,1030 @@
+{
+  "format": "normalized spritesheets for Phaser",
+  "frameWidth": 256,
+  "frameHeight": 256,
+  "cols": 8,
+  "rows": 5,
+  "animations": {
+    "idle": {
+      "row": 0,
+      "frames": 8,
+      "fps": 6
+    },
+    "run": {
+      "row": 1,
+      "frames": 8,
+      "fps": 10
+    },
+    "attack": {
+      "row": 2,
+      "frames": 8,
+      "fps": 12
+    },
+    "hurt": {
+      "row": 3,
+      "frames": 8,
+      "fps": 10
+    },
+    "death": {
+      "row": 4,
+      "frames": 8,
+      "fps": 8
+    }
+  },
+  "assets": {
+    "hero_swordsman": {
+      "source_size": [
+        1586,
+        992
+      ],
+      "normalized_size": [
+        2048,
+        1280
+      ],
+      "animations": {
+        "idle": {
+          "row": 0,
+          "fps": 6,
+          "repeat": -1,
+          "sheet": "animations/idle.png",
+          "frames": [
+            "frames/idle_01.png",
+            "frames/idle_02.png",
+            "frames/idle_03.png",
+            "frames/idle_04.png",
+            "frames/idle_05.png",
+            "frames/idle_06.png",
+            "frames/idle_07.png",
+            "frames/idle_08.png"
+          ],
+          "normalized_frame_indices": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ]
+        },
+        "run": {
+          "row": 1,
+          "fps": 10,
+          "repeat": -1,
+          "sheet": "animations/run.png",
+          "frames": [
+            "frames/run_01.png",
+            "frames/run_02.png",
+            "frames/run_03.png",
+            "frames/run_04.png",
+            "frames/run_05.png",
+            "frames/run_06.png",
+            "frames/run_07.png",
+            "frames/run_08.png"
+          ],
+          "normalized_frame_indices": [
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ]
+        },
+        "attack": {
+          "row": 2,
+          "fps": 12,
+          "repeat": 0,
+          "sheet": "animations/attack.png",
+          "frames": [
+            "frames/attack_01.png",
+            "frames/attack_02.png",
+            "frames/attack_03.png",
+            "frames/attack_04.png",
+            "frames/attack_05.png",
+            "frames/attack_06.png",
+            "frames/attack_07.png",
+            "frames/attack_08.png"
+          ],
+          "normalized_frame_indices": [
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23
+          ]
+        },
+        "hurt": {
+          "row": 3,
+          "fps": 10,
+          "repeat": 0,
+          "sheet": "animations/hurt.png",
+          "frames": [
+            "frames/hurt_01.png",
+            "frames/hurt_02.png",
+            "frames/hurt_03.png",
+            "frames/hurt_04.png",
+            "frames/hurt_05.png",
+            "frames/hurt_06.png",
+            "frames/hurt_07.png",
+            "frames/hurt_08.png"
+          ],
+          "normalized_frame_indices": [
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31
+          ]
+        },
+        "death": {
+          "row": 4,
+          "fps": 8,
+          "repeat": 0,
+          "sheet": "animations/death.png",
+          "frames": [
+            "frames/death_01.png",
+            "frames/death_02.png",
+            "frames/death_03.png",
+            "frames/death_04.png",
+            "frames/death_05.png",
+            "frames/death_06.png",
+            "frames/death_07.png",
+            "frames/death_08.png"
+          ],
+          "normalized_frame_indices": [
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39
+          ]
+        }
+      }
+    },
+    "goblin_warrior": {
+      "source_size": [
+        1586,
+        992
+      ],
+      "normalized_size": [
+        2048,
+        1280
+      ],
+      "animations": {
+        "idle": {
+          "row": 0,
+          "fps": 6,
+          "repeat": -1,
+          "sheet": "animations/idle.png",
+          "frames": [
+            "frames/idle_01.png",
+            "frames/idle_02.png",
+            "frames/idle_03.png",
+            "frames/idle_04.png",
+            "frames/idle_05.png",
+            "frames/idle_06.png",
+            "frames/idle_07.png",
+            "frames/idle_08.png"
+          ],
+          "normalized_frame_indices": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ]
+        },
+        "run": {
+          "row": 1,
+          "fps": 10,
+          "repeat": -1,
+          "sheet": "animations/run.png",
+          "frames": [
+            "frames/run_01.png",
+            "frames/run_02.png",
+            "frames/run_03.png",
+            "frames/run_04.png",
+            "frames/run_05.png",
+            "frames/run_06.png",
+            "frames/run_07.png",
+            "frames/run_08.png"
+          ],
+          "normalized_frame_indices": [
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ]
+        },
+        "attack": {
+          "row": 2,
+          "fps": 12,
+          "repeat": 0,
+          "sheet": "animations/attack.png",
+          "frames": [
+            "frames/attack_01.png",
+            "frames/attack_02.png",
+            "frames/attack_03.png",
+            "frames/attack_04.png",
+            "frames/attack_05.png",
+            "frames/attack_06.png",
+            "frames/attack_07.png",
+            "frames/attack_08.png"
+          ],
+          "normalized_frame_indices": [
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23
+          ]
+        },
+        "hurt": {
+          "row": 3,
+          "fps": 10,
+          "repeat": 0,
+          "sheet": "animations/hurt.png",
+          "frames": [
+            "frames/hurt_01.png",
+            "frames/hurt_02.png",
+            "frames/hurt_03.png",
+            "frames/hurt_04.png",
+            "frames/hurt_05.png",
+            "frames/hurt_06.png",
+            "frames/hurt_07.png",
+            "frames/hurt_08.png"
+          ],
+          "normalized_frame_indices": [
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31
+          ]
+        },
+        "death": {
+          "row": 4,
+          "fps": 8,
+          "repeat": 0,
+          "sheet": "animations/death.png",
+          "frames": [
+            "frames/death_01.png",
+            "frames/death_02.png",
+            "frames/death_03.png",
+            "frames/death_04.png",
+            "frames/death_05.png",
+            "frames/death_06.png",
+            "frames/death_07.png",
+            "frames/death_08.png"
+          ],
+          "normalized_frame_indices": [
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39
+          ]
+        }
+      }
+    },
+    "goblin_archer": {
+      "source_size": [
+        1586,
+        992
+      ],
+      "normalized_size": [
+        2048,
+        1280
+      ],
+      "animations": {
+        "idle": {
+          "row": 0,
+          "fps": 6,
+          "repeat": -1,
+          "sheet": "animations/idle.png",
+          "frames": [
+            "frames/idle_01.png",
+            "frames/idle_02.png",
+            "frames/idle_03.png",
+            "frames/idle_04.png",
+            "frames/idle_05.png",
+            "frames/idle_06.png",
+            "frames/idle_07.png",
+            "frames/idle_08.png"
+          ],
+          "normalized_frame_indices": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ]
+        },
+        "run": {
+          "row": 1,
+          "fps": 10,
+          "repeat": -1,
+          "sheet": "animations/run.png",
+          "frames": [
+            "frames/run_01.png",
+            "frames/run_02.png",
+            "frames/run_03.png",
+            "frames/run_04.png",
+            "frames/run_05.png",
+            "frames/run_06.png",
+            "frames/run_07.png",
+            "frames/run_08.png"
+          ],
+          "normalized_frame_indices": [
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ]
+        },
+        "attack": {
+          "row": 2,
+          "fps": 12,
+          "repeat": 0,
+          "sheet": "animations/attack.png",
+          "frames": [
+            "frames/attack_01.png",
+            "frames/attack_02.png",
+            "frames/attack_03.png",
+            "frames/attack_04.png",
+            "frames/attack_05.png",
+            "frames/attack_06.png",
+            "frames/attack_07.png",
+            "frames/attack_08.png"
+          ],
+          "normalized_frame_indices": [
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23
+          ]
+        },
+        "hurt": {
+          "row": 3,
+          "fps": 10,
+          "repeat": 0,
+          "sheet": "animations/hurt.png",
+          "frames": [
+            "frames/hurt_01.png",
+            "frames/hurt_02.png",
+            "frames/hurt_03.png",
+            "frames/hurt_04.png",
+            "frames/hurt_05.png",
+            "frames/hurt_06.png",
+            "frames/hurt_07.png",
+            "frames/hurt_08.png"
+          ],
+          "normalized_frame_indices": [
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31
+          ]
+        },
+        "death": {
+          "row": 4,
+          "fps": 8,
+          "repeat": 0,
+          "sheet": "animations/death.png",
+          "frames": [
+            "frames/death_01.png",
+            "frames/death_02.png",
+            "frames/death_03.png",
+            "frames/death_04.png",
+            "frames/death_05.png",
+            "frames/death_06.png",
+            "frames/death_07.png",
+            "frames/death_08.png"
+          ],
+          "normalized_frame_indices": [
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39
+          ]
+        }
+      }
+    },
+    "goblin_mage": {
+      "source_size": [
+        1586,
+        992
+      ],
+      "normalized_size": [
+        2048,
+        1280
+      ],
+      "animations": {
+        "idle": {
+          "row": 0,
+          "fps": 6,
+          "repeat": -1,
+          "sheet": "animations/idle.png",
+          "frames": [
+            "frames/idle_01.png",
+            "frames/idle_02.png",
+            "frames/idle_03.png",
+            "frames/idle_04.png",
+            "frames/idle_05.png",
+            "frames/idle_06.png",
+            "frames/idle_07.png",
+            "frames/idle_08.png"
+          ],
+          "normalized_frame_indices": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ]
+        },
+        "run": {
+          "row": 1,
+          "fps": 10,
+          "repeat": -1,
+          "sheet": "animations/run.png",
+          "frames": [
+            "frames/run_01.png",
+            "frames/run_02.png",
+            "frames/run_03.png",
+            "frames/run_04.png",
+            "frames/run_05.png",
+            "frames/run_06.png",
+            "frames/run_07.png",
+            "frames/run_08.png"
+          ],
+          "normalized_frame_indices": [
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ]
+        },
+        "attack": {
+          "row": 2,
+          "fps": 12,
+          "repeat": 0,
+          "sheet": "animations/attack.png",
+          "frames": [
+            "frames/attack_01.png",
+            "frames/attack_02.png",
+            "frames/attack_03.png",
+            "frames/attack_04.png",
+            "frames/attack_05.png",
+            "frames/attack_06.png",
+            "frames/attack_07.png",
+            "frames/attack_08.png"
+          ],
+          "normalized_frame_indices": [
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23
+          ]
+        },
+        "hurt": {
+          "row": 3,
+          "fps": 10,
+          "repeat": 0,
+          "sheet": "animations/hurt.png",
+          "frames": [
+            "frames/hurt_01.png",
+            "frames/hurt_02.png",
+            "frames/hurt_03.png",
+            "frames/hurt_04.png",
+            "frames/hurt_05.png",
+            "frames/hurt_06.png",
+            "frames/hurt_07.png",
+            "frames/hurt_08.png"
+          ],
+          "normalized_frame_indices": [
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31
+          ]
+        },
+        "death": {
+          "row": 4,
+          "fps": 8,
+          "repeat": 0,
+          "sheet": "animations/death.png",
+          "frames": [
+            "frames/death_01.png",
+            "frames/death_02.png",
+            "frames/death_03.png",
+            "frames/death_04.png",
+            "frames/death_05.png",
+            "frames/death_06.png",
+            "frames/death_07.png",
+            "frames/death_08.png"
+          ],
+          "normalized_frame_indices": [
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39
+          ]
+        }
+      }
+    },
+    "stone_golem": {
+      "source_size": [
+        1586,
+        992
+      ],
+      "normalized_size": [
+        2048,
+        1280
+      ],
+      "animations": {
+        "idle": {
+          "row": 0,
+          "fps": 6,
+          "repeat": -1,
+          "sheet": "animations/idle.png",
+          "frames": [
+            "frames/idle_01.png",
+            "frames/idle_02.png",
+            "frames/idle_03.png",
+            "frames/idle_04.png",
+            "frames/idle_05.png",
+            "frames/idle_06.png",
+            "frames/idle_07.png",
+            "frames/idle_08.png"
+          ],
+          "normalized_frame_indices": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ]
+        },
+        "run": {
+          "row": 1,
+          "fps": 10,
+          "repeat": -1,
+          "sheet": "animations/run.png",
+          "frames": [
+            "frames/run_01.png",
+            "frames/run_02.png",
+            "frames/run_03.png",
+            "frames/run_04.png",
+            "frames/run_05.png",
+            "frames/run_06.png",
+            "frames/run_07.png",
+            "frames/run_08.png"
+          ],
+          "normalized_frame_indices": [
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ]
+        },
+        "attack": {
+          "row": 2,
+          "fps": 12,
+          "repeat": 0,
+          "sheet": "animations/attack.png",
+          "frames": [
+            "frames/attack_01.png",
+            "frames/attack_02.png",
+            "frames/attack_03.png",
+            "frames/attack_04.png",
+            "frames/attack_05.png",
+            "frames/attack_06.png",
+            "frames/attack_07.png",
+            "frames/attack_08.png"
+          ],
+          "normalized_frame_indices": [
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23
+          ]
+        },
+        "hurt": {
+          "row": 3,
+          "fps": 10,
+          "repeat": 0,
+          "sheet": "animations/hurt.png",
+          "frames": [
+            "frames/hurt_01.png",
+            "frames/hurt_02.png",
+            "frames/hurt_03.png",
+            "frames/hurt_04.png",
+            "frames/hurt_05.png",
+            "frames/hurt_06.png",
+            "frames/hurt_07.png",
+            "frames/hurt_08.png"
+          ],
+          "normalized_frame_indices": [
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31
+          ]
+        },
+        "death": {
+          "row": 4,
+          "fps": 8,
+          "repeat": 0,
+          "sheet": "animations/death.png",
+          "frames": [
+            "frames/death_01.png",
+            "frames/death_02.png",
+            "frames/death_03.png",
+            "frames/death_04.png",
+            "frames/death_05.png",
+            "frames/death_06.png",
+            "frames/death_07.png",
+            "frames/death_08.png"
+          ],
+          "normalized_frame_indices": [
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39
+          ]
+        }
+      }
+    },
+    "dire_wolf": {
+      "source_size": [
+        1586,
+        992
+      ],
+      "normalized_size": [
+        2048,
+        1280
+      ],
+      "animations": {
+        "idle": {
+          "row": 0,
+          "fps": 6,
+          "repeat": -1,
+          "sheet": "animations/idle.png",
+          "frames": [
+            "frames/idle_01.png",
+            "frames/idle_02.png",
+            "frames/idle_03.png",
+            "frames/idle_04.png",
+            "frames/idle_05.png",
+            "frames/idle_06.png",
+            "frames/idle_07.png",
+            "frames/idle_08.png"
+          ],
+          "normalized_frame_indices": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ]
+        },
+        "run": {
+          "row": 1,
+          "fps": 10,
+          "repeat": -1,
+          "sheet": "animations/run.png",
+          "frames": [
+            "frames/run_01.png",
+            "frames/run_02.png",
+            "frames/run_03.png",
+            "frames/run_04.png",
+            "frames/run_05.png",
+            "frames/run_06.png",
+            "frames/run_07.png",
+            "frames/run_08.png"
+          ],
+          "normalized_frame_indices": [
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ]
+        },
+        "attack": {
+          "row": 2,
+          "fps": 12,
+          "repeat": 0,
+          "sheet": "animations/attack.png",
+          "frames": [
+            "frames/attack_01.png",
+            "frames/attack_02.png",
+            "frames/attack_03.png",
+            "frames/attack_04.png",
+            "frames/attack_05.png",
+            "frames/attack_06.png",
+            "frames/attack_07.png",
+            "frames/attack_08.png"
+          ],
+          "normalized_frame_indices": [
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23
+          ]
+        },
+        "hurt": {
+          "row": 3,
+          "fps": 10,
+          "repeat": 0,
+          "sheet": "animations/hurt.png",
+          "frames": [
+            "frames/hurt_01.png",
+            "frames/hurt_02.png",
+            "frames/hurt_03.png",
+            "frames/hurt_04.png",
+            "frames/hurt_05.png",
+            "frames/hurt_06.png",
+            "frames/hurt_07.png",
+            "frames/hurt_08.png"
+          ],
+          "normalized_frame_indices": [
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31
+          ]
+        },
+        "death": {
+          "row": 4,
+          "fps": 8,
+          "repeat": 0,
+          "sheet": "animations/death.png",
+          "frames": [
+            "frames/death_01.png",
+            "frames/death_02.png",
+            "frames/death_03.png",
+            "frames/death_04.png",
+            "frames/death_05.png",
+            "frames/death_06.png",
+            "frames/death_07.png",
+            "frames/death_08.png"
+          ],
+          "normalized_frame_indices": [
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39
+          ]
+        }
+      }
+    },
+    "projectiles_effects": {
+      "source_size": [
+        1586,
+        992
+      ],
+      "normalized_size": [
+        2048,
+        1280
+      ],
+      "animations": {
+        "arrow": {
+          "row": 0,
+          "fps": 16,
+          "repeat": 0,
+          "sheet": "animations/arrow.png",
+          "frames": [
+            "frames/arrow_01.png",
+            "frames/arrow_02.png",
+            "frames/arrow_03.png",
+            "frames/arrow_04.png",
+            "frames/arrow_05.png",
+            "frames/arrow_06.png",
+            "frames/arrow_07.png",
+            "frames/arrow_08.png"
+          ],
+          "normalized_frame_indices": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ]
+        },
+        "shadow_bolt": {
+          "row": 1,
+          "fps": 14,
+          "repeat": 0,
+          "sheet": "animations/shadow_bolt.png",
+          "frames": [
+            "frames/shadow_bolt_01.png",
+            "frames/shadow_bolt_02.png",
+            "frames/shadow_bolt_03.png",
+            "frames/shadow_bolt_04.png",
+            "frames/shadow_bolt_05.png",
+            "frames/shadow_bolt_06.png",
+            "frames/shadow_bolt_07.png",
+            "frames/shadow_bolt_08.png"
+          ],
+          "normalized_frame_indices": [
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ]
+        },
+        "arcane_orb": {
+          "row": 2,
+          "fps": 14,
+          "repeat": 0,
+          "sheet": "animations/arcane_orb.png",
+          "frames": [
+            "frames/arcane_orb_01.png",
+            "frames/arcane_orb_02.png",
+            "frames/arcane_orb_03.png",
+            "frames/arcane_orb_04.png",
+            "frames/arcane_orb_05.png",
+            "frames/arcane_orb_06.png",
+            "frames/arcane_orb_07.png",
+            "frames/arcane_orb_08.png"
+          ],
+          "normalized_frame_indices": [
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23
+          ]
+        },
+        "fireball": {
+          "row": 3,
+          "fps": 14,
+          "repeat": 0,
+          "sheet": "animations/fireball.png",
+          "frames": [
+            "frames/fireball_01.png",
+            "frames/fireball_02.png",
+            "frames/fireball_03.png",
+            "frames/fireball_04.png",
+            "frames/fireball_05.png",
+            "frames/fireball_06.png",
+            "frames/fireball_07.png",
+            "frames/fireball_08.png"
+          ],
+          "normalized_frame_indices": [
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31
+          ]
+        },
+        "slash_hit": {
+          "row": 4,
+          "fps": 16,
+          "repeat": 0,
+          "sheet": "animations/slash_hit.png",
+          "frames": [
+            "frames/slash_hit_01.png",
+            "frames/slash_hit_02.png",
+            "frames/slash_hit_03.png",
+            "frames/slash_hit_04.png",
+            "frames/slash_hit_05.png",
+            "frames/slash_hit_06.png",
+            "frames/slash_hit_07.png",
+            "frames/slash_hit_08.png"
+          ],
+          "normalized_frame_indices": [
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39
+          ]
+        }
+      }
+    }
+  }
+}

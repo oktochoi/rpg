@@ -9,7 +9,7 @@ import {
 } from './class-types';
 
 export const WANDERER_BASE_STATS = {
-  maxHp: 100,
+  maxHp: 120,
   maxMp: 60,
   moveSpeed: 220,
 } as const;
@@ -56,10 +56,10 @@ export const PLAYER_CLASSES: Readonly<Record<PlayerClassId, PlayerClassDefinitio
     description: '아직 길을 정하지 않은 신입. 기본 근접과 회피로 버틴다.',
     playStyle: '기본 근접 / 회피',
     baseStats: {
-      maxHp: 100,
+      maxHp: 120,
       maxMp: 70,
       moveSpeed: 220,
-      attackPower: 16,
+      attackPower: 20,
     },
     combat: {
       basicAttackId: 'warrior_slash',

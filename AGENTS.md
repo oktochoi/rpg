@@ -1,7 +1,7 @@
 # AI RPG Development Rules
 
 ## Architecture
-
+ㄱ
 - This is a single-player AI RPG.
 - React handles RPG UI.
 - Phaser handles real-time combat only.
@@ -14,7 +14,7 @@
 3. AI may never directly modify GameState.
 4. All state changes must happen through validated Events.
 5. Phaser owns only temporary CombatState during combat.
-6. Phaser must not directly change NPC, Quest, World, or Story state.
+6. Phaser must not directly change NPC, Quest, World, or Story state.   
 7. AI output must be validated with Zod.
 8. NPC AI may only receive knowledge the NPC actually knows.
 9. Do not change architecture without explicit permission.
@@ -32,3 +32,4 @@ After changing code:
 - run lint
 - verify build
 - report changed files
+

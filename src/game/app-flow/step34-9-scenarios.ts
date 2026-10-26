@@ -113,7 +113,7 @@ export async function runStep349Scenarios(): Promise<string[]> {
   const introHasProgressionTriple = introLabels.some((text) => /길드에 들어|여관으로 간다|마을을 둘러/.test(text));
   if (
     introChoices.choices.length === 1 &&
-    introLabels[0] === '계속' &&
+    introLabels[0] === '광장으로 나선다' &&
     !introHasProgressionTriple &&
     introChoices.choices.every((choice) => !looksLikeInternalId(choice.text))
   ) {

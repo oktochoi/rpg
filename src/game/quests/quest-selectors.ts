@@ -125,11 +125,7 @@ export function featuredQuest(state: Readonly<GameState>): QuestState | undefine
   if (mainActive) {
     return mainActive;
   }
-  const active = list.find((quest) => quest.status === QUEST_STATUS.ACTIVE);
-  if (active) {
-    return active;
-  }
-  return list.find((quest) => quest.status === QUEST_STATUS.AVAILABLE);
+  return list.find((quest) => quest.status === QUEST_STATUS.ACTIVE);
 }
 
 export type { QuestId };

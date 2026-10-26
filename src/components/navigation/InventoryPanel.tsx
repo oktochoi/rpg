@@ -2,11 +2,13 @@ import { useState } from 'react';
 import type { GameState } from '@/game/core/game-state';
 import type { CommandDispatcher } from '@/game/core/command';
 import { EQUIPMENT_SLOT, getItemDefinition, ITEM_TYPE } from '@/game/inventory/item-definitions';
+import { itemIconPath } from '@/game/inventory/item-icons';
 import { compareEquipmentStats, filterInventory, isEquipped, itemDisplayName, type InventoryCategory } from '@/game/inventory/item-selectors';
 import { equippedItemId } from '@/game/inventory/equipment-types';
 import { canEnhanceHere, enhanceBlockedReason, enhancementLevelOf } from '@/game/inventory/enhancement-rules';
 import { enhancementCostFor, isEnhanceableSlot, MAX_ENHANCEMENT_LEVEL } from '@/game/inventory/enhancement-config';
 import { audioManager, SFX_ID } from '@/game/audio';
+import { GameModal } from '@/components/ui/GameModal';
 import styles from './InventoryPanel.module.css';
 
 interface InventoryPanelProps {
@@ -47,15 +49,7 @@ export function InventoryPanel({ state, dispatch, onClose }: InventoryPanelProps
       : [];
 
   return (
-    <div className={styles.overlay}>
-      <section className={styles.panel} aria-label="가방">
-        <header className={styles.header}>
-          <h2>INVENTORY</h2>
-          <p>Gold {state.player.gold} G</p>
-          <button type="button" onClick={onClose}>
-            닫기
-          </button>
-        </header>
+    <GameModal title="가방" kicker="소지품" meta={`${state.player.gold} G`} size="xl" onClose={onClose}>
         <div className={styles.tabs}>
           {CATEGORIES.map((item) => (
             <button
@@ -73,6 +67,7 @@ export function InventoryPanel({ state, dispatch, onClose }: InventoryPanelProps
             {items.length === 0 ? <li>해당 분류의 아이템이 없습니다.</li> : null}
             {items.map((item) => {
               const info = getItemDefinition(item.itemId);
+              const icon = itemIconPath(item.itemId);
               return (
                 <li key={item.itemId}>
                   <button
@@ -80,7 +75,11 @@ export function InventoryPanel({ state, dispatch, onClose }: InventoryPanelProps
                     className={selected?.itemId === item.itemId ? styles.itemActive : styles.item}
                     onClick={() => setSelectedId(item.itemId)}
                   >
-                    <span className={styles.icon} aria-hidden="true" />
+                    <span
+                      className={icon ? styles.itemIcon : styles.icon}
+                      style={icon ? { backgroundImage: `url(${icon})` } : undefined}
+                      aria-hidden="true"
+                    />
                     <span>
                       {itemDisplayName(item.itemId, enhancementLevelOf(state, item.itemId))}
                       {isEquipped(state.player.equipment, item.itemId) ? ' · 장착 중' : ''}
@@ -96,7 +95,7 @@ export function InventoryPanel({ state, dispatch, onClose }: InventoryPanelProps
               <>
                 <h3>{itemDisplayName(definition.id, enhanceLevel)}</h3>
                 <p>{definition.description}</p>
-                {definition.statBonuses?.attack ? <p>Attack +{definition.statBonuses.attack}</p> : null}
+                {definition.statBonuses?.attack ? <p>공격 +{definition.statBonuses.attack}</p> : null}
                 {definition.statBonuses?.hp ? <p>HP +{definition.statBonuses.hp}</p> : null}
                 {definition.statBonuses?.mp ? <p>MP +{definition.statBonuses.mp}</p> : null}
                 {compare.map((row) => (
@@ -107,6 +106,7 @@ export function InventoryPanel({ state, dispatch, onClose }: InventoryPanelProps
                 {definition.type === ITEM_TYPE.CONSUMABLE ? (
                   <button
                     type="button"
+                    className={styles.action}
                     onClick={() => {
                       audioManager.playSfx(SFX_ID.UI_CONFIRM);
                       dispatch({ type: 'USE_ITEM', itemId: selected.itemId });
@@ -118,6 +118,7 @@ export function InventoryPanel({ state, dispatch, onClose }: InventoryPanelProps
                 {definition.slot && !equipped ? (
                   <button
                     type="button"
+                    className={styles.action}
                     onClick={() => {
                       audioManager.playSfx(SFX_ID.UI_CONFIRM);
                       dispatch({ type: 'EQUIP_ITEM', itemId: selected.itemId });
@@ -129,6 +130,7 @@ export function InventoryPanel({ state, dispatch, onClose }: InventoryPanelProps
                 {definition.slot && equipped ? (
                   <button
                     type="button"
+                    className={styles.action}
                     onClick={() => {
                       audioManager.playSfx(SFX_ID.UI_CONFIRM);
                       dispatch({ type: 'UNEQUIP_ITEM', slot: definition.slot ?? EQUIPMENT_SLOT.WEAPON });
@@ -145,6 +147,7 @@ export function InventoryPanel({ state, dispatch, onClose }: InventoryPanelProps
                     {enhanceBlocked ? <p>{enhanceBlocked}</p> : null}
                     <button
                       type="button"
+                      className={styles.action}
                       disabled={Boolean(enhanceBlocked)}
                       onClick={() => {
                         audioManager.playSfx(SFX_ID.UI_CONFIRM);
@@ -161,7 +164,6 @@ export function InventoryPanel({ state, dispatch, onClose }: InventoryPanelProps
             )}
           </div>
         </div>
-      </section>
-    </div>
+    </GameModal>
   );
 }

@@ -1,7 +1,7 @@
 import * as Phaser from 'phaser';
 import { EventBus } from '../../EventBus';
 import type { CombatStatus } from '../combat-state';
-import { PLAYER_MAX_HP, POTION_COOLDOWN_MS } from '../CombatConfig';
+import { ATTACK_MOVE_MULTIPLIER, PLAYER_MAX_HP, POTION_COOLDOWN_MS } from '../CombatConfig';
 import { CombatArena } from '../arenas/CombatArena';
 import { DangerZoneController } from '../effects/DangerZoneController';
 import { ITEM_ID, getItemDefinition } from '../../inventory/item-definitions';
@@ -14,6 +14,12 @@ import type { EnemyRangedShot } from '../enemies/enemy-runtime';
 import { CombatHud } from '../hud/CombatHud';
 import { BossHud } from '../hud/BossHud';
 import { getBasicAttack } from '../attacks/basic-attack-definitions';
+import {
+  damageNumberForStrike,
+  isBasicAttackId,
+  readCombatHp,
+  rollBasicAttackStrike,
+} from '../attacks/basic-attack-strike';
 import { PlayerAttackController } from '../player/PlayerAttackController';
 import { getClassAppearance } from '../player/class-appearance';
 import { PlayerController } from '../player/PlayerController';
@@ -23,6 +29,8 @@ import { ProjectileController } from '../projectiles/ProjectileController';
 import { SkillCombatService } from '../skills/SkillCombatService';
 import { createSkillExecutors } from '../skills/skill-executors';
 import { EncounterManager } from '../encounters/EncounterManager';
+import { encounterEntranceSide, openingAttackDelayMs, planEncounterStart, type EncounterStartPhase, type EncounterStartPlan } from '../encounters/encounter-intro';
+import { clearEncounterCue, publishEncounterCue } from '../encounters/encounter-cue-bridge';
 import { ENCOUNTER_ID, resolveEncounterId, resolveSpawnPoint } from '../encounters/encounter-definitions';
 import { getBossDefinition } from '../boss/boss-definitions';
 import { BossController } from '../boss/BossController';
@@ -36,8 +44,10 @@ import { createBossVisual as makeBossVisual, createPlayerVisual as makePlayerVis
 import type { BossVisual } from '../visual/BossVisual';
 import type { PlayerVisual } from '../visual/PlayerVisual';
 import { publishCombatHud } from '../hud/combat-hud-bridge';
+import { setCombatOutcomeHandlers } from '../hud/combat-outcome-bridge';
+import { ENEMY_TYPE_ID } from '../enemies/enemy-types';
 import { buildCombatHudState } from '../hud/build-combat-hud-state';
-import { audioManager, BGM_CONTEXT, SFX_ID, sfxForDash, sfxForEnemyAttack, sfxForPlayerAttack, sfxForSkill } from '../../audio';
+import { audioManager, bgmContextForCombat, BGM_CONTEXT, SFX_ID, playPlayerSwing, sfxForDash, sfxForEnemyAttack, sfxForSkill } from '../../audio';
 import { isGameDebugEnabled } from '../../debug/debug-flags';
 
 export class CombatScene extends Phaser.Scene {
@@ -75,6 +85,13 @@ export class CombatScene extends Phaser.Scene {
   private wasPlayerDead = false;
   private wasPhaseTransition = false;
   private readonly heardDeathIds = new Set<string>();
+  /** PRE_ENCOUNTER → ENEMY_ENTRANCE → READY → ACTIVE_COMBAT. AI stays halted until active. */
+  private startPhase: EncounterStartPhase = 'pre';
+  private phaseMs = 0;
+  private phaseBudget = 1;
+  private startPlan: EncounterStartPlan | null = null;
+  private playerEntering = false;
+  private playerEnterFacing = 1;
 
   constructor() {
     super('CombatScene');
@@ -88,10 +105,15 @@ export class CombatScene extends Phaser.Scene {
     CombatAssetLoader.create(this);
     this.status = 'RUNNING';
     this.resultSent = false;
+    this.retreatOnLeave = false;
     this.wasDashing = false;
     this.wasPlayerDead = false;
     this.wasPhaseTransition = false;
+    this.phaseMs = 0;
+    this.startPlan = null;
+    this.playerEntering = false;
     this.heardDeathIds.clear();
+    this.startPhase = 'pre';
     this.boss = undefined;
     this.bossHud = undefined;
     this.combatConfig = this.registry.get(COMBAT_CONFIG_REGISTRY_KEY) as CombatConfig | undefined;
@@ -124,6 +146,7 @@ export class CombatScene extends Phaser.Scene {
       dash,
       clampBlink: (x, y, radius) => this.arena?.clampPoint(x, y, radius) ?? { x, y },
     });
+    const training = this.combatConfig?.training === true;
     this.health = new PlayerHealthController(this, player, this.controller, {
       maxHp: this.combatConfig?.player.maxHp ?? PLAYER_MAX_HP,
       currentHp: this.combatConfig?.player.currentHp ?? PLAYER_MAX_HP,
@@ -131,14 +154,36 @@ export class CombatScene extends Phaser.Scene {
       currentMp: this.combatConfig?.player.currentMp ?? classDefinition.baseStats.maxMp,
       bodyColor: appearance.color,
       size: appearance.size,
+      infiniteResources: training,
+      invulnerable: training,
     });
     this.projectiles = new ProjectileController(this);
+    const basic = getBasicAttack(classId, classDefinition.combat.basicAttackId);
+    const rangeScale = this.combatConfig?.player.attackRangeScale ?? 1;
+    const attackPercent = this.combatConfig?.player.attackPercent ?? 0;
+    const rawDamage = basic.damage + (this.combatConfig?.player.attackBonus ?? 0);
     this.attack = new PlayerAttackController(this, player, this.controller, {
       profile: {
-        ...getBasicAttack(classId, classDefinition.combat.basicAttackId),
-        damage: getBasicAttack(classId, classDefinition.combat.basicAttackId).damage + (this.combatConfig?.player.attackBonus ?? 0),
+        ...basic,
+        damage: Math.max(1, Math.round(rawDamage * (1 + attackPercent / 100))),
+        hitbox: {
+          ...basic.hitbox,
+          width: Math.round(basic.hitbox.width * rangeScale),
+          height: Math.round(basic.hitbox.height * rangeScale),
+          offset: Math.round(basic.hitbox.offset * rangeScale),
+        },
+        projectile: basic.projectile
+          ? {
+              ...basic.projectile,
+              lifetimeMs: Math.round(basic.projectile.lifetimeMs * rangeScale),
+              radius: Math.max(4, Math.round(basic.projectile.radius * Math.min(rangeScale, 1.25))),
+            }
+          : undefined,
       },
       spawnProjectile: (request) => {
+        const strike = isBasicAttackId(request.skillId)
+          ? rollBasicAttackStrike(request.damage)
+          : { damage: request.damage, critical: false };
         this.projectiles?.spawn({
           skillId: request.skillId,
           x: request.originX,
@@ -146,22 +191,37 @@ export class CombatScene extends Phaser.Scene {
           pointerX: request.pointerX,
           pointerY: request.pointerY,
           speed: request.speed,
-          damage: request.damage,
+          damage: strike.damage,
           lifetimeMs: request.lifetimeMs,
           radius: request.radius,
           color: request.color,
           knockbackScale: request.knockbackScale,
           owner: 'player',
+          critical: strike.critical,
         });
-        audioManager.playSfx(sfxForPlayerAttack(classId));
+        playPlayerSwing(classId, this.attack?.attackId ?? 0);
       },
     });
     this.feedback = new CombatFeedback(this);
-    this.enemyManager = new EnemyManager(this, player, () => !this.health?.isDead, this.handleEnemyRangedShot);
+    const openingScout =
+      this.combatConfig?.encounterId === ENCOUNTER_ID.CH1_FOREST_SCOUTS &&
+      this.combatConfig?.repeatEncounter !== true;
+    this.enemyManager = new EnemyManager(
+      this,
+      player,
+      () => !this.health?.isDead,
+      this.handleEnemyRangedShot,
+      openingScout ? 1 : 2
+    );
     this.enemyManager.setWorldQueries(
       () => ({ x: this.controller?.facing ? (player.body as Phaser.Physics.Arcade.Body).velocity.x : 0, y: (player.body as Phaser.Physics.Arcade.Body).velocity.y }),
       (x, y, radius) => this.arena?.collidesCircle(x, y, radius) ?? false
     );
+    if (this.arena) {
+      this.enemyManager.setNavigation(this.arena.solidRects, this.arena.walkableAabb, (x, y) =>
+        this.arena?.containsWalkable(x, y) ?? true
+      );
+    }
     this.encounterManager = new EncounterManager(this.enemyManager);
     const encounterId =
       this.combatConfig?.encounterId ?? resolveEncounterId(this.combatConfig?.combatId ?? '') ?? ENCOUNTER_ID.RUINS_EASY_01;
@@ -174,6 +234,7 @@ export class CombatScene extends Phaser.Scene {
       instanceIds: this.combatConfig?.enemies.map((enemy) => enemy.id),
     });
     this.spawnBossIfNeeded(player);
+    this.beginEncounterIntro();
     this.skillCombat = new SkillCombatService(
       this,
       () => this.player,
@@ -234,6 +295,8 @@ export class CombatScene extends Phaser.Scene {
       this.playerVisual?.destroy();
       this.bossVisual?.destroy();
       publishCombatHud(null);
+      clearEncounterCue();
+      setCombatOutcomeHandlers(null);
     });
 
     this.game.canvas.setAttribute('tabindex', '0');
@@ -254,8 +317,25 @@ export class CombatScene extends Phaser.Scene {
     }
 
     if (this.status === 'RUNNING') {
+      if (this.startPhase !== 'active') {
+        this.phaseMs = Math.max(0, this.phaseMs - delta);
+        if (this.phaseMs <= 0) {
+          this.advanceStartPhase();
+        }
+        this.encounterManager?.update(delta, {
+          width: this.arena?.layout.width ?? this.scale.width,
+          height: this.arena?.layout.height ?? this.scale.height,
+        });
+        this.boss?.update(delta);
+        this.syncActorVisuals();
+        this.hud?.update();
+        this.bossHud?.update();
+        this.syncAliveLabel();
+        this.publishHud();
+        return;
+      }
       this.controller?.setCombatModifiers({
-        attackMoveMultiplier: this.attack?.isAttacking ? 0.72 : 1,
+        attackMoveMultiplier: this.attack?.isAttacking ? ATTACK_MOVE_MULTIPLIER : 1,
         dashLocked: this.attack?.blocksDash === true,
       });
       if (this.controller?.isDashing && this.attack?.isAttacking && !this.attack.blocksDash) {
@@ -284,18 +364,23 @@ export class CombatScene extends Phaser.Scene {
               y: this.player.y,
               radius: this.playerSize / 2,
               isInvincible: this.controller.isInvincible,
-              takeDamage: (hit) => this.health?.takeDamage(hit) ?? false,
+              takeDamage: (hit) =>
+                this.startPhase === 'active' ? (this.health?.takeDamage(hit) ?? false) : false,
             }
           : undefined,
-        (enemy, damage) => {
+        (enemy, damage, critical) => {
           this.feedback?.playAttackHit(enemy.gameObject, damage, {
             shakeScale: this.isBossTarget(enemy) ? COMBAT_FEEL.bossChipShakeScale : 1,
             offsetY: this.hitOffset(enemy),
+            critical,
           });
           audioManager.playSfx(SFX_ID.ENEMY_HIT);
           this.checkCombatEnd();
         },
         (damage) => {
+          if (this.startPhase !== 'active') {
+            return;
+          }
           if (this.player) {
             this.feedback?.playReceivedHit(this.player, damage, this.playerHitOffset());
             audioManager.playSfx(SFX_ID.PLAYER_HIT);
@@ -315,6 +400,9 @@ export class CombatScene extends Phaser.Scene {
             }
           : undefined,
         (damage, attackId, dirX, dirY) => {
+          if (this.startPhase !== 'active') {
+            return;
+          }
           const applied = this.health?.takeDamage({
             amount: damage,
             attackId,
@@ -370,6 +458,199 @@ export class CombatScene extends Phaser.Scene {
     );
   }
 
+  private beginEncounterIntro(): void {
+    const encounterId = this.combatConfig?.encounterId ?? '';
+    const training = this.combatConfig?.training === true;
+    const repeat = this.combatConfig?.repeatEncounter === true;
+    this.startPlan = planEncounterStart({
+      encounterId,
+      training,
+      repeat,
+      observed: this.combatConfig?.spawnBias === 'observed',
+      boss: Boolean(this.boss),
+    });
+    this.controller?.lockCombat();
+    this.enemyManager?.haltAll();
+    this.boss?.halt();
+    if (training) {
+      audioManager.playBgmContext(bgmContextForCombat(encounterId));
+    } else if (this.startPlan.playEnemyEntrances && this.startPlan.phases[0] === 'pre') {
+      this.enemyManager?.holdForEntrance();
+    }
+    if (this.startPlan.walkIn) {
+      this.beginPlayerWalkIn();
+    }
+    this.enterStartPhase(this.startPlan.phases[0] ?? 'ready');
+    this.encounterManager?.update(0, {
+      width: this.arena?.layout.width ?? this.scale.width,
+      height: this.arena?.layout.height ?? this.scale.height,
+    });
+    this.syncActorVisuals();
+  }
+
+  private enterStartPhase(phase: 'pre' | 'entrance' | 'ready'): void {
+    this.startPhase = phase;
+    const plan = this.startPlan;
+    if (!plan) {
+      this.finishEncounterIntro();
+      return;
+    }
+    if (phase === 'entrance') {
+      const layout = this.arena?.layout;
+      const animMs = plan.playEnemyEntrances
+        ? (this.enemyManager?.playEntrances(
+            {
+              width: layout?.width ?? this.scale.width,
+              height: layout?.height ?? this.scale.height,
+              originX: layout?.x ?? 0,
+              originY: layout?.y ?? 0,
+            },
+            this.combatConfig?.repeatEncounter ? 'brief' : 'full',
+            encounterEntranceSide(this.combatConfig?.encounterId ?? '')
+          ) ?? 0)
+        : 0;
+      this.phaseMs = Math.max(plan.entranceMs, animMs);
+      this.phaseBudget = Math.max(1, this.phaseMs);
+    if (plan.boss) {
+      this.tweens.killTweensOf(this.cameras.main);
+      this.nudgeCameraTowardBoss();
+    }
+    } else if (phase === 'ready') {
+      this.phaseMs = plan.readyMs + plan.graceMs;
+      this.phaseBudget = Math.max(1, this.phaseMs);
+      this.beginReadyBeat();
+    } else {
+      this.phaseMs = plan.preMs;
+      this.phaseBudget = Math.max(1, this.phaseMs);
+    }
+    this.publishStartCue();
+  }
+
+  private advanceStartPhase(): void {
+    const order = this.startPlan?.phases ?? [];
+    const index = order.indexOf(this.startPhase as 'pre' | 'entrance' | 'ready');
+    const next = order[index + 1];
+    if (!next) {
+      this.finishEncounterIntro();
+      return;
+    }
+    this.enterStartPhase(next);
+  }
+
+  private beginReadyBeat(): void {
+    const encounterId = this.combatConfig?.encounterId ?? '';
+    if (!this.combatConfig?.training) {
+      audioManager.playSfx(SFX_ID.COMBAT_START);
+      audioManager.playBgmContext(bgmContextForCombat(encounterId));
+    }
+    if (this.startPlan?.boss) {
+      this.cameras.main.shake(220, 0.004);
+      this.settleCamera();
+    }
+    if ((this.startPlan?.graceMs ?? 0) > 0) {
+      this.controller?.unlockCombat();
+    }
+  }
+
+  private nudgeCameraTowardBoss(): void {
+    if (!this.boss) {
+      return;
+    }
+    const cam = this.cameras.main;
+    const dx = Phaser.Math.Clamp((this.boss.gameObject.x - cam.midPoint.x) * 0.22, -80, 80);
+    const dy = Phaser.Math.Clamp((this.boss.gameObject.y - cam.midPoint.y) * 0.16, -48, 48);
+    this.tweens.add({
+      targets: cam,
+      zoom: 1.05,
+      scrollX: dx,
+      scrollY: dy,
+      duration: 420,
+      ease: 'Sine.easeOut',
+    });
+  }
+
+  private settleCamera(): void {
+    this.tweens.killTweensOf(this.cameras.main);
+    this.tweens.add({
+      targets: this.cameras.main,
+      zoom: 1,
+      scrollX: 0,
+      scrollY: 0,
+      duration: 200,
+      ease: 'Sine.easeInOut',
+    });
+  }
+
+  private beginPlayerWalkIn(): void {
+    if (!this.player || !this.arena) {
+      return;
+    }
+    const spawnX = this.player.x;
+    const spawnY = this.player.y;
+    const from = this.arena.clampPoint(spawnX - 160, spawnY, this.playerSize / 2);
+    if (Math.hypot(from.x - spawnX, from.y - spawnY) < 28) {
+      return;
+    }
+    const body = this.player.body as Phaser.Physics.Arcade.Body;
+    body.setEnable(false);
+    this.player.setPosition(from.x, from.y);
+    this.playerEntering = true;
+    this.playerEnterFacing = Math.sign(spawnX - from.x) || 1;
+    this.tweens.add({
+      targets: this.player,
+      x: spawnX,
+      y: spawnY,
+      duration: 340,
+      ease: 'Sine.easeOut',
+      onUpdate: () => {
+        body.reset(this.player?.x ?? spawnX, this.player?.y ?? spawnY);
+      },
+      onComplete: () => {
+        this.playerEntering = false;
+        if (!this.player?.active) {
+          return;
+        }
+        body.setEnable(true);
+        body.reset(spawnX, spawnY);
+      },
+    });
+  }
+
+  private publishStartCue(): void {
+    const plan = this.startPlan;
+    if (!plan) {
+      return;
+    }
+    const line = this.startPhase === 'pre' ? plan.cue : this.startPhase === 'active' ? '' : plan.meet;
+    publishEncounterCue({
+      phase: this.startPhase,
+      line,
+      boss: plan.boss,
+    });
+  }
+
+  private finishEncounterIntro(): void {
+    this.startPhase = 'active';
+    this.phaseMs = 0;
+    const encounterId = this.combatConfig?.encounterId ?? '';
+    const repeat = this.combatConfig?.repeatEncounter === true;
+    const training = this.combatConfig?.training === true;
+    const boss = Boolean(this.startPlan?.boss);
+    this.enemyManager?.resumeAll((enemy, index) =>
+      openingAttackDelayMs({
+        encounterId,
+        repeat,
+        training,
+        boss,
+        index,
+        ranged: enemy.typeId === ENEMY_TYPE_ID.ARCHER || enemy.typeId === ENEMY_TYPE_ID.GOBLIN_MAGE,
+      })
+    );
+    this.boss?.resume();
+    this.controller?.unlockCombat();
+    this.publishStartCue();
+  }
+
   private spawnBossIfNeeded(player: Phaser.GameObjects.Rectangle | Phaser.GameObjects.Arc): void {
     const encounter = this.encounterManager?.getDefinition();
     if (!encounter?.bossId) {
@@ -385,7 +666,8 @@ export class CombatScene extends Phaser.Scene {
       this.arena?.layout.height ?? this.scale.height,
       { x: this.arena?.layout.x ?? 0, y: this.arena?.layout.y ?? 0 }
     );
-    const visual = this.add.rectangle(point.x, point.y, definition.size, definition.size, definition.color);
+    const placed = this.arena?.clampPoint(point.x, point.y, definition.size / 2) ?? point;
+    const visual = this.add.rectangle(placed.x, placed.y, definition.size, definition.size, definition.color);
     visual.setAlpha(0);
     this.physics.add.existing(visual);
     this.boss = new BossController(
@@ -423,15 +705,16 @@ export class CombatScene extends Phaser.Scene {
   }
 
   private syncActorVisuals(): void {
+    this.containActors();
     if (this.player && this.controller && this.health) {
       const aim = this.attack?.isAttacking ? this.attack.attackDirection : this.controller.facing;
       const skillSlot = this.currentSkillVisualSlot();
       this.playerVisual?.update({
         x: this.player.x,
         y: this.player.y,
-        facingX: aim.x,
+        facingX: this.playerEntering ? this.playerEnterFacing : aim.x,
         facingY: aim.y,
-        moving: this.controller.isMoving,
+        moving: this.playerEntering || this.controller.isMoving,
         dashing: this.controller.isEvasive,
         invincible: this.controller.isInvincible && !this.health.isHitFlashing,
         hit: this.health.isHitFlashing,
@@ -444,6 +727,10 @@ export class CombatScene extends Phaser.Scene {
         blink: this.controller.isDashing && this.controller.dashStyle === 'blink',
         shadowDash: this.controller.isSkillMoving && this.lastSkillVisualId === 'rogue_shadow_dash',
         delta: this.lastVisualDelta,
+        speed: this.actorSpeed(
+          this.player,
+          this.playerEntering ? (this.combatConfig?.player.moveSpeed ?? 220) : 0
+        ),
       });
     }
     if (this.boss) {
@@ -452,12 +739,17 @@ export class CombatScene extends Phaser.Scene {
         snapshot.patternId === 'heavy_slam' || snapshot.patternId === 'projectile_burst' || snapshot.patternId === 'charge'
           ? snapshot.patternId
           : null;
+      const bossAwaken = this.startPhase === 'entrance' && this.startPlan?.boss === true;
+      const bossConcealed = this.startPhase === 'pre' && this.startPlan?.boss === true;
       this.bossVisual?.update({
         x: this.boss.gameObject.x,
         y: this.boss.gameObject.y,
         facingX: this.boss.attackDirection.x,
         facingY: this.boss.attackDirection.y,
-        moving: !this.boss.isDead && this.boss.state === 'IDLE',
+        moving: !bossAwaken && !bossConcealed && !this.boss.isDead && this.boss.state === 'IDLE',
+        entrance: bossAwaken ? 'awaken' : undefined,
+        entranceT: bossAwaken ? 1 - this.phaseMs / this.phaseBudget : undefined,
+        concealed: bossConcealed,
         hit: this.boss.isHit,
         dead: this.boss.isDead,
         deadT: this.boss.deathProgress,
@@ -467,6 +759,7 @@ export class CombatScene extends Phaser.Scene {
         phaseTransition: this.boss.isTransitioningPhase,
         bossPattern: pattern,
         delta: this.lastVisualDelta,
+        speed: this.actorSpeed(this.boss.gameObject),
       });
     }
   }
@@ -495,7 +788,9 @@ export class CombatScene extends Phaser.Scene {
       return getBossAsset(this.boss?.bossId ?? 'RUINS_GUARDIAN').damageTextOffsetY ?? 40;
     }
     if ('typeId' in target) {
-      return getEnemyAsset((target as EnemyController).typeId).damageTextOffsetY ?? 20;
+      const asset = getEnemyAsset((target as EnemyController).typeId);
+      const aboveHead = Math.round(asset.visualSize * (asset.originY ?? 0.9) + 6);
+      return Math.max(asset.damageTextOffsetY ?? 20, aboveHead);
     }
     return Math.round(target.size * 0.5);
   }
@@ -613,6 +908,7 @@ export class CombatScene extends Phaser.Scene {
   }
 
   private handleEnemyRangedShot = (shot: EnemyRangedShot): void => {
+    const isMage = shot.definition.id === 'goblin_mage';
     this.projectiles?.spawnEnemyShot({
       x: shot.originX,
       y: shot.originY,
@@ -622,6 +918,8 @@ export class CombatScene extends Phaser.Scene {
       damage: shot.definition.damage,
       lifetimeMs: shot.definition.projectileLifetimeMs ?? 1400,
       radius: shot.definition.projectileRadius ?? 7,
+      color: isMage ? shot.definition.color : undefined,
+      skillId: isMage ? 'enemy_mage_bolt' : 'enemy_shot',
     });
     audioManager.playSfx(SFX_ID.ARCHER_SHOT);
   };
@@ -643,7 +941,7 @@ export class CombatScene extends Phaser.Scene {
       this.attack.attackDirection,
       classId === 'rogue' ? 'backstab' : 'slash_basic'
     );
-    audioManager.playSfx(sfxForPlayerAttack(this.combatConfig?.player.classId ?? 'warrior'));
+    playPlayerSwing(this.combatConfig?.player.classId ?? 'warrior', this.attack.attackId);
   }
 
   private syncAliveLabel(): void {
@@ -669,6 +967,10 @@ export class CombatScene extends Phaser.Scene {
       return;
     }
 
+    // Training dummies respawn — never auto-end the session.
+    if (this.combatConfig?.training) {
+      return;
+    }
     if (this.encounterManager?.isVictory()) {
       this.enterResult('VICTORY');
     }
@@ -682,13 +984,22 @@ export class CombatScene extends Phaser.Scene {
     this.status = status;
     this.attack?.cancel();
     this.controller?.lockCombat();
+    if (status === 'DEFEAT') {
+      this.enemyManager?.hideOverheads();
+    }
     this.encounterManager?.haltAll();
     this.boss?.halt();
     this.projectiles?.destroyAll();
     this.skillCombat?.destroy();
+    setCombatOutcomeHandlers({
+      retry: this.restartCombat,
+      leave: this.submitRetreat,
+      proceed: this.submitResult,
+    });
 
     const isBoss = Boolean(this.boss);
-    this.time.delayedCall(420, () => {
+    // Let death / idle settle before victory chrome.
+    this.time.delayedCall(isBoss ? 900 : 620, () => {
       if (!this.hud) {
         return;
       }
@@ -706,6 +1017,13 @@ export class CombatScene extends Phaser.Scene {
 
   private restartCombat = (): void => {
     this.scene.restart();
+  };
+
+  private retreatOnLeave = false;
+
+  private submitRetreat = (): void => {
+    this.retreatOnLeave = true;
+    this.submitResult();
   };
 
   private submitResult = (): void => {
@@ -732,6 +1050,7 @@ export class CombatScene extends Phaser.Scene {
       defeatedEnemyIds,
       defeatedEnemyTypes,
       consumedItemIds: Array.from({ length: this.potionsUsed }, () => ITEM_ID.HEALING_POTION),
+      retreatToVillage: this.retreatOnLeave,
     };
 
     EventBus.emit(COMBAT_RESULT_EVENT, result);
@@ -748,17 +1067,21 @@ export class CombatScene extends Phaser.Scene {
       return;
     }
 
+    const strike = rollBasicAttackStrike(this.attack.damage);
+    const before = readCombatHp(enemy);
     const applied = enemy.takeDamage({
-      amount: this.attack.damage,
+      amount: strike.damage,
       direction: this.attack.attackDirection,
       attackId: this.attack.attackId,
       knockbackScale: this.attack.knockbackScale,
     });
 
     if (applied) {
-      this.feedback?.playAttackHit(enemy.gameObject, this.attack.damage, {
+      const shown = damageNumberForStrike(before, readCombatHp(enemy), strike.damage);
+      this.feedback?.playAttackHit(enemy.gameObject, shown, {
         shakeScale: this.isBossTarget(enemy) ? COMBAT_FEEL.bossChipShakeScale : 1,
         offsetY: this.hitOffset(enemy),
+        critical: strike.critical,
       });
       audioManager.playSfx(SFX_ID.ENEMY_HIT);
     }
@@ -769,6 +1092,7 @@ export class CombatScene extends Phaser.Scene {
   private canApplyEnemyAttackHit(enemy: EnemyController): boolean {
     return Boolean(
       this.status === 'RUNNING' &&
+        this.startPhase === 'active' &&
         !enemy.isDead &&
         this.health &&
         !this.health.isDead &&
@@ -790,14 +1114,13 @@ export class CombatScene extends Phaser.Scene {
 
     if (applied && this.player) {
       this.feedback?.playReceivedHit(this.player, enemy.attackDamage, this.playerHitOffset());
-      audioManager.playSfx(sfxForEnemyAttack(enemy.typeId));
       audioManager.playSfx(SFX_ID.PLAYER_HIT);
     }
     this.checkCombatEnd();
   }
 
   private canApplyBossHitbox(boss: BossController, kind: 'slam' | 'charge'): boolean {
-    if (this.status !== 'RUNNING' || boss.isDead || !this.health || this.health.isDead || !this.controller || this.controller.isInvincible) {
+    if (this.startPhase !== 'active' || this.status !== 'RUNNING' || boss.isDead || !this.health || this.health.isDead || !this.controller || this.controller.isInvincible) {
       return false;
     }
     return kind === 'slam' ? boss.isSlamHitboxActive() : boss.isChargeHitboxActive();
@@ -823,7 +1146,6 @@ export class CombatScene extends Phaser.Scene {
     if (applied && this.player) {
       this.feedback?.playReceivedHit(this.player, amount, this.playerHitOffset(), true);
       audioManager.playSfx(sfxId);
-      audioManager.playSfx(SFX_ID.PLAYER_HIT);
     }
     this.checkCombatEnd();
   }
@@ -835,6 +1157,13 @@ export class CombatScene extends Phaser.Scene {
     this.wasPlayerDead = this.health?.isDead === true;
 
     for (const enemy of this.enemyManager?.getEnemies() ?? []) {
+      if (enemy.isAttacking) {
+        const swingKey = `${enemy.id}:${enemy.attackId}`;
+        if (!this.heardDeathIds.has(swingKey)) {
+          this.heardDeathIds.add(swingKey);
+          audioManager.playSfx(sfxForEnemyAttack(enemy.typeId));
+        }
+      }
       if (enemy.isDead && !this.heardDeathIds.has(enemy.id)) {
         this.heardDeathIds.add(enemy.id);
         audioManager.playSfx(SFX_ID.ENEMY_DEATH);
@@ -853,6 +1182,7 @@ export class CombatScene extends Phaser.Scene {
 
   private handleResize(gameSize: Phaser.Structs.Size): void {
     this.cameras.main.setSize(gameSize.width, gameSize.height);
+    this.arena?.resize(gameSize.width, gameSize.height);
     this.syncWorldBounds();
     this.clampActor(this.player, this.playerSize);
     for (const enemy of this.enemyManager?.getEnemies() ?? []) {
@@ -871,7 +1201,11 @@ export class CombatScene extends Phaser.Scene {
     if (!Phaser.Input.Keyboard.JustDown(this.potionKey)) {
       return;
     }
-    if (this.potionCount <= 0 || this.potionCooldownMs > 0) {
+    if (this.potionCooldownMs > 0) {
+      return;
+    }
+    const training = this.combatConfig?.training === true;
+    if (!training && this.potionCount <= 0) {
       return;
     }
     const heal = getItemDefinition(ITEM_ID.HEALING_POTION)?.healHp ?? 30;
@@ -879,34 +1213,63 @@ export class CombatScene extends Phaser.Scene {
     if (restored <= 0 && (this.health?.currentHp ?? 0) >= (this.health?.maxHp ?? 0)) {
       return;
     }
-    this.potionCount -= 1;
-    this.potionsUsed += 1;
+    if (!training) {
+      this.potionCount -= 1;
+      this.potionsUsed += 1;
+    }
     this.potionCooldownMs = POTION_COOLDOWN_MS;
   }
 
   private syncWorldBounds(): void {
-    const layout = this.arena?.layout;
-    if (layout) {
-      this.physics.world.setBounds(layout.x, layout.y, layout.width, layout.height);
+    const floor = this.arena?.walkableAabb;
+    if (floor) {
+      this.physics.world.setBounds(floor.x, floor.y, floor.width, floor.height);
       return;
     }
     this.physics.world.setBounds(0, 0, this.scale.width, this.scale.height);
+  }
+
+  private containActors(): void {
+    if (!this.playerEntering) {
+      this.clampActor(this.player, this.playerSize);
+    }
+    for (const enemy of this.enemyManager?.getEnemies() ?? []) {
+      if (this.enemyManager?.isEntering(enemy.id)) {
+        continue;
+      }
+      this.clampActor(enemy.gameObject, enemy.size);
+    }
+    if (this.boss) {
+      this.clampActor(this.boss.gameObject, this.boss.size);
+    }
+  }
+
+  /** px/s the actor is actually traveling, so the walk cycle can match the ground. */
+  private actorSpeed(target: Phaser.GameObjects.GameObject, fallback = 0): number {
+    const body = target.body as Phaser.Physics.Arcade.Body | undefined;
+    const measured = body ? Math.hypot(body.velocity.x, body.velocity.y) : 0;
+    return measured > 24 ? measured : fallback;
   }
 
   private clampActor(
     target: Phaser.GameObjects.Rectangle | Phaser.GameObjects.Arc | undefined,
     size: number
   ): void {
-    if (!target) {
+    if (!target || !this.arena) {
       return;
     }
-
-    const layout = this.arena?.layout;
-    if (layout) {
-      const half = size / 2;
-      target.x = Phaser.Math.Clamp(target.x, layout.x + half, layout.x + layout.width - half);
-      target.y = Phaser.Math.Clamp(target.y, layout.y + half, layout.y + layout.height - half);
+    const next = this.arena.clampPoint(target.x, target.y, size / 2);
+    if (Math.abs(next.x - target.x) < 0.5 && Math.abs(next.y - target.y) < 0.5) {
       return;
     }
+    const body = target.body as Phaser.Physics.Arcade.Body | null;
+    if (body) {
+      const vx = body.velocity.x;
+      const vy = body.velocity.y;
+      body.reset(next.x, next.y);
+      body.setVelocity(vx, vy);
+      return;
+    }
+    target.setPosition(next.x, next.y);
   }
 }

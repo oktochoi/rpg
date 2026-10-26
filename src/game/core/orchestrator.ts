@@ -35,6 +35,8 @@ export interface GameOrchestratorOptions {
   now?: () => number;
   actionParser?: ActionParser;
   dialogue?: NpcDialogueService;
+  /** Chapter 1 play does not read or write saves. Tests leave this on. */
+  autosaveEnabled?: boolean;
 }
 
 export function createGameOrchestrator(
@@ -69,6 +71,13 @@ export function createGameOrchestrator(
   function applyCommand(command: Command): boolean {
     const result = rules.evaluate(command, state);
     if (!result.allowed) {
+      // Surface rejected story/move choices so the UI does not feel soft-locked.
+      if (
+        (command.type === 'SELECT_CHOICE' || command.type === 'MOVE_TO_LOCATION') &&
+        result.reason
+      ) {
+        applyNotice(result.reason);
+      }
       return false;
     }
     const events = resolvePlayerTurnEvents(state, result.events);
@@ -82,7 +91,7 @@ export function createGameOrchestrator(
   }
 
   function maybeAutosave(events: readonly GameEvent[]) {
-    if (!shouldAutosave(events)) {
+    if (options.autosaveEnabled === false || !shouldAutosave(events)) {
       return;
     }
     const playTimeSeconds = currentPlayTime();

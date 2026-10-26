@@ -32,6 +32,10 @@ export const STORY_SCREEN_PLACEHOLDER: StoryScreenView = {
       '빗소리가 여관 홀을 채운다. 벽난로는 약하게 타오르고, 낡은 간판의 글자는 그을음에 가려 거의 보이지 않는다. 카운터 너머로 마라가 잔을 닦으며 당신을 살핀다.',
     messages: [],
     lastActionNarrative: null,
+    storyLog: [],
+    flowMode: 'FREE_ROAM',
+    gamePhase: 'VILLAGE',
+    sequenceTitle: null,
   },
   quest: {
     title: '여관의 소문',

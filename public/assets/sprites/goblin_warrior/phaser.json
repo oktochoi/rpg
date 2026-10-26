@@ -1,0 +1,45 @@
+{
+  "textureKey": "goblin_warrior",
+  "path": "goblin_warrior/goblin_warrior_spritesheet_8x5_256.png",
+  "frameConfig": {
+    "frameWidth": 256,
+    "frameHeight": 256
+  },
+  "animations": [
+    {
+      "key": "goblin_warrior_idle",
+      "start": 0,
+      "end": 7,
+      "frameRate": 6,
+      "repeat": -1
+    },
+    {
+      "key": "goblin_warrior_run",
+      "start": 8,
+      "end": 15,
+      "frameRate": 10,
+      "repeat": -1
+    },
+    {
+      "key": "goblin_warrior_attack",
+      "start": 16,
+      "end": 23,
+      "frameRate": 12,
+      "repeat": 0
+    },
+    {
+      "key": "goblin_warrior_hurt",
+      "start": 24,
+      "end": 31,
+      "frameRate": 10,
+      "repeat": 0
+    },
+    {
+      "key": "goblin_warrior_death",
+      "start": 32,
+      "end": 39,
+      "frameRate": 8,
+      "repeat": 0
+    }
+  ]
+}

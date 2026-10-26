@@ -18,11 +18,18 @@ export interface EnemyBehaviorContext {
   formationIndex: number;
   aliveCount: number;
   hasMeleeToken: boolean;
+  pathClear?: boolean;
 }
 
 export interface EnemyMoveCommand {
   vx: number;
   vy: number;
+  goalX?: number;
+  goalY?: number;
+  /** In strike range: do not keep sliding toward the player. */
+  hold?: boolean;
+  /** Ranged units should path to a cell that can see the player. */
+  needsLos?: boolean;
 }
 
 export interface EnemyBehavior {
@@ -43,11 +50,7 @@ export function directionToward(fromX: number, fromY: number, toX: number, toY: 
 
 export function surroundOffset(ctx: EnemyBehaviorContext, radius: number): { x: number; y: number } {
   const count = Math.max(1, ctx.aliveCount);
-  const t = count === 1 ? 0.5 : ctx.formationIndex / (count - 1);
-  const angleOffset = (t - 0.5) * (Math.PI / 2);
-  const toEnemy = directionToward(ctx.playerX, ctx.playerY, ctx.x, ctx.y);
-  const base = Math.atan2(toEnemy.y, toEnemy.x);
-  const angle = base + angleOffset;
+  const angle = (ctx.formationIndex / count) * Math.PI * 2;
   return {
     x: ctx.playerX + Math.cos(angle) * radius,
     y: ctx.playerY + Math.sin(angle) * radius,

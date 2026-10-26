@@ -18,7 +18,13 @@ export class BossVisual {
   update(state: ActorVisualState): void {
     this.actor.update(state);
     this.aura.setPosition(state.x, state.y);
-    this.aura.setVisible(!state.dead);
+    this.aura.setVisible(!state.dead && !state.concealed);
+    if (state.entrance === 'awaken' && !state.concealed) {
+      const t = state.entranceT ?? 0;
+      this.aura.setStrokeStyle(3, 0x7ec8ff, 0.2 + t * 0.65);
+      this.aura.setScale(0.85 + t * 0.25);
+      return;
+    }
     if (state.phaseTransition || state.phase === 2) {
       this.aura.setStrokeStyle(3, 0xff88cc, 0.55 + Math.sin(performance.now() / 140) * 0.2);
       this.aura.setScale(state.phaseTransition ? 1.25 : 1.15);

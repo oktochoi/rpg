@@ -78,6 +78,17 @@ function migrateV2(data: unknown): unknown {
         exp: typeof player.exp === 'number' ? player.exp : 0,
         attackPower: typeof player.attackPower === 'number' ? player.attackPower : 10,
         classRankId: typeof player.classRankId === 'string' ? player.classRankId : undefined,
+        permanentMods:
+          isRecord(player.permanentMods)
+            ? {
+                attackPercent: typeof player.permanentMods.attackPercent === 'number' ? player.permanentMods.attackPercent : 0,
+                rangePercent: typeof player.permanentMods.rangePercent === 'number' ? player.permanentMods.rangePercent : 0,
+                maxHpFlat: typeof player.permanentMods.maxHpFlat === 'number' ? player.permanentMods.maxHpFlat : 0,
+              }
+            : { attackPercent: 0, rangePercent: 0, maxHpFlat: 0 },
+        purchasedUpgradeIds: Array.isArray(player.purchasedUpgradeIds)
+          ? player.purchasedUpgradeIds.filter((id): id is string => typeof id === 'string')
+          : [],
       },
         world: {
           ...world,
@@ -207,6 +218,10 @@ function migrateV4(data: unknown): unknown {
       world: {
         ...world,
         clearedEncounterIds: Array.isArray(world.clearedEncounterIds) ? world.clearedEncounterIds : [],
+        ruinsKeyFailedAttempts:
+          typeof world.ruinsKeyFailedAttempts === 'number' && Number.isFinite(world.ruinsKeyFailedAttempts)
+            ? Math.max(0, Math.floor(world.ruinsKeyFailedAttempts))
+            : 0,
       },
       story: {
         ...story,

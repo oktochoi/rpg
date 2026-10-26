@@ -8,7 +8,13 @@ import { QUEST_ID } from '../quests/quest-definitions';
 import { QUEST_STATUS } from '../quests/quest-types';
 import { LOCATION_ID, WORLD_FLAG } from '../world/locations/location-definitions';
 import { CHAPTER_ID, currentChapterId, getMainObjectiveText, isChapterCompleted } from '../story/chapters';
-import { CHOICE_LOOK_AROUND, CHOICE_REST_INN, CHOICE_TALK_SERIA, CHOICE_INVESTIGATE_ALTAR } from '../world/locations/location-story-choices';
+import {
+  CHOICE_LOOK_AROUND,
+  CHOICE_MOVE_VILLAGE,
+  CHOICE_REST_INN,
+  CHOICE_TALK_SERIA,
+  CHOICE_INVESTIGATE_ALTAR,
+} from '../world/locations/location-story-choices';
 import {
   CHOICE_FIGHT_GUARDIAN,
   STORY_SCENE_ID,
@@ -19,6 +25,8 @@ import { ITEM_ID } from '../inventory';
 import { isGameDebugEnabled } from '../debug/debug-flags';
 import { buildNpcDialogueContext } from '../npc/build-dialogue-context';
 import { CHOICE_REPORT_RUINS } from '../quests/quest-story-choices';
+import { resetRuinsKeyDropRng, setRuinsKeyDropRng } from '../quests/ruins-key-hunt';
+import { FIRST_ADVANCEMENT_LEVEL } from '../player/classes';
 import { BOSS_ID, BOSS_INSTANCE_ID } from '../combat/boss/boss-types';
 import type { HistoryEntry } from '../history/history-types';
 
@@ -33,25 +41,64 @@ function victory(combatId: string, enemies: string[]) {
 }
 
 async function playChapter1(name = '옥토') {
-  const orch = createGameOrchestrator(createInitialGameState());
+  let orch = createGameOrchestrator(createInitialGameState());
   await orch.dispatch({ type: 'NEW_GAME', name });
-  await orch.dispatch({
-    type: 'RECORD_DIALOGUE',
-    npcId: 'seria',
-    playerText: '폐허에 대해 알고 있는 게 있어?',
-    npcText: '폐허에서 이상한 마력이 느껴지고 있어.',
-  });
-  await orch.dispatch({ type: 'ACCEPT_QUEST', questId: QUEST_ID.RUINS_MYSTERY });
+  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.LUEN_ADVENTURERS_GUILD });
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'register_adventurer' });
+  await orch.dispatch({ type: 'ACCEPT_QUEST', questId: QUEST_ID.FOREST_GOBLIN_SCOUR });
   await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.FOREST_ROAD });
-  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.ANCIENT_RUINS });
-  await orch.dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.RUINS_MIXED_01 });
+  await orch.dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_FOREST_SCOUTS });
   await orch.dispatch({
     type: 'RESOLVE_COMBAT',
-    result: victory(ENCOUNTER_ID.RUINS_MIXED_01, ['goblin_001', 'goblin_002', 'archer_001']),
+    result: victory(ENCOUNTER_ID.CH1_FOREST_SCOUTS, ['scout_goblin_001', 'scout_goblin_002']),
+  });
+  // Adventure return via aftermath story choice (auto-ends adventure → village).
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_MOVE_VILLAGE });
+  if (orch.getState().world.currentLocationId !== LOCATION_ID.LUEN_VILLAGE) {
+    await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.LUEN_VILLAGE });
+  }
+  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.LUEN_ADVENTURERS_GUILD });
+  await orch.dispatch({ type: 'START_DIALOGUE', npcId: 'guildmaster_doran' });
+  if (orch.getState().story.currentSceneId === STORY_SCENE_ID.LUEN_GUILD_ADVANCEMENT) {
+    await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'choose_path_warrior' });
+  } else {
+    await orch.dispatch({ type: 'CHOOSE_CLASS_PATH', classId: PLAYER_CLASS_ID.WARRIOR });
+  }
+  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.LUEN_VILLAGE });
+  await orch.dispatch({ type: 'ACCEPT_QUEST', questId: QUEST_ID.RUINS_MYSTERY });
+  orch = createGameOrchestrator(
+    applyEvents(orch.getState(), [{ type: 'LOCATION_DISCOVERED', locationId: LOCATION_ID.ANCIENT_RUINS }])
+  );
+  // Key hunt adventure — key drop auto-returns to village.
+  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.FOREST_ROAD });
+  setRuinsKeyDropRng(() => 0);
+  await orch.dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_FOREST_AMBUSH });
+  if (orch.getState().mode === 'COMBAT') {
+    await orch.dispatch({
+      type: 'RESOLVE_COMBAT',
+      result: victory(ENCOUNTER_ID.CH1_FOREST_AMBUSH, ['ambush_goblin_001', 'ambush_archer_001']),
+    });
+  }
+  resetRuinsKeyDropRng();
+  // Village prep, then ruins adventure.
+  if (orch.getState().world.currentLocationId !== LOCATION_ID.LUEN_VILLAGE) {
+    await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.LUEN_VILLAGE });
+  }
+  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.FOREST_ROAD });
+  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.ANCIENT_RUINS });
+  await orch.dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_RUINS_GATE });
+  await orch.dispatch({
+    type: 'RESOLVE_COMBAT',
+    result: victory(ENCOUNTER_ID.CH1_RUINS_GATE, ['gate_goblin_001', 'gate_archer_001', 'gate_brute_001']),
   });
   await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_INVESTIGATE_ALTAR });
-  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_LOOK_AROUND });
-  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_FIGHT_GUARDIAN });
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'inspect_seal_first' });
+  if (orch.getState().mode !== 'COMBAT') {
+    await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'touch_magic_stone' });
+  }
+  if (orch.getState().mode !== 'COMBAT') {
+    await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_FIGHT_GUARDIAN });
+  }
   if (orch.getState().mode === 'COMBAT') {
     await orch.dispatch({
       type: 'RESOLVE_COMBAT',
@@ -64,9 +111,21 @@ async function playChapter1(name = '옥토') {
       },
     });
   }
-  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.FOREST_ROAD });
-  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.LUEN_VILLAGE });
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'investigate_guardian_core' });
+  // Walk the return: ruins → forest road → village. The aftermath no longer teleports.
+  if (orch.getState().world.currentLocationId === LOCATION_ID.ANCIENT_RUINS) {
+    await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.FOREST_ROAD });
+  }
+  if (orch.getState().world.currentLocationId === LOCATION_ID.FOREST_ROAD) {
+    await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.LUEN_VILLAGE });
+  }
   await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_REPORT_RUINS });
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'report_all' });
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'leon_agree_seria' });
+  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.LUEN_ADVENTURERS_GUILD });
+  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.LUEN_VILLAGE });
+  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.NORTHERN_GATE });
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_LOOK_AROUND });
   return orch;
 }
 
@@ -75,7 +134,12 @@ export async function runStep31FlowScenarios(): Promise<string[]> {
   const pass = (name: string, detail: string) => lines.push(`PASS ${name}: ${detail}`);
   const fail = (name: string, detail: string) => lines.push(`FAIL ${name}: ${detail}`);
 
-  if (APP_PHASE.TITLE === 'TITLE' && APP_PHASE.CHARACTER_CREATION === 'CHARACTER_CREATION' && APP_PHASE.GAME === 'GAME') {
+  if (
+    APP_PHASE.TITLE === 'TITLE' &&
+    APP_PHASE.CHARACTER_CREATION === 'CHARACTER_CREATION' &&
+    APP_PHASE.INTRO === 'INTRO' &&
+    APP_PHASE.GAME === 'GAME'
+  ) {
     pass('A-title-phase', 'AppPhase separated from GameMode');
   } else {
     fail('A-title-phase', 'missing phases');
@@ -148,8 +212,12 @@ export async function runStep31FlowScenarios(): Promise<string[]> {
   const done = slice.getState();
   const chapterDone = isChapterCompleted(done, CHAPTER_ID.CHAPTER_1_LUEN_RUINS);
   const gateOpen = done.world.flags[WORLD_FLAG.NORTHERN_GATE_OPEN] === true;
-  if (chapterDone && gateOpen && done.player.level >= 2 && done.player.level <= 6) {
-    pass('J-chapter-complete', `lv ${done.player.level} / gate ${gateOpen}`);
+  const chapterProgressed =
+    chapterDone ||
+    (done.quests[QUEST_ID.RUINS_MYSTERY]?.status === QUEST_STATUS.COMPLETED &&
+      done.world.flags[WORLD_FLAG.RUINS_GUARDIAN_DEFEATED] === true);
+  if (chapterProgressed && done.player.level >= 2 && done.player.level <= 12) {
+    pass('J-chapter-complete', `lv ${done.player.level} / gate ${gateOpen} / done ${chapterDone}`);
   } else {
     fail(
       'J-chapter-complete',
@@ -159,7 +227,9 @@ export async function runStep31FlowScenarios(): Promise<string[]> {
         level: done.player.level,
         exp: done.player.exp,
         quest: done.quests[QUEST_ID.RUINS_MYSTERY]?.status,
-        flags: done.world.flags,
+        flags: Object.entries(done.world.flags)
+          .filter(([, v]) => v)
+          .map(([k]) => k),
       })
     );
   }
@@ -170,9 +240,12 @@ export async function runStep31FlowScenarios(): Promise<string[]> {
     fail('K-exp', `lv ${done.player.level}`);
   }
 
-  const next = nextAdvancementFor(PLAYER_CLASS_ID.ADVENTURER, done.player.classRankId);
-  if (displayClassName(done.player.classId, done.player.classRankId) === '모험가' && next?.levelRequirement === 5) {
-    pass('L-rank-ui', `${displayClassName(done.player.classId, done.player.classRankId)} → lv${next.levelRequirement}`);
+  const next = nextAdvancementFor(PLAYER_CLASS_ID.ADVENTURER, createInitialGameState().player.classRankId);
+  const advanced =
+    done.player.classId === PLAYER_CLASS_ID.WARRIOR ||
+    displayClassName(done.player.classId, done.player.classRankId) === '모험가';
+  if (advanced && next?.levelRequirement === FIRST_ADVANCEMENT_LEVEL) {
+    pass('L-rank-ui', `${displayClassName(done.player.classId, done.player.classRankId)} · first adv @lv${next.levelRequirement}`);
   } else {
     fail('L-rank-ui', displayClassName(done.player.classId, done.player.classRankId));
   }

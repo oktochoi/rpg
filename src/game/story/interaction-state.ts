@@ -48,7 +48,7 @@ export function selectInteractionState(
     mode: state.mode,
     isResolving,
     hasCandidates,
-    canUseFreeInput: canInteract,
+    canUseFreeInput: false,
   };
 }
 

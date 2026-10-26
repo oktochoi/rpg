@@ -1,0 +1,262 @@
+{
+  "images": {
+    "public/game-assets/backgrounds/northern-gate/northern_gate.png": {
+      "size": [
+        2048,
+        768
+      ],
+      "mode": "RGB"
+    },
+    "public/game-assets/effects/guard_shield.png": {
+      "size": [
+        512,
+        512
+      ],
+      "mode": "RGBA"
+    },
+    "public/game-assets/effects/boss_phase.png": {
+      "size": [
+        512,
+        512
+      ],
+      "mode": "RGBA"
+    },
+    "public/game-assets/effects/boss_slam.png": {
+      "size": [
+        512,
+        512
+      ],
+      "mode": "RGBA"
+    },
+    "public/game-assets/effects/boss_charge.png": {
+      "size": [
+        512,
+        512
+      ],
+      "mode": "RGBA"
+    },
+    "public/assets/characters/hero_swordsman/hero_fullbody.png": {
+      "size": [
+        800,
+        1200
+      ],
+      "mode": "RGBA"
+    },
+    "public/assets/bosses/ruins_guardian/ruins_guardian_idle.png": {
+      "size": [
+        1086,
+        1448
+      ],
+      "mode": "RGBA"
+    },
+    "public/assets/bosses/ruins_guardian/ruins_guardian_walk_2.png": {
+      "size": [
+        1086,
+        1448
+      ],
+      "mode": "RGBA"
+    },
+    "public/assets/bosses/ruins_guardian/ruins_guardian_hit.png": {
+      "size": [
+        1086,
+        1448
+      ],
+      "mode": "RGBA"
+    },
+    "public/assets/bosses/ruins_guardian/ruins_guardian_death.png": {
+      "size": [
+        1086,
+        1448
+      ],
+      "mode": "RGBA"
+    },
+    "public/assets/bosses/ruins_guardian/ruins_guardian_projectile_cast.png": {
+      "size": [
+        1086,
+        1448
+      ],
+      "mode": "RGBA"
+    },
+    "public/assets/bosses/ruins_guardian/ruins_guardian_slam_attack.png": {
+      "size": [
+        1086,
+        1448
+      ],
+      "mode": "RGBA"
+    },
+    "public/assets/bosses/ruins_guardian/ruins_guardian_walk_1.png": {
+      "size": [
+        1086,
+        1448
+      ],
+      "mode": "RGBA"
+    },
+    "public/assets/bosses/ruins_guardian/ruins_guardian_slam_windup.png": {
+      "size": [
+        1086,
+        1448
+      ],
+      "mode": "RGBA"
+    },
+    "public/assets/ui/dark-fantasy/item_sword_iron.png": {
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGB"
+    },
+    "public/assets/ui/dark-fantasy/item_potion_hp.png": {
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGB"
+    },
+    "public/assets/ui/dark-fantasy/item_sword.png": {
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGB"
+    },
+    "public/assets/ui/dark-fantasy/item_goblin_ear.png": {
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGB"
+    },
+    "public/assets/ui/dark-fantasy/item_armor_leather.png": {
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGB"
+    },
+    "public/assets/ui/dark-fantasy/item_armor.png": {
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGB"
+    },
+    "public/assets/ui/dark-fantasy/item_potion.png": {
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGB"
+    },
+    "public/assets/story/03_adventurers_guild_hall.png": {
+      "size": [
+        2048,
+        768
+      ],
+      "mode": "RGB"
+    },
+    "public/assets/story/06_seria_scholar_npc.png": {
+      "size": [
+        640,
+        800
+      ],
+      "mode": "RGBA"
+    },
+    "public/assets/story/guild_master_doran.png": {
+      "size": [
+        768,
+        768
+      ],
+      "mode": "RGB"
+    },
+    "public/assets/story/shopkeeper_elin_placeholder.png": {
+      "size": [
+        768,
+        768
+      ],
+      "mode": "RGB"
+    },
+    "public/assets/story/08_marta_innkeeper_npc.png": {
+      "size": [
+        640,
+        800
+      ],
+      "mode": "RGBA"
+    },
+    "public/assets/story/general_store_interior.png": {
+      "size": [
+        2048,
+        768
+      ],
+      "mode": "RGB"
+    },
+    "public/assets/story/07_leon_knight_npc.png": {
+      "size": [
+        640,
+        800
+      ],
+      "mode": "RGBA"
+    },
+    "public/assets/story/05_ancient_ruins.png": {
+      "size": [
+        2048,
+        768
+      ],
+      "mode": "RGB"
+    },
+    "public/assets/story/04_forest_road.png": {
+      "size": [
+        2048,
+        768
+      ],
+      "mode": "RGB"
+    },
+    "public/assets/story/01_luen_village_square.png": {
+      "size": [
+        2048,
+        768
+      ],
+      "mode": "RGB"
+    },
+    "public/assets/story/training_ground.png": {
+      "size": [
+        2048,
+        768
+      ],
+      "mode": "RGB"
+    },
+    "public/assets/story/02_blue_moon_inn_interior.png": {
+      "size": [
+        2048,
+        768
+      ],
+      "mode": "RGB"
+    }
+  },
+  "audio": {
+    "public/game-assets/audio/bgm/story_safe.mp3": {},
+    "public/game-assets/audio/bgm/story_mystery.mp3": {},
+    "public/game-assets/audio/bgm/combat_boss.mp3": {},
+    "public/game-assets/audio/bgm/victory.mp3": {},
+    "public/game-assets/audio/bgm/combat_normal.mp3": {},
+    "public/game-assets/audio/bgm/defeat.mp3": {},
+    "public/game-assets/audio/sfx/ui_click.mp3": {},
+    "public/game-assets/audio/sfx/guardian_projectile.mp3": {},
+    "public/game-assets/audio/sfx/combat_start.mp3": {},
+    "public/game-assets/audio/sfx/ui_confirm.mp3": {},
+    "public/game-assets/audio/sfx/player_dash.mp3": {},
+    "public/game-assets/audio/sfx/player_attack.mp3": {},
+    "public/game-assets/audio/sfx/brute_attack.mp3": {},
+    "public/game-assets/audio/sfx/enemy_hit.mp3": {},
+    "public/game-assets/audio/sfx/guardian_death.mp3": {},
+    "public/game-assets/audio/sfx/guardian_slam.mp3": {},
+    "public/game-assets/audio/sfx/archer_shot.mp3": {},
+    "public/game-assets/audio/sfx/victory.mp3": {},
+    "public/game-assets/audio/sfx/quest_update.mp3": {},
+    "public/game-assets/audio/sfx/defeat.mp3": {},
+    "public/game-assets/audio/sfx/important_discovery.mp3": {},
+    "public/game-assets/audio/sfx/goblin_attack.mp3": {},
+    "public/game-assets/audio/sfx/guardian_phase2.mp3": {},
+    "public/game-assets/audio/sfx/player_hit.mp3": {},
+    "public/game-assets/audio/sfx/guardian_charge.mp3": {}
+  }
+}

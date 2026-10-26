@@ -25,12 +25,20 @@ export interface ActorVisualState {
   shadowDash?: boolean;
   phaseTransition?: boolean;
   bossPattern?: 'heavy_slam' | 'projectile_burst' | 'charge' | null;
+  entrance?: 'run_in' | 'drop_back' | 'materialize' | 'awaken';
+  /** 0 at the start of an entrance, 1 when the enemy has arrived. */
+  entranceT?: number;
+  /** Hidden until the entrance beat starts. */
+  concealed?: boolean;
   delta?: number;
+  /** Current travel speed in px/s. Walk playback follows this so the stride matches the ground. */
+  speed?: number;
 }
 
 export class SpriteActorVisual {
   readonly sprite: Phaser.GameObjects.Sprite;
   readonly shadow: Phaser.GameObjects.Ellipse;
+  private readonly hitWash: Phaser.GameObjects.Sprite;
   private readonly animator: SpriteAnimationController;
   private baseScale: number;
   private poseTime = 0;
@@ -48,6 +56,11 @@ export class SpriteActorVisual {
     this.shadow.setDepth(COMBAT_DEPTH.shadow);
     this.sprite = scene.add.sprite(0, 0, texture);
     this.sprite.setOrigin(asset.originX, asset.originY);
+    this.hitWash = scene.add.sprite(0, 0, texture);
+    this.hitWash.setOrigin(asset.originX, asset.originY);
+    this.hitWash.setTint(0xff1a1a);
+    this.hitWash.setAlpha(0);
+    this.hitWash.setVisible(false);
     this.baseScale = this.computeBaseScale();
     this.sprite.setScale(this.baseScale);
     this.animator = new SpriteAnimationController(scene, this.sprite, kind, asset);
@@ -64,7 +77,7 @@ export class SpriteActorVisual {
       this.poseTime = 0;
     }
     this.poseTime += state.delta ?? 16;
-    this.usingPlaceholder = !this.animator.play(anim);
+    this.usingPlaceholder = !this.animator.play(anim, state.speed ?? 0);
     this.tryPromoteTexture();
     this.syncBaseScale();
 
@@ -78,17 +91,20 @@ export class SpriteActorVisual {
     this.sprite.setDepth(COMBAT_DEPTH.character + state.y * 0.001);
     this.shadow.setDepth(COMBAT_DEPTH.shadow + state.y * 0.001);
 
+    const artFacesLeft = this.asset.artFacesLeft === true;
     if (state.facingX < -0.15) {
-      this.sprite.setFlipX(true);
+      this.sprite.setFlipX(!artFacesLeft);
     } else if (state.facingX > 0.15) {
-      this.sprite.setFlipX(false);
+      this.sprite.setFlipX(artFacesLeft);
     }
 
     this.applyPose(state, anim);
+    this.syncHitWash(state);
   }
 
   destroy(): void {
     this.animator.destroy();
+    this.hitWash.destroy();
     this.sprite.destroy();
     this.shadow.destroy();
   }
@@ -139,7 +155,7 @@ export class SpriteActorVisual {
     }
 
     if (this.usingPlaceholder) {
-      if (anim === 'idle' && !state.dead) {
+      if (anim === 'idle' && !state.dead && this.kind !== 'player') {
         scale *= 1 + Math.sin(this.poseTime / 240) * 0.03;
       } else if (anim === 'walk' && !state.dead) {
         this.sprite.y += Math.sin(this.poseTime / 70) * 1.6;
@@ -154,14 +170,28 @@ export class SpriteActorVisual {
       } else if (anim === 'phase_transition') {
         scale *= 1.16 + Math.sin(this.poseTime / 90) * 0.06;
       }
-    } else if (anim === 'walk' && !state.dead) {
-      const period = this.kind === 'boss' ? 140 : 80;
-      const amp = this.kind === 'boss' ? 0.8 : 1.2;
-      this.sprite.y += Math.sin(this.poseTime / period) * amp;
-      scale *= 1 + Math.sin(this.poseTime / period) * 0.02;
     } else if (state.bossPattern === 'charge' && !state.dead) {
       alpha = Math.min(alpha, 0.78);
       scale *= 1.04;
+    }
+
+    if (state.entrance && !state.dead) {
+      const t = Math.max(0, Math.min(1, state.entranceT ?? 1));
+      if (state.entrance === 'materialize') {
+        scale *= 0.55 + 0.45 * t;
+        alpha *= t;
+        if (!state.hit && t < 0.45) {
+          this.sprite.setTint(0xd2ecff);
+        }
+      } else if (state.entrance === 'awaken') {
+        scale *= 0.82 + 0.18 * t;
+        alpha *= 0.35 + 0.65 * t;
+        if (!state.hit && t < 0.82) {
+          this.sprite.setTint(0x8fd4ff);
+        }
+      } else if (state.entrance === 'drop_back') {
+        alpha *= 0.55 + 0.45 * t;
+      }
     }
 
     if (state.dead) {
@@ -169,17 +199,45 @@ export class SpriteActorVisual {
       alpha = 1 - (state.deadT ?? 0) * 0.7;
       this.shadow.setAlpha(0.2);
     } else if (state.hit) {
-      this.sprite.setTint(0xfff3ee);
-      alpha = 1;
+      this.sprite.setTint(0xff5c5c);
+      alpha = 0.86;
     } else if (state.invincible) {
       alpha = 0.45 + Math.sin(performance.now() / 50) * 0.25;
     } else if (state.dashing) {
       alpha = Math.min(alpha, state.shadowDash ? 0.4 : state.blink ? 0.35 : 0.7);
     }
 
+    if (state.concealed && !state.dead) {
+      alpha = 0;
+    }
     this.sprite.setAlpha(alpha);
     this.sprite.setScale(scale);
     this.sprite.setRotation(rotation);
-    this.shadow.setVisible(!state.dead || (state.deadT ?? 0) < 0.9);
+    this.shadow.setVisible(!state.concealed && (!state.dead || (state.deadT ?? 0) < 0.9));
+    if (state.concealed) {
+      this.shadow.setAlpha(0);
+    }
+  }
+
+  /** Semi-transparent red copy of the current frame, so a hit reads on bright and dark art. */
+  private syncHitWash(state: ActorVisualState): void {
+    const show = state.hit === true && !state.dead && !state.concealed;
+    this.hitWash.setVisible(show);
+    if (!show) {
+      this.hitWash.setAlpha(0);
+      return;
+    }
+    if (this.hitWash.texture.key !== this.sprite.texture.key) {
+      this.hitWash.setTexture(this.sprite.texture.key);
+    }
+    this.hitWash.setFrame(this.sprite.frame.name);
+    this.hitWash.setPosition(this.sprite.x, this.sprite.y);
+    this.hitWash.setOrigin(this.sprite.originX, this.sprite.originY);
+    this.hitWash.setScale(this.sprite.scaleX, this.sprite.scaleY);
+    this.hitWash.setFlipX(this.sprite.flipX);
+    this.hitWash.setRotation(this.sprite.rotation);
+    this.hitWash.setDepth(this.sprite.depth + 0.01);
+    this.hitWash.setTint(0xff1a1a);
+    this.hitWash.setAlpha(0.5);
   }
 }

@@ -2,6 +2,7 @@ export type { CombatState, CombatStatus } from './combat-state';
 export type { CombatConfig, CombatEnemyConfig } from './types/combat-config';
 export type { CombatOutcome, CombatResult } from './types/combat-result';
 export { startCombatGame } from './CombatGame';
+export { isTrainingCombatId, TRAINING_COMBAT_ID } from './training/training-combat';
 export { buildCombatConfig, playerCombatSnapshot } from './build-combat-config';
 export {
   publishCombatResult,

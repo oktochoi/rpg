@@ -12,7 +12,6 @@ import {
   ENEMY_HP_BAR_BG,
   ENEMY_HP_BAR_FILL,
   ENEMY_HP_BAR_HEIGHT,
-  ENEMY_HP_BAR_OFFSET_Y,
   ENEMY_KNOCKBACK_DURATION_MS,
   ENEMY_KNOCKBACK_SPEED,
   ENEMY_WINDUP_COLOR,
@@ -20,6 +19,8 @@ import {
 import type { EnemyRangedShot } from './enemy-runtime';
 import { COMBAT_DEPTH } from '../visual/combat-depth';
 import { getEnemyAsset } from '../visual/asset-registry';
+import { isNavDebugEnabled } from '../../debug/debug-flags';
+import { HEAVY_REPATH_MS, NAV_REPATH_MS, type NavSteer, type NavigationBoard } from '../navigation/navigation-board';
 
 export interface EnemyDamageHit {
   amount: number;
@@ -39,7 +40,19 @@ export interface EnemyControllerOptions {
   releaseMeleeToken?: (id: string) => void;
   getPlayerVelocity?: () => { x: number; y: number };
   hitsObstacle?: (x: number, y: number, radius: number) => boolean;
+  navigation?: NavigationBoard;
 }
+
+export type EnemyAiState =
+  | 'IDLE'
+  | 'PATROL'
+  | 'CHASE'
+  | 'PATH_CHASE'
+  | 'REPOSITION'
+  | 'ATTACK'
+  | 'RECOVER'
+  | 'RETURN'
+  | 'DEAD';
 
 export class EnemyController {
   private readonly body: Phaser.Physics.Arcade.Body;
@@ -62,15 +75,20 @@ export class EnemyController {
   private readonly releaseMeleeToken?: (id: string) => void;
   private readonly getPlayerVelocity?: () => { x: number; y: number };
   private readonly hitsObstacle?: (x: number, y: number, radius: number) => boolean;
+  private readonly navigation?: NavigationBoard;
+  private recoverRemainingMs = 0;
+  private aiState: EnemyAiState = 'IDLE';
+  private lastNav: NavSteer | null = null;
   private readonly _maxHp: number;
   private readonly _attackDamage: number;
-  private readonly homeX: number;
-  private readonly homeY: number;
+  private homeX: number;
+  private homeY: number;
   private _currentHp: number;
   private _isHit = false;
   private _isDead = false;
   private _isAttacking = false;
   private _isHalted = false;
+  private overheadHidden = false;
   private _attackId = 0;
   private _formationIndex = 0;
   private _aliveCount = 1;
@@ -86,6 +104,7 @@ export class EnemyController {
   private lastHitAttackId = -1;
   private slowRemainingMs = 0;
   private slowMultiplier = 1;
+  private attackStaggerApplied = false;
 
   constructor(
     scene: Phaser.Scene,
@@ -104,6 +123,7 @@ export class EnemyController {
     this.releaseMeleeToken = options.releaseMeleeToken;
     this.getPlayerVelocity = options.getPlayerVelocity;
     this.hitsObstacle = options.hitsObstacle;
+    this.navigation = options.navigation;
     this._maxHp = options.definition.maxHp;
     this._attackDamage = options.definition.damage;
     this._currentHp = this._maxHp;
@@ -119,8 +139,10 @@ export class EnemyController {
     this.hpBarBg = scene.add.rectangle(0, 0, this.hpBarWidth, ENEMY_HP_BAR_HEIGHT, ENEMY_HP_BAR_BG);
     this.hpBarFill = scene.add.rectangle(0, 0, this.hpBarWidth, ENEMY_HP_BAR_HEIGHT, ENEMY_HP_BAR_FILL);
     this.hpBarBg.setDepth(COMBAT_DEPTH.hpBar);
-    this.hpBarFill.setDepth(COMBAT_DEPTH.hpBar);
+    this.hpBarFill.setDepth(COMBAT_DEPTH.hpBar + 0.01);
     this.hpBarFill.setOrigin(0, 0.5);
+    this.hpBarBg.setVisible(false);
+    this.hpBarFill.setVisible(false);
 
     const hitboxWidth = Math.max(8, options.definition.hitboxWidth);
     const hitboxHeight = Math.max(8, options.definition.hitboxHeight);
@@ -147,6 +169,7 @@ export class EnemyController {
     });
     this.debugLabel.setOrigin(0.5, 1);
     this.debugLabel.setDepth(4);
+    this.debugLabel.setVisible(isNavDebugEnabled());
 
     this.syncHpBar();
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, this.destroy, this);
@@ -189,6 +212,14 @@ export class EnemyController {
 
   get isAttacking(): boolean {
     return this._isAttacking;
+  }
+
+  get navigationState(): EnemyAiState {
+    return this.aiState;
+  }
+
+  get navigationView(): NavSteer | null {
+    return this.lastNav;
   }
 
   get isStrikePhase(): boolean {
@@ -239,11 +270,40 @@ export class EnemyController {
     this._aliveCount = Math.max(1, aliveCount);
   }
 
+  applySeparation(vx: number, vy: number, cap: number): void {
+    if (this._isDead || this._isHalted || this._isAttacking || this.recoverRemainingMs > 0) {
+      return;
+    }
+    if (Math.hypot(this.body.velocity.x, this.body.velocity.y) < 8) {
+      return;
+    }
+    const mag = Math.hypot(vx, vy);
+    if (mag < 0.01) {
+      return;
+    }
+    const scale = Math.min(1, cap / mag);
+    const sx = vx * scale;
+    const sy = vy * scale;
+    const radius = this.definition.size / 2;
+    const nextX = this.enemy.x + (this.body.velocity.x + sx) * 0.05;
+    const nextY = this.enemy.y + (this.body.velocity.y + sy) * 0.05;
+    if (this.hitsObstacle?.(nextX, nextY, radius)) {
+      return;
+    }
+    this.body.setVelocity(this.body.velocity.x + sx, this.body.velocity.y + sy);
+  }
+
   nudge(dx: number, dy: number, _bounds?: { width: number; height: number }): void {
     const half = this.definition.size / 2;
     const bounds = this.body.world.bounds;
     this.enemy.x = Phaser.Math.Clamp(this.enemy.x + dx, bounds.x + half, bounds.right - half);
     this.enemy.y = Phaser.Math.Clamp(this.enemy.y + dy, bounds.y + half, bounds.bottom - half);
+  }
+
+  hideOverhead(): void {
+    this.overheadHidden = true;
+    this.hpBarBg.setVisible(false);
+    this.hpBarFill.setVisible(false);
   }
 
   halt(): void {
@@ -255,6 +315,28 @@ export class EnemyController {
     this.body.setVelocity(0, 0);
   }
 
+  /** Walkable spawn the AI returns to. Entrance tweens must not leave home off the floor. */
+  adoptHome(x: number, y: number): void {
+    this.homeX = x;
+    this.homeY = y;
+  }
+
+  /** Clears halt so AI can resume after encounter intro. */
+  resume(): void {
+    if (this._isDead) {
+      return;
+    }
+    this._isHalted = false;
+  }
+
+  /** Holds the first swing so a pack does not attack on the same frame. */
+  armFirstAttack(delayMs: number): void {
+    if (this._isDead || delayMs <= 0) {
+      return;
+    }
+    this.attackCooldownRemainingMs = Math.max(this.attackCooldownRemainingMs, delayMs);
+  }
+
   applySlow(multiplier: number, durationMs: number): void {
     this.slowMultiplier = Math.max(0.05, Math.min(1, multiplier));
     this.slowRemainingMs = Math.max(this.slowRemainingMs, durationMs);
@@ -264,6 +346,10 @@ export class EnemyController {
     if (this._isDead) {
       this.tickDeath(delta);
       return;
+    }
+
+    if (!this._isHalted) {
+      this.containToWorld();
     }
 
     if (this._isHalted) {
@@ -299,7 +385,12 @@ export class EnemyController {
     this.syncHpBar();
 
     if (this._currentHp <= 0) {
-      this.beginDeath();
+      if (this.definition.respawnOnDeath) {
+        this._currentHp = this._maxHp;
+        this.syncHpBar();
+      } else {
+        this.beginDeath();
+      }
     }
 
     return true;
@@ -332,7 +423,30 @@ export class EnemyController {
       formationIndex: this._formationIndex,
       aliveCount: this._aliveCount,
       hasMeleeToken: melee ? this.canGrantMeleeToken?.(this._id) !== false : true,
+      pathClear: this.isPathClearToPlayer(),
     };
+  }
+
+  private isPathClearToPlayer(): boolean {
+    if (this.navigation) {
+      return this.navigation.hasSight(
+        { x: this.enemy.x, y: this.enemy.y },
+        { x: this.player.x, y: this.player.y }
+      );
+    }
+    if (!this.hitsObstacle) {
+      return true;
+    }
+    const dx = this.player.x - this.enemy.x;
+    const dy = this.player.y - this.enemy.y;
+    const radius = this.definition.size / 2;
+    for (let step = 1; step <= 8; step += 1) {
+      const t = step / 8;
+      if (this.hitsObstacle(this.enemy.x + dx * t, this.enemy.y + dy * t, radius)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   private distanceToPlayer(): number {
@@ -363,12 +477,34 @@ export class EnemyController {
     if (!this.canStartAttack()) {
       return;
     }
+    if (!this.attackStaggerApplied) {
+      this.attackStaggerApplied = true;
+      const delay = (this._formationIndex % 4) * 110;
+      if (delay > 0) {
+        this.attackCooldownRemainingMs = delay;
+        return;
+      }
+    }
     const melee = this.definition.behaviorType !== ENEMY_BEHAVIOR_TYPE.RANGED;
     if (melee && this.tryAcquireMeleeToken && !this.tryAcquireMeleeToken(this._id)) {
       return;
     }
 
     this.facePlayer();
+    if (
+      this.definition.behaviorType === ENEMY_BEHAVIOR_TYPE.HEAVY_MELEE ||
+      this.definition.behaviorType === ENEMY_BEHAVIOR_TYPE.MELEE
+    ) {
+      const velocity = this.getPlayerVelocity?.() ?? { x: 0, y: 0 };
+      const lead = this.definition.behaviorType === ENEMY_BEHAVIOR_TYPE.HEAVY_MELEE ? 0.28 : 0.18;
+      this._attackDirection.set(
+        this.player.x + velocity.x * lead - this.enemy.x,
+        this.player.y + velocity.y * lead - this.enemy.y
+      );
+      if (this._attackDirection.lengthSq() > 0) {
+        this._attackDirection.normalize();
+      }
+    }
     this._attackId += 1;
     this._isAttacking = true;
     this.rangedShotFired = false;
@@ -416,12 +552,18 @@ export class EnemyController {
     this.tryFireRangedShot();
 
     if (this.attackRemainingMs <= 0) {
+      const kind = this.definition.behaviorType;
+      this.recoverRemainingMs =
+        kind === ENEMY_BEHAVIOR_TYPE.HEAVY_MELEE ? 380 : kind === ENEMY_BEHAVIOR_TYPE.RANGED ? 140 : 220;
       this.cancelAttack();
     }
   }
 
   private tryFireRangedShot(): void {
     if (this.definition.behaviorType !== ENEMY_BEHAVIOR_TYPE.RANGED || this.rangedShotFired) {
+      return;
+    }
+    if (!this.isPathClearToPlayer()) {
       return;
     }
     const elapsed = this.definition.attackDurationMs - this.attackRemainingMs;
@@ -520,20 +662,148 @@ export class EnemyController {
       return;
     }
 
-    this.updateMoveOrAttack();
+    this.updateMoveOrAttack(delta);
   }
 
-  private updateMoveOrAttack(): void {
+  private approachVelocity(targetX: number, targetY: number, delta: number, accel = 620): void {
+    const dt = Math.min(delta, 48) / 1000;
+    const vx = this.body.velocity.x;
+    const vy = this.body.velocity.y;
+    const dx = targetX - vx;
+    const dy = targetY - vy;
+    const dist = Math.hypot(dx, dy);
+    const step = accel * dt;
+    if (dist <= step || dist === 0) {
+      this.body.setVelocity(targetX, targetY);
+      return;
+    }
+    this.body.setVelocity(vx + (dx / dist) * step, vy + (dy / dist) * step);
+  }
+
+  private updateMoveOrAttack(delta: number): void {
     const ctx = this.behaviorContext();
     if (this._isAttacking) {
+      this.aiState = 'ATTACK';
       this.applySpecialAttackMotion();
+      this.refreshNavLabel();
+      return;
+    }
+
+    if (this.recoverRemainingMs > 0) {
+      this.recoverRemainingMs = Math.max(0, this.recoverRemainingMs - delta);
+      this.aiState = 'RECOVER';
+      this.body.setVelocity(0, 0);
+      this.facePlayer();
+      this.refreshNavLabel();
+      return;
+    }
+
+    if (!ctx.isPlayerAlive) {
+      const homeDist = Math.hypot(this.enemy.x - this.homeX, this.enemy.y - this.homeY);
+      this.aiState = homeDist < 28 ? 'IDLE' : 'RETURN';
+      this.approachVelocity(
+        homeDist < 28 ? 0 : ((this.homeX - this.enemy.x) / homeDist) * this.moveSpeed * 0.6,
+        homeDist < 28 ? 0 : ((this.homeY - this.enemy.y) / homeDist) * this.moveSpeed * 0.6,
+        delta
+      );
+      this.refreshNavLabel();
       return;
     }
 
     const move = this.behavior.chooseMove(ctx);
-    this.body.setVelocity(move.vx, move.vy);
-    this.facePlayer();
+    if (this.definition.behaviorType === ENEMY_BEHAVIOR_TYPE.IDLE) {
+      this.aiState = 'IDLE';
+      this.body.setVelocity(0, 0);
+      this.refreshNavLabel();
+      return;
+    }
+    if (move.hold) {
+      this.aiState = this.attackCooldownRemainingMs > 0 ? 'RECOVER' : 'CHASE';
+      this.lastNav = null;
+      this.body.setVelocity(0, 0);
+      this.facePlayer();
+      this.tryStartAttack();
+      this.refreshNavLabel();
+      return;
+    }
+
+    const accel = this.definition.behaviorType === ENEMY_BEHAVIOR_TYPE.HEAVY_MELEE ? 240 : 620;
+    const steered = this.steerAroundObstacles(move, ctx);
+    this.approachVelocity(steered.vx, steered.vy, delta, accel);
+    if (this.aiState === 'PATH_CHASE') {
+      this.faceVector(steered.vx, steered.vy);
+    } else {
+      this.facePlayer();
+    }
     this.tryStartAttack();
+    this.refreshNavLabel();
+  }
+
+  private steerAroundObstacles(
+    move: { vx: number; vy: number; goalX?: number; goalY?: number; needsLos?: boolean },
+    ctx: EnemyBehaviorContext
+  ): { vx: number; vy: number } {
+    const goalX = move.goalX ?? ctx.playerX;
+    const goalY = move.goalY ?? ctx.playerY;
+    if (!this.navigation) {
+      this.aiState = move.needsLos ? 'REPOSITION' : 'CHASE';
+      return move;
+    }
+    const min = this.definition.preferredDistanceMin ?? 200;
+    const max = this.definition.preferredDistanceMax ?? 360;
+    const steer = this.navigation.steer({
+      id: this._id,
+      x: this.enemy.x,
+      y: this.enemy.y,
+      speed: Math.max(this.moveSpeed, Math.hypot(move.vx, move.vy)),
+      goalX,
+      goalY,
+      now: this.enemy.scene.time.now,
+      repathMs: this.definition.behaviorType === ENEMY_BEHAVIOR_TYPE.HEAVY_MELEE ? HEAVY_REPATH_MS : NAV_REPATH_MS,
+      hold: false,
+      forcePath:
+        this.hitsObstacle?.(this.enemy.x + move.vx * 0.08, this.enemy.y + move.vy * 0.08, this.definition.size / 2) ===
+        true,
+      losRing: move.needsLos
+        ? {
+            min,
+            preferred: (min + max) * 0.5,
+            max,
+            bias: (this._formationIndex / Math.max(1, this._aliveCount)) * Math.PI * 2,
+          }
+        : undefined,
+      playerX: ctx.playerX,
+      playerY: ctx.playerY,
+    });
+    this.lastNav = steer;
+    const radius = this.definition.size / 2;
+    const probeBlocked =
+      this.hitsObstacle?.(this.enemy.x + move.vx * 0.08, this.enemy.y + move.vy * 0.08, radius) === true;
+    const openChase = steer.mode === 'DIRECT_CHASE' && !probeBlocked && Math.hypot(move.vx, move.vy) > 8;
+    if (openChase) {
+      this.aiState = this.definition.behaviorType === ENEMY_BEHAVIOR_TYPE.RANGED ? 'REPOSITION' : 'CHASE';
+      return move;
+    }
+    this.aiState = steer.mode === 'PATH_CHASE' ? 'PATH_CHASE' : 'CHASE';
+    return { vx: steer.vx, vy: steer.vy };
+  }
+
+  private faceVector(x: number, y: number): void {
+    if (x === 0 && y === 0) {
+      this.facePlayer();
+      return;
+    }
+    this._attackDirection.set(x, y);
+    this._attackDirection.normalize();
+  }
+
+  private refreshNavLabel(): void {
+    if (!isNavDebugEnabled()) {
+      this.debugLabel.setVisible(false);
+      return;
+    }
+    this.debugLabel.setVisible(true);
+    this.debugLabel.setText(this.aiState);
   }
 
   private resolveAttackMove(): 'melee' | 'lunge' | 'charge' {
@@ -653,12 +923,38 @@ export class EnemyController {
     }
   }
 
+  /** AI never steers from an entrance point that is still outside the floor. */
+  private containToWorld(): void {
+    const bounds = this.body.world.bounds;
+    const half = this.definition.size / 2;
+    const inside =
+      this.enemy.x >= bounds.x + half &&
+      this.enemy.x <= bounds.right - half &&
+      this.enemy.y >= bounds.y + half &&
+      this.enemy.y <= bounds.bottom - half;
+    if (inside) {
+      return;
+    }
+    const x = Phaser.Math.Clamp(this.homeX, bounds.x + half, bounds.right - half);
+    const y = Phaser.Math.Clamp(this.homeY, bounds.y + half, bounds.bottom - half);
+    this.homeX = x;
+    this.homeY = y;
+    this.enemy.setPosition(x, y);
+    this.body.reset(x, y);
+    this.body.setEnable(true);
+    this.body.setVelocity(0, 0);
+  }
+
   private syncHpBar(): void {
-    const offsetY = getEnemyAsset(this._typeId).hpBarOffsetY ?? this.definition.size / 2 + ENEMY_HP_BAR_OFFSET_Y;
+    const asset = getEnemyAsset(this._typeId);
+    const offsetY = Math.round(asset.visualSize * (asset.originY ?? 0.9) + 10);
     const barY = this.enemy.y - offsetY;
+    const show = !this.overheadHidden && !this._isDead && this._currentHp < this._maxHp;
+    this.hpBarBg.setVisible(show);
+    this.hpBarFill.setVisible(show);
     this.hpBarBg.setPosition(this.enemy.x, barY);
     this.hpBarFill.setPosition(this.enemy.x - this.hpBarWidth / 2, barY);
-    this.hpBarFill.displayWidth = this.hpBarWidth * (this._currentHp / this._maxHp);
+    this.hpBarFill.displayWidth = Math.max(0, this.hpBarWidth * (this._currentHp / Math.max(1, this._maxHp)));
     this.debugLabel.setPosition(this.enemy.x, barY - 8);
   }
 

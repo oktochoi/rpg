@@ -127,10 +127,14 @@ export async function runStep34FlowScenarios(): Promise<string[]> {
   }
 
   await orch.dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_FOREST_SCOUTS });
-  if (orch.getState().mode !== 'COMBAT') {
-    pass('C-oneshot', 'scouts not repeated');
+  if (orch.getState().mode === 'COMBAT') {
+    pass('C-oneshot', 'scouts rechallenge allowed (repeat = gold only)');
+    await orch.dispatch({
+      type: 'RESOLVE_COMBAT',
+      result: victory(ENCOUNTER_ID.CH1_FOREST_SCOUTS, ['scout_goblin_001', 'scout_goblin_002']),
+    });
   } else {
-    fail('C-oneshot', 'repeat combat started');
+    fail('C-oneshot', 'rechallenge blocked');
   }
 
   await hopTo(orch, LOCATION_ID.LUEN_ADVENTURERS_GUILD);
@@ -270,6 +274,7 @@ export async function runStep34FlowScenarios(): Promise<string[]> {
     { type: 'WORLD_FLAG_SET', flagId: WORLD_FLAG.RUINS_GUARDIAN_DEFEATED, value: true },
     { type: 'QUEST_COMPLETED', questId: QUEST_ID.RUINS_MYSTERY },
     { type: 'WORLD_FLAG_SET', flagId: WORLD_FLAG.GUILD_RECOGNITION_DONE, value: true },
+    { type: 'WORLD_FLAG_SET', flagId: WORLD_FLAG.CHAPTER_1_COMPLETE, value: true },
   ]);
   ready = applyEvents(ready, eventsForExpGrant(ready, 500, 'test:lv5', 'QUEST'));
   ready = {
@@ -398,8 +403,10 @@ export async function playOrganicChapter1() {
     result: victory(ENCOUNTER_ID.CH1_RUINS_GATE, ['gate_goblin_001', 'gate_archer_001', 'gate_brute_001']),
   });
   await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_INVESTIGATE_ALTAR });
-  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_LOOK_AROUND });
-  await orch.dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.RUINS_BOSS_01 });
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'inspect_seal_first' });
+  if (orch.getState().mode !== 'COMBAT') {
+    await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'touch_magic_stone' });
+  }
   if (orch.getState().mode === 'COMBAT') {
     await orch.dispatch({
       type: 'RESOLVE_COMBAT',
@@ -417,18 +424,16 @@ export async function playOrganicChapter1() {
   await hopTo(orch, LOCATION_ID.LUEN_VILLAGE);
   await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_REPORT_RUINS });
   await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'report_all' });
-  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'seria_follow_done' });
   await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'leon_agree_seria' });
-  await hopTo(orch, LOCATION_ID.BLUE_MOON_INN);
-  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_REST_INN });
   await hopTo(orch, LOCATION_ID.LUEN_ADVENTURERS_GUILD);
   await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_LOOK_AROUND });
-  if (orch.getState().story.currentSceneId === STORY_SCENE_ID.LUEN_GUILD_ADVANCEMENT) {
-    await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'choose_path_warrior' });
-  } else if (canChooseFirstAdvancement(orch.getState()) || orch.getState().player.level >= 5) {
-    await orch.dispatch({ type: 'CHOOSE_CLASS_PATH', classId: PLAYER_CLASS_ID.WARRIOR });
-  }
   await hopTo(orch, LOCATION_ID.NORTHERN_GATE);
   await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_LOOK_AROUND });
+  await hopTo(orch, LOCATION_ID.LUEN_ADVENTURERS_GUILD);
+  if (orch.getState().story.currentSceneId === STORY_SCENE_ID.LUEN_GUILD_ADVANCEMENT) {
+    await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'choose_path_warrior' });
+  } else if (canChooseFirstAdvancement(orch.getState())) {
+    await orch.dispatch({ type: 'CHOOSE_CLASS_PATH', classId: PLAYER_CLASS_ID.WARRIOR });
+  }
   return orch;
 }

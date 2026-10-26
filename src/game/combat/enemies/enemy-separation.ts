@@ -9,9 +9,9 @@ export interface SeparationDelta {
   dy: number;
 }
 
-const DEFAULT_PADDING = 10;
-const DEFAULT_STRENGTH = 0.5;
-const MAX_PUSH = 8;
+const DEFAULT_PADDING = 36;
+const DEFAULT_STRENGTH = 1.15;
+const MAX_PUSH = 18;
 
 export function computeSeparationDeltas(
   units: readonly SeparableUnit[],

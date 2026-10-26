@@ -6,10 +6,13 @@ const ENCOUNTER_TITLES: Readonly<Record<string, string>> = {
   [ENCOUNTER_ID.FOREST_GOBLIN_01]: '숲길 — 고블린 정찰대',
   [ENCOUNTER_ID.CH1_FOREST_AMBUSH]: '숲길 — 매복',
   [ENCOUNTER_ID.CH1_GOBLIN_CAMP]: '고블린 야영지',
+  [ENCOUNTER_ID.CH1_FOREST_DEEP]: '숲길 — 깊은 숲 무리',
+  [ENCOUNTER_ID.CH1_FOREST_KEY_HOLDER]: '깊은 숲 — 수상한 고블린',
   [ENCOUNTER_ID.CH1_RUINS_GATE]: '고대 폐허 — 입구',
   [ENCOUNTER_ID.RUINS_MIXED_01]: '고대 폐허 — 입구',
   [ENCOUNTER_ID.RUINS_HEAVY_01]: '고대 폐허 — 중혼합',
   [ENCOUNTER_ID.RUINS_BOSS_01]: '고대 수호자',
+  [ENCOUNTER_ID.TRAINING_GROUNDS]: '루엔 훈련장',
 };
 
 export function encounterTitle(encounterId: string): string {

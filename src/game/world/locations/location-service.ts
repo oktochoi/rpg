@@ -11,6 +11,9 @@ import type { WorldFact } from '../facts/world-fact';
 export function eventsForLocationProgress(state: Readonly<GameState>, incoming: readonly GameEvent[]): GameEvent[] {
   const outgoing: GameEvent[] = [];
   for (const event of incoming) {
+    if (event.type === 'LOCATION_ENTERED' && event.locationId === LOCATION_ID.ANCIENT_RUINS) {
+      outgoing.push(...discoveryEvents(state, LOCATION_ID.ANCIENT_RUINS));
+    }
     if (event.type === 'DIALOGUE_TURN_RECORDED' && event.npcId === 'seria' && dialogueMatchesTopic(event.playerText, RUINS_OFFER_TOPIC)) {
       outgoing.push(...discoveryEvents(state, LOCATION_ID.ANCIENT_RUINS));
     }

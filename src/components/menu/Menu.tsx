@@ -3,6 +3,7 @@ import type { SaveSlotId } from '@/game/core/ids';
 import { AUTO_SAVE_SLOT_ID, MANUAL_SAVE_SLOTS } from '@/game/save/save-types';
 import { formatPlayTime, formatSavedAt } from '@/game/save/save-selectors';
 import type { SaveSlotSummary } from '@/game/save/save-types';
+import { GameModal } from '@/components/ui/GameModal';
 import styles from './menu.module.css';
 
 interface MenuProps {
@@ -13,15 +14,15 @@ interface MenuProps {
 
 function slotTitle(slotId: string): string {
   if (slotId === AUTO_SAVE_SLOT_ID) {
-    return 'AUTO SAVE';
+    return '자동 저장';
   }
   if (slotId === 'slot_1') {
-    return 'SLOT 1';
+    return '칸 1';
   }
   if (slotId === 'slot_2') {
-    return 'SLOT 2';
+    return '칸 2';
   }
-  return 'SLOT 3';
+  return '칸 3';
 }
 
 export function Menu({ dispatch, slots, onClose }: MenuProps) {
@@ -43,14 +44,7 @@ export function Menu({ dispatch, slots, onClose }: MenuProps) {
   }
 
   return (
-    <div className={styles.overlay}>
-      <section className={styles.panel} aria-label="저장">
-        <div className={styles.header}>
-          <h2 className={styles.title}>SAVE</h2>
-          <button className={styles.close} type="button" onClick={onClose}>
-            닫기
-          </button>
-        </div>
+    <GameModal title="저장" kicker="기록" size="md" onClose={onClose}>
         <ul className={styles.slots}>
           {MANUAL_SAVE_SLOTS.map((slotId) => {
             const slot = slotMap.get(slotId) ?? { slotId, empty: true };
@@ -82,7 +76,7 @@ export function Menu({ dispatch, slots, onClose }: MenuProps) {
             );
           })}
           <li className={styles.slot}>
-            <SlotBody slot={slotMap.get(AUTO_SAVE_SLOT_ID) ?? { slotId: AUTO_SAVE_SLOT_ID, empty: true }} title="AUTO SAVE" />
+            <SlotBody slot={slotMap.get(AUTO_SAVE_SLOT_ID) ?? { slotId: AUTO_SAVE_SLOT_ID, empty: true }} title="자동 저장" />
             <div className={styles.actions}>
               <button
                 className={styles.action}
@@ -104,10 +98,9 @@ export function Menu({ dispatch, slots, onClose }: MenuProps) {
           </li>
         </ul>
         <button className={styles.newGame} type="button" onClick={() => dispatch({ type: 'NEW_GAME' })}>
-          New Game
+          새 게임
         </button>
-      </section>
-    </div>
+    </GameModal>
   );
 }
 
@@ -116,7 +109,7 @@ function SlotBody({ slot, title }: { slot: SaveSlotSummary; title: string }) {
     return (
       <div>
         <p className={styles.slotTitle}>{title}</p>
-        <p className={styles.empty}>Empty</p>
+        <p className={styles.empty}>비어 있음</p>
       </div>
     );
   }
@@ -128,7 +121,7 @@ function SlotBody({ slot, title }: { slot: SaveSlotSummary; title: string }) {
       </p>
       <p className={styles.meta}>{slot.locationLabel}</p>
       <p className={styles.meta}>{formatPlayTime(slot.playTimeSeconds ?? 0)}</p>
-      <p className={styles.meta}>Last Save: {slot.updatedAt ? formatSavedAt(slot.updatedAt) : '-'}</p>
+      <p className={styles.meta}>마지막 저장: {slot.updatedAt ? formatSavedAt(slot.updatedAt) : '-'}</p>
     </div>
   );
 }

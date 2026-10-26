@@ -4,6 +4,7 @@ import { createInitialGameState } from '../../core/initial-state';
 import { applyEvents } from '../../core/reducer';
 import { eventsForMemoryRequests } from './memory-service';
 import { getMemoriesForNpc } from './memory-selectors';
+import { withAuthoredRescue } from './authored-rescue';
 
 export async function runStep17MemoryScenarios(): Promise<string[]> {
   const lines: string[] = [];
@@ -24,8 +25,7 @@ export async function runStep17MemoryScenarios(): Promise<string[]> {
     fail('A-help', JSON.stringify(getMemoriesForNpc(orchA.getState(), 'seria')));
   }
 
-  const orchB = createGameOrchestrator(createInitialGameState());
-  await orchB.dispatch({ type: 'FREE_ACTION', turnId: 1, input: '세리아를 구한다.' });
+  const orchB = createGameOrchestrator(withAuthoredRescue(createInitialGameState()));
   const saved = getMemoriesForNpc(orchB.getState(), 'seria')[0];
   const dialogueB = createNpcDialogueService(() => orchB.getState());
   const savedLine = await dialogueB.respond('seria', '나 못 믿겠어?');
@@ -105,6 +105,16 @@ export async function runStep17MemoryScenarios(): Promise<string[]> {
     pass('F-dialogue', `empty=${emptyLine.dialogue} | remembered=${remembered.dialogue}`);
   } else {
     fail('F-dialogue', `empty=${emptyLine.dialogue} | remembered=${remembered.dialogue}`);
+  }
+
+  const orchFree = createGameOrchestrator(createInitialGameState());
+  await orchFree.dispatch({ type: 'FREE_ACTION', turnId: 1, input: '세리아를 구한다.' });
+  const freeSaved = getMemoriesForNpc(orchFree.getState(), 'seria').some((memory) => memory.type === 'PLAYER_SAVED_ME');
+  const freeHelped = getMemoriesForNpc(orchFree.getState(), 'seria').some((memory) => memory.type === 'PLAYER_HELPED_ME');
+  if (!freeSaved && freeHelped) {
+    pass('G-free-action-no-canon-save', 'FREE_ACTION rescue stays HELP');
+  } else {
+    fail('G-free-action-no-canon-save', JSON.stringify(getMemoriesForNpc(orchFree.getState(), 'seria')));
   }
 
   return lines;

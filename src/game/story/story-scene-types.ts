@@ -49,7 +49,8 @@ export type StorySceneEffect =
   | { type: 'SET_WORLD_FLAG'; flagId: string; value: boolean }
   | { type: 'DISCOVER_LOCATION'; locationId: string }
   | { type: 'GRANT_ITEM'; itemId: string; quantity: number; sourceEventId: string }
-  | { type: 'LEARN_FACT'; factId: string };
+  | { type: 'LEARN_FACT'; factId: string }
+  | { type: 'RELATIONSHIP_CHANGE'; npcId: string; reason: string; sourceEventId: string };
 
 export type StorySceneActivation = 'auto' | 'on_talk';
 
@@ -62,6 +63,7 @@ export interface StoryChoiceDefinition {
   action: StoryChoiceAction;
   nextSceneId?: string;
   choicePurpose?: StoryChoicePurpose;
+  effects?: readonly StorySceneEffect[];
 }
 
 export interface StorySceneDefinition {

@@ -4,16 +4,6 @@ import { PLAYER_MP_BAR_FILL } from '../CombatConfig';
 import type { PlayerHealthController } from '../player/PlayerHealthController';
 import type { PlayerSkillController } from '../player/PlayerSkillController';
 
-function skillStatusText(implemented: boolean, cooldownRemainingMs: number): string {
-  if (!implemented) {
-    return 'NOT IMPLEMENTED';
-  }
-  if (cooldownRemainingMs > 0) {
-    return `${(cooldownRemainingMs / 1000).toFixed(1)}s`;
-  }
-  return 'READY';
-}
-
 function resourceBar(current: number, max: number, width: number): string {
   const filled = max <= 0 ? 0 : Math.round((current / max) * width);
   return `${'█'.repeat(filled)}${'░'.repeat(Math.max(0, width - filled))}`;
@@ -33,13 +23,15 @@ export class CombatHud {
   private readonly skillE: Phaser.GameObjects.Text;
   private readonly overlay: Phaser.GameObjects.Rectangle;
   private readonly resultTitle: Phaser.GameObjects.Text;
+  private readonly resultSubtitle: Phaser.GameObjects.Text;
   private readonly primaryButton: Phaser.GameObjects.Text;
   private readonly secondaryButton: Phaser.GameObjects.Text;
+  private resultButtonDelay?: Phaser.Time.TimerEvent;
 
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly health: PlayerHealthController,
-    private readonly skills?: PlayerSkillController,
+    _skills?: PlayerSkillController,
     private readonly classLabel = 'PLAYER'
   ) {
     this.classTitle = scene.add.text(16, 44, classLabel, {
@@ -101,7 +93,7 @@ export class CombatHud {
     this.overlay.setInteractive();
     this.overlay.setVisible(false);
 
-    this.resultTitle = scene.add.text(scene.scale.width / 2, scene.scale.height / 2 - 40, '', {
+    this.resultTitle = scene.add.text(scene.scale.width / 2, scene.scale.height / 2 - 48, '', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '42px',
       color: '#ece6d9',
@@ -110,8 +102,18 @@ export class CombatHud {
     this.resultTitle.setDepth(21);
     this.resultTitle.setVisible(false);
 
-    this.primaryButton = this.createButton(scene.scale.height / 2 + 24);
-    this.secondaryButton = this.createButton(scene.scale.height / 2 + 64);
+    this.resultSubtitle = scene.add.text(scene.scale.width / 2, scene.scale.height / 2 + 4, '', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '16px',
+      color: '#cfc4b0',
+    });
+    this.resultSubtitle.setOrigin(0.5);
+    this.resultSubtitle.setDepth(21);
+    this.resultSubtitle.setVisible(false);
+    this.resultSubtitle.setAlpha(0);
+
+    this.primaryButton = this.createButton(scene.scale.height / 2 + 44);
+    this.secondaryButton = this.createButton(scene.scale.height / 2 + 84);
 
     scene.scale.on('resize', this.handleResize, this);
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -132,11 +134,10 @@ export class CombatHud {
       `${resourceBar(this.health.currentMp, this.health.maxMp, 10)}  ${this.health.currentMp} / ${this.health.maxMp}`
     );
 
-    const slots = this.skills?.getHudSlots() ?? [];
-    const q = slots.find((slot) => slot.slot === 'Q');
-    const e = slots.find((slot) => slot.slot === 'E');
-    this.skillQ.setText(q ? `Q  ${q.name}\n${skillStatusText(q.implemented, q.cooldownRemainingMs)}` : '');
-    this.skillE.setText(e ? `E  ${e.name}\n${skillStatusText(e.implemented, e.cooldownRemainingMs)}` : '');
+    this.skillQ.setVisible(false);
+    this.skillE.setVisible(false);
+    this.skillQ.setText('');
+    this.skillE.setText('');
   }
 
   showResult(
@@ -145,35 +146,62 @@ export class CombatHud {
     onSecondary?: () => void,
     options?: { boss?: boolean }
   ): void {
+    this.resultButtonDelay?.remove(false);
+    this.primaryButton.setVisible(false);
+    this.secondaryButton.setVisible(false);
+    this.resultSubtitle.setVisible(false);
+    this.resultSubtitle.setAlpha(0);
+
     this.overlay.setVisible(true);
     this.overlay.setAlpha(0);
     this.scene.tweens.add({
       targets: this.overlay,
       alpha: status === 'VICTORY' ? 0.62 : 0.7,
-      duration: 220,
+      duration: 320,
     });
     this.resultTitle.setVisible(true);
+    this.resultTitle.setAlpha(0);
+    this.scene.tweens.add({
+      targets: this.resultTitle,
+      alpha: 1,
+      duration: 280,
+    });
 
     if (status === 'VICTORY') {
-      this.resultTitle.setText('VICTORY');
+      this.resultTitle.setText('전투 승리');
       this.resultTitle.setColor('#c4a574');
       this.resultTitle.setFontSize(options?.boss ? '52px' : '42px');
       this.resultTitle.setShadow(0, 0, '#c4a574', options?.boss ? 22 : 12);
-      this.setButton(this.primaryButton, '[스토리로 돌아가기]', onPrimary);
-      this.secondaryButton.setVisible(false);
+      this.resultSubtitle.setText(
+        options?.boss ? '수호자가 쓰러졌다. 바닥에 핵이 남았다.' : '전투에서 승리했다'
+      );
+      this.resultSubtitle.setVisible(true);
+      this.scene.tweens.add({
+        targets: this.resultSubtitle,
+        alpha: 1,
+        duration: 360,
+        delay: 220,
+      });
+      void onPrimary;
       return;
     }
 
     if (status === 'DEFEAT') {
-      this.resultTitle.setText('DEFEAT');
+      this.resultTitle.setText('전투 패배');
       this.resultTitle.setColor('#e88a7a');
       this.resultTitle.setFontSize('42px');
       this.resultTitle.setShadow(0, 0, '#e88a7a', 10);
-      this.setButton(this.primaryButton, '[다시 전투]', onPrimary);
-      if (onSecondary) {
-        this.setButton(this.secondaryButton, '[스토리로 돌아가기]', onSecondary);
-      }
+      this.resultSubtitle.setText('쓰러졌습니다');
+      this.resultSubtitle.setVisible(true);
+      this.scene.tweens.add({
+        targets: this.resultSubtitle,
+        alpha: 1,
+        duration: 300,
+        delay: 160,
+      });
     }
+    void onPrimary;
+    void onSecondary;
   }
 
   private createButton(y: number): Phaser.GameObjects.Text {
@@ -189,18 +217,12 @@ export class CombatHud {
     return button;
   }
 
-  private setButton(button: Phaser.GameObjects.Text, label: string, onClick: () => void): void {
-    button.setText(label);
-    button.setVisible(true);
-    button.removeAllListeners('pointerup');
-    button.on('pointerup', onClick);
-  }
-
   private handleResize(gameSize: Phaser.Structs.Size): void {
     this.overlay.setSize(gameSize.width, gameSize.height);
     this.overlay.setInteractive();
-    this.resultTitle.setPosition(gameSize.width / 2, gameSize.height / 2 - 40);
-    this.primaryButton.setPosition(gameSize.width / 2, gameSize.height / 2 + 24);
-    this.secondaryButton.setPosition(gameSize.width / 2, gameSize.height / 2 + 64);
+    this.resultTitle.setPosition(gameSize.width / 2, gameSize.height / 2 - 48);
+    this.resultSubtitle.setPosition(gameSize.width / 2, gameSize.height / 2 + 4);
+    this.primaryButton.setPosition(gameSize.width / 2, gameSize.height / 2 + 44);
+    this.secondaryButton.setPosition(gameSize.width / 2, gameSize.height / 2 + 84);
   }
 }

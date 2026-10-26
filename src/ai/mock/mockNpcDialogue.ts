@@ -184,9 +184,16 @@ function respondRuins(
       return applyTone(context, '폐허에서 이상한 마력이 느껴지고 있어. 네가 조사해줄 수 있을까?', 'CURIOUS');
     }
     const extra = goblin ? ' 고블린이 있던 곳이기도 하지.' : '';
+    if (/직접 가지|왜 안 가/.test(context.playerInput ?? '')) {
+      return applyTone(
+        context,
+        '내가 현장에 서면 왕실 봉인 기록을 다루는 내가 레온과 왕실의 감시를 부른다. 그래서 너를 보낸다.',
+        'CURIOUS'
+      );
+    }
     return applyTone(
       context,
-      `조금은. 하지만 좋은 곳은 아니야.${extra}`,
+      `조금은. 하지만 좋은 곳은 아니야. 나는 이미 푸른 파동을 관측했다.${extra}`,
       'CURIOUS',
       goblin ? [goblin.fact.id] : []
     );
@@ -515,12 +522,12 @@ function knownRecentLine(npcId: string): string {
 
 function identityLine(npcId: string): string {
   if (npcId === 'seria') {
-    return '세리아다. 마법 연구를 위해 폐허를 조사하지.';
+    return '세리아다. 봉인을 연구해야 다음 사고를 막을 수 있다. 직접 폐허에 가면 왕실 감시를 부른다.';
   }
   if (npcId === 'leon') {
-    return '레온이라고 하네. 이 지역의 치안을 맡은 기사일세.';
+    return '레온이라고 하네. 이 지역의 치안을 맡은 기사일세. 왕실 관련 사건은 공식 보고가 먼저다.';
   }
-  return '난 마르타야. 이 여관을 지키고 있지.';
+    return '난 마르타야. 이 여관을 지키고 있지. 북문 길이 막히면 손님이 안 돌아와.';
 }
 
 function generalLine(npcId: string): string {

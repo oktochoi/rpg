@@ -8,4 +8,5 @@ export {
   eventsForChapterComplete,
   isChapterCompleted,
 } from './chapter-rules';
-export { getMainObjectiveText } from './main-objective';
+export { getMainObjectiveText, getNextStepText, getQuestStepMark } from './main-objective';
+export type { QuestStepMark } from './main-objective';

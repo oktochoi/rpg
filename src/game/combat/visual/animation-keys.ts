@@ -1,9 +1,9 @@
 import type { VisualAnimState } from './asset-types';
 
 export const ANIMATION_FRAME_RATE = {
-  idle: 6,
-  walk: 8,
-  attack: 12,
+  idle: 5,
+  walk: 6,
+  attack: 10,
   attack_windup: 8,
   dash: 14,
   skill1: 12,

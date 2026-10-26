@@ -167,6 +167,14 @@ export function matchObjectiveEvent(
     return progressEventsForObjective(quest, objective, 1, 1, previous.countedIds ?? []);
   }
 
+  if (objective.type === QUEST_OBJECTIVE_TYPE.INVESTIGATE && objective.id === 'investigate_ruins') {
+    // The altar stone is the discovery. A wall inscription in the same ruins must not complete it.
+    if (event.type === 'EXPLORATION_POINT_COMPLETED' && event.pointId === 'royal_magic_stone') {
+      return progressEventsForObjective(quest, objective, 1, 1, previous.countedIds ?? []);
+    }
+    return null;
+  }
+
   if (objective.type === QUEST_OBJECTIVE_TYPE.INVESTIGATE && event.type === 'AREA_INVESTIGATED') {
     if (objective.targetId && event.locationId !== objective.targetId) {
       return null;
@@ -174,7 +182,10 @@ export function matchObjectiveEvent(
     return progressEventsForObjective(quest, objective, 1, 1, previous.countedIds ?? []);
   }
 
-  if (objective.type === QUEST_OBJECTIVE_TYPE.OBTAIN_ITEM && event.type === 'ITEM_RECEIVED') {
+  if (
+    objective.type === QUEST_OBJECTIVE_TYPE.OBTAIN_ITEM &&
+    (event.type === 'ITEM_RECEIVED' || event.type === 'ITEM_OBTAINED')
+  ) {
     if (objective.targetId && event.itemId !== objective.targetId) {
       return null;
     }

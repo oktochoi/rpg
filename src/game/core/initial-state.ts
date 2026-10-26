@@ -1,4 +1,5 @@
 import type { PlayerState } from '../player/player-state';
+import { emptyPermanentMods } from '../player/player-state';
 import { applyPlayerClass, isSpecializedClassId, PLAYER_CLASS_ID } from '../player/classes';
 import type { GameState } from './game-state';
 import { createEmptyPlayerKnowledge } from '../knowledge/player-knowledge';
@@ -32,9 +33,12 @@ export function createInitialGameState(options: NewGameOptions = {}): GameState 
     turn: 1,
     facts: [] as const,
     locations: createInitialLocationRuntimes(),
-    flags: {},
+    flags: {
+      shop_unlocked: true,
+    },
     exploredPointIds: [] as const,
     clearedEncounterIds: [] as const,
+    ruinsKeyFailedAttempts: 0,
   };
   const name = options.name?.trim() || '모험가';
   let player: PlayerState = applyPlayerClass(
@@ -46,9 +50,9 @@ export function createInitialGameState(options: NewGameOptions = {}): GameState 
       classRankId: undefined,
       level: 1,
       exp: 0,
-      attackPower: 16,
-      maxHp: 100,
-      currentHp: 100,
+      attackPower: 20,
+      maxHp: 120,
+      currentHp: 120,
       maxMp: 70,
       currentMp: 70,
       gold: STARTING_GOLD,
@@ -62,6 +66,8 @@ export function createInitialGameState(options: NewGameOptions = {}): GameState 
       skills: [],
       unspentStatPoints: 0,
       allocatedStats: { vit: 0, str: 0, int: 0, agi: 0 },
+      permanentMods: emptyPermanentMods(),
+      purchasedUpgradeIds: [],
     },
     PLAYER_CLASS_ID.ADVENTURER
   );

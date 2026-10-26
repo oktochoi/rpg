@@ -6,4 +6,6 @@ export interface Choice {
   label: string;
   source?: ChoiceSource;
   candidateId?: string;
+  /** This choice is the one that advances the current step. */
+  questStep?: boolean;
 }

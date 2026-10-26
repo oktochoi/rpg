@@ -1,24 +1,88 @@
 .portrait {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    width: 160px;
-    height: 220px;
+    gap: 6px;
+    width: 100%;
+    min-width: 0;
+    height: auto;
 }
 
 .frame {
     position: relative;
-    width: 160px;
-    height: 180px;
+    width: 100%;
+    height: auto;
     aspect-ratio: 4 / 5;
-    flex: 0 0 180px;
+    flex: 0 0 auto;
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    border: 1px solid var(--gold-dim);
-    background:
-        linear-gradient(180deg, #3a3124 0%, #1a1612 100%);
+    border: 0;
+    background: transparent;
     overflow: hidden;
+}
+
+.bare {
+    position: relative;
+    width: 64px;
+    height: 80px;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    background: transparent;
+    overflow: hidden;
+}
+
+.dockWrap {
+    flex: 0 0 auto;
+    width: 112px;
+}
+
+.dock {
+    position: relative;
+    width: 112px;
+    height: 124px;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    background: transparent;
+    overflow: hidden;
+}
+
+.dock .image {
+    position: relative;
+    inset: auto;
+    width: auto;
+    height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+    object-position: center bottom;
+}
+
+.bust {
+    width: 112px;
+    height: 124px;
+}
+
+.bust .image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: cover;
+    object-position: center 18%;
+}
+
+.bare .image {
+    position: relative;
+    inset: auto;
+    width: auto;
+    height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+    object-position: center bottom;
 }
 
 .silhouette {
@@ -58,19 +122,10 @@
     pointer-events: none;
 }
 
-.npcSeria {
-    background:
-        linear-gradient(180deg, #4a3870 0%, #1a1612 100%);
-}
-
-.npcLeon {
-    background:
-        linear-gradient(180deg, #3d4a68 0%, #1a1612 100%);
-}
-
+.npcSeria,
+.npcLeon,
 .npcMarta {
-    background:
-        linear-gradient(180deg, #6a4a28 0%, #1a1612 100%);
+    background: transparent;
 }
 
 .name {
@@ -99,9 +154,8 @@
 .speaker {
     margin: 0;
     color: var(--gold);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
-    min-height: 20px;
 }
 
 .line {

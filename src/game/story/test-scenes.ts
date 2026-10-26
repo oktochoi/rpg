@@ -58,8 +58,8 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneContent>> = {
   [SCENE_GOBLIN_INTRO]: {
     sceneId: SCENE_GOBLIN_INTRO,
     npcName: '세리아',
-    npcDialogue: '폐허 입구에 고블린이 나타났어. 지금 처리하지 않으면 길이 막힐지도 몰라.',
-    narration: '허물어진 석문 앞에 고블린 한 마리가 서 있다. 세리아가 낮게 경고한다.',
+    npcDialogue: '석문 앞에 고블린이 서 있어. 놈들 눈이 폐허 안쪽을 보고 있어.',
+    narration: '허물어진 석문 앞에 고블린 한 마리가 서 있다.',
     choices: INTRO_CHOICES,
   },
   [SCENE_GOBLIN_VICTORY]: {
@@ -107,5 +107,13 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneContent>> = {
 };
 
 export function getStoryScene(sceneId: SceneId): StorySceneContent {
-  return STORY_SCENES[sceneId] ?? STORY_SCENES[SCENE_GOBLIN_INTRO];
+  return (
+    STORY_SCENES[sceneId] ?? {
+      sceneId,
+      npcName: '',
+      npcDialogue: '',
+      narration: '',
+      choices: INTRO_CHOICES,
+    }
+  );
 }

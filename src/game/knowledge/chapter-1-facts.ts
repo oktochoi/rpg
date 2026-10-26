@@ -9,6 +9,8 @@ export const CHAPTER_FACT_ID = {
   RUMOR_CHILD_BLUE_LIGHT: 'fact_rumor_child_blue_light',
   RUMOR_WOUNDED_ADVENTURER: 'fact_rumor_wounded_adventurer',
   RUMOR_ELIN_PRICE_WORRY: 'fact_rumor_elin_price_worry',
+  ASKED_ELIN_PRICES: 'fact_asked_elin_prices',
+  ASKED_GOBLIN_DANGER: 'fact_asked_goblin_danger',
   RUMOR_RUINS_STIRRED: 'fact_rumor_ruins_stirred',
   RUMOR_FOREST_QUIETER: 'fact_rumor_forest_quieter',
   RUMOR_NORTHERN_WATCH: 'fact_rumor_northern_watch',
@@ -36,6 +38,15 @@ export const CHAPTER_FACT_ID = {
   PLAYER_BACKS_SERIA: 'fact_player_backs_seria',
   PLAYER_BACKS_LEON: 'fact_player_backs_leon',
   PLAYER_WAITS_TO_JUDGE: 'fact_player_waits_to_judge',
+  EVIDENCE_RECORDED: 'fact_evidence_recorded',
+  BROKEN_SEAL_DETAIL: 'fact_broken_seal_detail',
+  LEFT_RUINS_EARLY: 'fact_left_ruins_early',
+  CAMP_HUMAN_MAP: 'fact_camp_human_map',
+  RUINS_RECENT_HUMAN_TRACE: 'fact_ruins_recent_human_trace',
+  NORTHERN_BLUE_LIGHT: 'fact_northern_blue_light',
+  GUARDIAN_NOT_OUR_FAULT: 'fact_guardian_not_our_fault',
+  GUARDIAN_CORE_FLOW: 'fact_guardian_core_flow',
+  SERIA_BLUE_PULSE: 'fact_seria_blue_pulse',
 } as const;
 
 export type ChapterFactId = (typeof CHAPTER_FACT_ID)[keyof typeof CHAPTER_FACT_ID];

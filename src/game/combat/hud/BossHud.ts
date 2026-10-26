@@ -1,4 +1,5 @@
 import * as Phaser from 'phaser';
+import { isCombatDebugEnabled } from '../../debug/debug-flags';
 import type { BossController } from '../boss/BossController';
 import { formatBossDebug } from '../boss/boss-debug';
 
@@ -62,7 +63,7 @@ export class BossHud {
     });
     this.debugLabel.setOrigin(1, 1);
     this.debugLabel.setDepth(8);
-    this.debugLabel.setVisible(process.env.NODE_ENV !== 'production');
+    this.debugLabel.setVisible(isCombatDebugEnabled());
 
     scene.scale.on('resize', this.handleResize, this);
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {

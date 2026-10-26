@@ -1,4 +1,5 @@
 import * as Phaser from 'phaser';
+import { basicAttackDamageLabel } from '../attacks/basic-attack-strike';
 import { COMBAT_FEEL } from './CombatFeelConfig';
 import { COMBAT_DEPTH } from '../visual/combat-depth';
 import { GAME_ASSETS, getEffectAsset } from '../visual/asset-registry';
@@ -41,15 +42,20 @@ export class CombatFeedback {
     return this.hitStopUntilMs > 0 && performance.now() < this.hitStopUntilMs;
   }
 
-  playAttackHit(target: WorldPoint, amount: number, options?: { shakeScale?: number; offsetY?: number }): void {
-    const strong = amount >= 30;
+  playAttackHit(
+    target: WorldPoint,
+    amount: number,
+    options?: { shakeScale?: number; offsetY?: number; critical?: boolean }
+  ): void {
+    const critical = options?.critical === true;
+    const strong = critical || amount >= 30;
     this.playHitStop(strong ? COMBAT_FEEL.skillHitStopMs : COMBAT_FEEL.normalHitStopMs);
     const shakeScale = options?.shakeScale ?? 1;
     this.playShake(
       strong ? COMBAT_FEEL.skillShakeDurationMs : COMBAT_FEEL.playerHitShakeDurationMs,
       (strong ? COMBAT_FEEL.skillShakeIntensity : COMBAT_FEEL.playerHitShakeIntensity) * shakeScale
     );
-    this.playDamageNumber(target.x, target.y, amount, '#f0d2a8', strong, options?.offsetY);
+    this.playDamageNumber(target.x, target.y, amount, '#f0d2a8', strong, options?.offsetY, critical);
   }
 
   playBossDeath(): void {
@@ -63,7 +69,7 @@ export class CombatFeedback {
       heavy ? COMBAT_FEEL.receivedHeavyShakeDurationMs : COMBAT_FEEL.receivedHitShakeDurationMs,
       heavy ? COMBAT_FEEL.receivedHeavyShakeIntensity : COMBAT_FEEL.receivedHitShakeIntensity
     );
-    this.playDamageNumber(target.x, target.y, amount, '#e88a7a', heavy, offsetY);
+    this.playDamageNumber(target.x, target.y, amount, '#e88a7a', heavy, offsetY, false);
   }
 
   playSlash(originX: number, originY: number, direction: Phaser.Math.Vector2, effectId: CombatEffectId = 'slash_basic'): void {
@@ -238,9 +244,13 @@ export class CombatFeedback {
   }
 
   private playHitStop(durationMs: number): void {
+    const world = this.physicsWorld();
+    if (!world) {
+      return;
+    }
     const until = performance.now() + durationMs;
     this.hitStopUntilMs = Math.max(this.hitStopUntilMs, until);
-    this.scene.physics.world.pause();
+    world.pause();
   }
 
   private tickHitStop(): void {
@@ -253,9 +263,7 @@ export class CombatFeedback {
     }
 
     this.hitStopUntilMs = 0;
-    if (this.scene.physics.world.isPaused) {
-      this.scene.physics.world.resume();
-    }
+    this.resumePhysicsIfPaused();
   }
 
   private playShake(durationMs: number, intensity: number): void {
@@ -267,11 +275,20 @@ export class CombatFeedback {
     this.scene.cameras.main.shake(durationMs, Math.min(intensity, 0.01));
   }
 
-  private playDamageNumber(x: number, y: number, amount: number, color: string, large = false, offsetY = 18): void {
-    const label = this.scene.add.text(x, y - offsetY, `-${amount}`, {
+  private playDamageNumber(
+    x: number,
+    y: number,
+    amount: number,
+    color: string,
+    large = false,
+    offsetY = 18,
+    critical = false
+  ): void {
+    const text = basicAttackDamageLabel(amount, critical);
+    const label = this.scene.add.text(x, y - offsetY, text, {
       fontFamily: 'Arial, sans-serif',
-      fontSize: large || amount >= 30 ? '20px' : '16px',
-      color,
+      fontSize: critical || large || amount >= 30 ? '22px' : '18px',
+      color: critical ? '#f5d76e' : color,
       stroke: '#1a1612',
       strokeThickness: 3,
     });
@@ -326,13 +343,22 @@ export class CombatFeedback {
 
   private destroy(): void {
     this.hitStopUntilMs = 0;
-    if (this.scene.physics.world.isPaused) {
-      this.scene.physics.world.resume();
-    }
+    this.resumePhysicsIfPaused();
 
     this.clearVisuals(this.afterImages);
     this.clearVisuals(this.slashes);
     this.clearVisuals(this.numbers);
+  }
+
+  private physicsWorld(): Phaser.Physics.Arcade.World | null {
+    return this.scene.sys?.isActive() ? (this.scene.physics?.world ?? null) : null;
+  }
+
+  private resumePhysicsIfPaused(): void {
+    const world = this.physicsWorld();
+    if (world?.isPaused) {
+      world.resume();
+    }
   }
 
   private clearVisuals(items: TimedVisual[]): void {

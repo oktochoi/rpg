@@ -16,7 +16,9 @@ export type LocationType = (typeof LOCATION_TYPE)[keyof typeof LOCATION_TYPE];
 export type LocationAccessRequirement =
   | { type: 'QUEST_COMPLETED'; questId: string }
   | { type: 'FACT_KNOWN'; factId: string }
-  | { type: 'FLAG'; flagId: string };
+  | { type: 'FLAG'; flagId: string }
+  | { type: 'ITEM'; itemId: string }
+  | { type: 'HAS_ITEM'; itemId: string };
 
 export interface LocationDefinition {
   id: LocationId;
@@ -29,6 +31,8 @@ export interface LocationDefinition {
   tags: readonly string[];
   discoveryRequired: boolean;
   accessRequirements?: readonly LocationAccessRequirement[];
+  /** Shown when accessRequirements fail (e.g. locked ruins gate). */
+  accessDeniedReason?: string;
   encounterIds?: readonly string[];
   /** Presentation only. Story logic must not branch on this. */
   audioTheme?: 'STORY_SAFE' | 'STORY_MYSTERY';

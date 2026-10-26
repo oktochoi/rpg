@@ -102,7 +102,7 @@ export async function runStep3410Scenarios(): Promise<string[]> {
   const introMinutes = beforeContinue.world.totalMinutes ?? 0;
   if (
     intro.choices.length === 1 &&
-    intro.choices[0]?.text === '계속' &&
+    intro.choices[0]?.text === '광장으로 나선다' &&
     getMainObjectiveText(beforeContinue).includes('길드')
   ) {
     pass('A-arrival-continue', getMainObjectiveText(beforeContinue));
@@ -312,8 +312,10 @@ export async function runStep3410Scenarios(): Promise<string[]> {
     result: victory(ENCOUNTER_ID.CH1_RUINS_GATE, ['gate_goblin_001', 'gate_archer_001', 'gate_brute_001']),
   });
   await later.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_INVESTIGATE_ALTAR });
-  await later.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_LOOK_AROUND });
-  await later.dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.RUINS_BOSS_01 });
+  await later.dispatch({ type: 'SELECT_CHOICE', choiceId: 'inspect_seal_first' });
+  if (later.getState().mode !== 'COMBAT') {
+    await later.dispatch({ type: 'SELECT_CHOICE', choiceId: 'touch_magic_stone' });
+  }
   if (later.getState().mode === 'COMBAT') {
     await later.dispatch({
       type: 'RESOLVE_COMBAT',
@@ -330,13 +332,13 @@ export async function runStep3410Scenarios(): Promise<string[]> {
   await hopTo(later, LOCATION_ID.LUEN_VILLAGE);
   await later.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_REPORT_RUINS });
   await later.dispatch({ type: 'SELECT_CHOICE', choiceId: 'report_all' });
-  await later.dispatch({ type: 'SELECT_CHOICE', choiceId: 'seria_follow_done' });
   await later.dispatch({ type: 'SELECT_CHOICE', choiceId: 'leon_agree_seria' });
-  if (getMainObjectiveText(later.getState()).includes('여관')) {
+  if (getMainObjectiveText(later.getState()).includes('길드')) {
     pass('Q-epilogue-objective', getMainObjectiveText(later.getState()));
   } else {
     fail('Q-epilogue-objective', getMainObjectiveText(later.getState()));
   }
+  // Optional Free Roam rest still grants free-rest flags after Leon.
   await hopTo(later, LOCATION_ID.BLUE_MOON_INN);
   await later.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_REST_INN });
   if (worldFlag(later.getState(), WORLD_FLAG.EPILOGUE_REST_DONE) && worldFlag(later.getState(), WORLD_FLAG.STORY_FREE_REST_USED)) {

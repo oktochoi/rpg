@@ -11,5 +11,6 @@ export {
   relationshipRequestsForCombat,
   relationshipRequestsForQuest,
   relationshipRequestsForShare,
+  authoredRescueRequest,
 } from './relationship-service';
 export { getRelationship, getNpcAttitude, attitudeFromRelationship, relationshipBandLabel, formatRelationshipFeedback } from './relationship-selectors';

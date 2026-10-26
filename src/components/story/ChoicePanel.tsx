@@ -4,7 +4,6 @@ import type { CommandDispatcher } from '@/game/core/command';
 import type { Choice } from '@/game/story/choice';
 import { directorChoiceDebugEnabled } from '@/game/story/choices/choice-priority';
 import { resolvePlayerFacingChoiceLabel } from '@/game/story/choices/choice-label';
-import { FreeActionInput } from './FreeActionInput';
 import styles from './ChoicePanel.module.css';
 
 interface ChoicePanelProps {
@@ -14,6 +13,7 @@ interface ChoicePanelProps {
   turnId: number;
   lockToken?: string;
   debugReason?: string | null;
+  stepHints?: readonly string[];
 }
 
 export function ChoicePanel({
@@ -23,21 +23,15 @@ export function ChoicePanel({
   turnId,
   lockToken = '',
   debugReason = null,
+  stepHints = [],
 }: ChoicePanelProps) {
   const [locked, setLocked] = useState(false);
   const choiceIds = choices.map((choice) => choice.id).join('|');
+  const count = Math.max(1, Math.min(3, choices.length || 1));
 
   useEffect(() => {
     setLocked(false);
   }, [turnId, disabled, lockToken, choiceIds]);
-
-  useEffect(() => {
-    if (!locked) {
-      return;
-    }
-    const timer = window.setTimeout(() => setLocked(false), 8000);
-    return () => window.clearTimeout(timer);
-  }, [locked]);
 
   const inactive = disabled || locked;
 
@@ -49,11 +43,12 @@ export function ChoicePanel({
     audioManager.unlock();
     audioManager.playSfx(SFX_ID.UI_CONFIRM);
     dispatch({
-      type: 'SELECT_DYNAMIC_CHOICE',
+      type: 'SELECT_CHOICE',
       choiceId: choice.id,
-      turnId,
-      candidateId: choice.candidateId ?? choice.id,
     });
+    // Stay locked until turn/lockToken changes (parent clears after staged transition).
+    // Fallback unlock avoids soft-lock if dispatch is a no-op.
+    window.setTimeout(() => setLocked(false), 420);
   };
 
   useEffect(() => {
@@ -81,18 +76,33 @@ export function ChoicePanel({
 
   const continueOnly =
     choices.length === 1 &&
-    (choices[0]?.label === '계속' || choices[0]?.candidateId === 'story_continue' || choices[0]?.candidateId === 'intro_continue');
+    (choices[0]?.label === '계속' || choices[0]?.label === '계속 이동한다');
+  const flagged = choices.some((choice) => choice.questStep);
+  const hintedId = flagged
+    ? undefined
+    : choices.find((choice) => {
+        const label = resolvePlayerFacingChoiceLabel({ text: choice.label, candidateId: choice.candidateId });
+        return stepHints.some((hint) => label.includes(hint));
+      })?.id;
+
+  const isQuestStep = (choice: Choice) => !continueOnly && (choice.questStep === true || choice.id === hintedId);
 
   return (
-    <section className={`${styles.panel} ${continueOnly ? styles.continuePanel : ''}`} aria-label="선택지">
+    <section
+      className={styles.panel}
+      style={{ ['--choice-count' as string]: String(count) }}
+      data-count={count}
+      aria-label="선택지"
+    >
       {choices.map((choice, index) => (
         <button
-          className={`${styles.choice} ${continueOnly ? styles.continue : ''}`}
+          className={`${styles.choice} ${continueOnly ? styles.continue : ''} ${isQuestStep(choice) ? styles.questStep : ''}`}
           key={choice.id}
           type="button"
           disabled={inactive}
           onClick={() => selectChoice(choice)}
         >
+          {isQuestStep(choice) ? <span className={styles.mark}>목표</span> : null}
           {continueOnly ? null : <span className={styles.index}>{index + 1}</span>}
           <span className={styles.label}>
             {resolvePlayerFacingChoiceLabel({ text: choice.label, candidateId: choice.candidateId })}
@@ -102,9 +112,10 @@ export function ChoicePanel({
           ) : null}
         </button>
       ))}
-      <FreeActionInput dispatch={dispatch} disabled={inactive} turnId={turnId} lockToken={lockToken} />
       {directorChoiceDebugEnabled() && debugReason ? (
-        <p className={styles.source}>lock {debugReason} turn {turnId}</p>
+        <p className={styles.source}>
+          lock {debugReason} turn {turnId}
+        </p>
       ) : null}
     </section>
   );

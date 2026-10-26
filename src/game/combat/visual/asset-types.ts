@@ -48,6 +48,8 @@ export interface GameAssetDefinition {
   frameHeight?: number;
   visualOffsetX?: number;
   visualOffsetY?: number;
+  /** When true, the spritesheet art faces left at rest (flipX=false). */
+  artFacesLeft?: boolean;
   hpBarOffsetY?: number;
   damageTextOffsetY?: number;
   stateTextures?: Partial<Record<VisualAnimState, string>>;

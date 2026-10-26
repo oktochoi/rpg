@@ -1,51 +1,59 @@
-import { DialogueBox } from '@/components/dialogue/DialogueBox';
 import { NpcPortrait } from '@/components/dialogue/NpcPortrait';
 import type { StoryPanelView } from './types';
-import { StoryBackground } from './StoryBackground';
 import styles from './StoryPanel.module.css';
 
 interface StoryPanelProps {
   story: StoryPanelView;
-  locationId: string;
   statusMessage?: string | null;
 }
 
-export function StoryPanel({ story, locationId, statusMessage = null }: StoryPanelProps) {
-  const hasTranscript = story.messages.length > 0;
+function normalizeText(value: string | null | undefined): string {
+  return (value ?? '').replace(/\s+/g, ' ').trim();
+}
+
+function keepBreaks(value: string | null | undefined): string {
+  return (value ?? '')
+    .replace(/\r/g, '')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/ *\n */g, '\n')
+    .trim();
+}
+
+/** Dialogue dock under the scene. The background stays in the main view. */
+export function StoryPanel({ story, statusMessage = null }: StoryPanelProps) {
+  const recent = story.messages.slice(-1);
+  const hasTranscript = recent.length > 0;
+  const lastMessageText = normalizeText(recent[recent.length - 1]?.text);
+  const npcDialogue = normalizeText(story.npcDialogue);
+  const spoken = hasTranscript ? lastMessageText : npcDialogue;
+  const sceneNote = keepBreaks(story.situation || story.lastActionNarrative);
+  const showSceneNote = sceneNote.length > 0 && normalizeText(sceneNote) !== spoken;
+  const speaker = spoken
+    ? hasTranscript
+      ? recent[0]?.speaker === 'PLAYER'
+        ? '플레이어'
+        : story.npcName
+      : story.npcName
+    : null;
 
   return (
-    <section className={styles.panel} aria-label="스토리">
-      <div className={styles.background}>
-        <StoryBackground locationId={locationId} />
-        <div className={styles.portraitWrap}>
-          <NpcPortrait emotion={story.npcEmotion} npcId={story.npcId} npcName={story.npcName} role={story.npcRole} />
-        </div>
-      </div>
-      <div className={styles.body}>
-        {hasTranscript ? (
-          <div className={styles.transcript} aria-label="대화 기록">
-            {story.messages.map((message, index) => (
-              <p
-                className={message.speaker === 'PLAYER' ? styles.playerTurn : styles.npcTurn}
-                key={`${message.speaker}-${index}`}
-              >
-                <span className={styles.speaker}>
-                  {message.speaker === 'PLAYER' ? 'Player' : story.npcName}
-                </span>
-                {message.text}
-              </p>
-            ))}
-          </div>
-        ) : (
-          <DialogueBox npcName={story.npcName} dialogue={story.npcDialogue} />
-        )}
-        {story.lastActionNarrative ? <p className={styles.actionResult}>{story.lastActionNarrative}</p> : null}
+    <section className={styles.dock} aria-label="대화">
+      {speaker && story.npcName ? (
+        <NpcPortrait dock emotion={story.npcEmotion} npcId={story.npcId} npcName={story.npcName} role={story.npcRole} />
+      ) : null}
+      <div className={styles.copy}>
+        {speaker ? <p className={styles.speaker}>{speaker}</p> : null}
+        {showSceneNote ? <p className={styles.note}>{sceneNote}</p> : null}
+        {spoken ? (
+          <p className={hasTranscript && recent[0]?.speaker === 'PLAYER' ? styles.playerLine : styles.line}>
+            {hasTranscript ? recent[0]?.text : story.npcDialogue}
+          </p>
+        ) : null}
         {statusMessage ? (
           <p className={styles.thinking} role="status">
             {statusMessage}
           </p>
         ) : null}
-        <p className={styles.situation}>{story.situation}</p>
       </div>
     </section>
   );

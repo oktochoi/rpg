@@ -11,7 +11,7 @@ export function ClassSelect({ onSelect }: ClassSelectProps) {
   return (
     <div className={styles.overlay} role="dialog" aria-label="직업 선택">
       <section className={styles.panel}>
-        <p className={styles.kicker}>NEW GAME</p>
+        <p className={styles.kicker}>새 게임</p>
         <h2 className={styles.title}>직업을 선택하세요</h2>
         <div className={styles.grid}>
           {(Object.keys(PLAYER_CLASSES) as PlayerClassId[]).map((classId) => {

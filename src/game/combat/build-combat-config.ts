@@ -5,7 +5,7 @@ import { WORLD_FLAG } from '../world/locations/location-definitions';
 import { worldFlag } from '../world/locations/location-selectors';
 import type { EncounterId } from '../core/ids';
 import { getPlayerClass, resolvePlayerClassId } from '../player/classes';
-import { derivedPlayerStats } from '../inventory/derived-stats';
+import { combatRangeScale, derivedPlayerStats } from '../inventory/derived-stats';
 import { isNpcDuelCombatId } from '../actions/action-validator';
 import { getEnemyDefinition } from './enemies/enemy-definitions';
 import {
@@ -13,13 +13,18 @@ import {
   getEncounter,
   resolveEncounterId,
 } from './encounters/encounter-definitions';
+import { isEncounterCleared } from './encounters/encounter-progress';
 import { snapshotSpawns } from './encounters/EncounterManager';
+import { isTrainingCombatId } from './training/training-combat';
 import type { CombatConfig, CombatEnemyConfig } from './types/combat-config';
 
 export function playerCombatSnapshot(state: Readonly<GameState>): CombatConfig['player'] {
   const classId = resolvePlayerClassId(state.player.classId);
   const definition = getPlayerClass(classId);
   const derived = derivedPlayerStats(state.player);
+  const baseAttack = definition.baseStats.attackPower;
+  const levelAttackDelta = Math.max(0, (state.player.attackPower ?? baseAttack) - baseAttack);
+  const attackPercent = state.player.permanentMods?.attackPercent ?? 0;
   return {
     classId,
     maxHp: derived.maxHp,
@@ -27,7 +32,9 @@ export function playerCombatSnapshot(state: Readonly<GameState>): CombatConfig['
     maxMp: derived.maxMp,
     currentMp: Math.min(state.player.currentMp, derived.maxMp),
     moveSpeed: definition.baseStats.moveSpeed,
-    attackBonus: derived.attackBonus,
+    attackBonus: derived.attackBonus + levelAttackDelta,
+    attackPercent,
+    attackRangeScale: combatRangeScale(state.player),
     healingPotions: itemQuantity(state.player, ITEM_ID.HEALING_POTION),
   };
 }
@@ -58,15 +65,24 @@ export function buildCombatConfig(state: Readonly<GameState>, combatId: Encounte
     };
   });
 
+  const training = isTrainingCombatId(combatId) || isTrainingCombatId(encounterId);
   return {
     combatId,
     encounterId,
-    player,
+    player: training
+      ? {
+          ...player,
+          currentHp: player.maxHp,
+          currentMp: player.maxMp,
+        }
+      : player,
     enemies,
     arenaId: encounter.arenaId,
     spawnBias:
       encounterId === ENCOUNTER_ID.CH1_GOBLIN_CAMP && worldFlag(state, WORLD_FLAG.GOBLIN_CAMP_OBSERVED)
         ? 'observed'
         : 'default',
+    training,
+    repeatEncounter: training || isEncounterCleared(state, encounterId),
   };
 }

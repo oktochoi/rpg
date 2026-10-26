@@ -1,0 +1,1138 @@
+{
+  "source": "어두운_판타지_던전_타일셋_아틀라스.png",
+  "count": 87,
+  "items": [
+    {
+      "id": 1,
+      "filename": "dungeon_tileset_001.png",
+      "source_bbox": [
+        481,
+        13,
+        626,
+        162
+      ],
+      "width": 145,
+      "height": 149,
+      "pixel_count": 20742
+    },
+    {
+      "id": 2,
+      "filename": "dungeon_tileset_002.png",
+      "source_bbox": [
+        636,
+        9,
+        780,
+        162
+      ],
+      "width": 144,
+      "height": 153,
+      "pixel_count": 20528
+    },
+    {
+      "id": 3,
+      "filename": "dungeon_tileset_003.png",
+      "source_bbox": [
+        946,
+        13,
+        1086,
+        162
+      ],
+      "width": 140,
+      "height": 149,
+      "pixel_count": 18587
+    },
+    {
+      "id": 4,
+      "filename": "dungeon_tileset_004.png",
+      "source_bbox": [
+        13,
+        13,
+        160,
+        162
+      ],
+      "width": 147,
+      "height": 149,
+      "pixel_count": 20460
+    },
+    {
+      "id": 5,
+      "filename": "dungeon_tileset_005.png",
+      "source_bbox": [
+        174,
+        13,
+        313,
+        162
+      ],
+      "width": 139,
+      "height": 149,
+      "pixel_count": 20035
+    },
+    {
+      "id": 6,
+      "filename": "dungeon_tileset_006.png",
+      "source_bbox": [
+        325,
+        14,
+        468,
+        166
+      ],
+      "width": 143,
+      "height": 152,
+      "pixel_count": 20714
+    },
+    {
+      "id": 7,
+      "filename": "dungeon_tileset_007.png",
+      "source_bbox": [
+        791,
+        13,
+        936,
+        162
+      ],
+      "width": 145,
+      "height": 149,
+      "pixel_count": 19720
+    },
+    {
+      "id": 8,
+      "filename": "dungeon_tileset_008.png",
+      "source_bbox": [
+        1102,
+        13,
+        1229,
+        160
+      ],
+      "width": 127,
+      "height": 147,
+      "pixel_count": 14887
+    },
+    {
+      "id": 9,
+      "filename": "dungeon_tileset_009.png",
+      "source_bbox": [
+        1245,
+        15,
+        1341,
+        162
+      ],
+      "width": 96,
+      "height": 147,
+      "pixel_count": 10475
+    },
+    {
+      "id": 10,
+      "filename": "dungeon_tileset_010.png",
+      "source_bbox": [
+        1353,
+        44,
+        1434,
+        162
+      ],
+      "width": 81,
+      "height": 118,
+      "pixel_count": 6713
+    },
+    {
+      "id": 11,
+      "filename": "dungeon_tileset_011.png",
+      "source_bbox": [
+        14,
+        169,
+        162,
+        319
+      ],
+      "width": 148,
+      "height": 150,
+      "pixel_count": 20725
+    },
+    {
+      "id": 12,
+      "filename": "dungeon_tileset_012.png",
+      "source_bbox": [
+        170,
+        170,
+        315,
+        321
+      ],
+      "width": 145,
+      "height": 151,
+      "pixel_count": 20216
+    },
+    {
+      "id": 13,
+      "filename": "dungeon_tileset_013.png",
+      "source_bbox": [
+        636,
+        170,
+        780,
+        319
+      ],
+      "width": 144,
+      "height": 149,
+      "pixel_count": 20159
+    },
+    {
+      "id": 14,
+      "filename": "dungeon_tileset_014.png",
+      "source_bbox": [
+        1203,
+        171,
+        1233,
+        213
+      ],
+      "width": 30,
+      "height": 42,
+      "pixel_count": 987
+    },
+    {
+      "id": 15,
+      "filename": "dungeon_tileset_015.png",
+      "source_bbox": [
+        325,
+        171,
+        471,
+        322
+      ],
+      "width": 146,
+      "height": 151,
+      "pixel_count": 20656
+    },
+    {
+      "id": 16,
+      "filename": "dungeon_tileset_016.png",
+      "source_bbox": [
+        481,
+        171,
+        625,
+        321
+      ],
+      "width": 144,
+      "height": 150,
+      "pixel_count": 20523
+    },
+    {
+      "id": 17,
+      "filename": "dungeon_tileset_017.png",
+      "source_bbox": [
+        796,
+        171,
+        937,
+        321
+      ],
+      "width": 141,
+      "height": 150,
+      "pixel_count": 17506
+    },
+    {
+      "id": 18,
+      "filename": "dungeon_tileset_018.png",
+      "source_bbox": [
+        950,
+        172,
+        1086,
+        317
+      ],
+      "width": 136,
+      "height": 145,
+      "pixel_count": 16915
+    },
+    {
+      "id": 19,
+      "filename": "dungeon_tileset_019.png",
+      "source_bbox": [
+        1104,
+        171,
+        1233,
+        321
+      ],
+      "width": 129,
+      "height": 150,
+      "pixel_count": 12953
+    },
+    {
+      "id": 20,
+      "filename": "dungeon_tileset_020.png",
+      "source_bbox": [
+        1246,
+        176,
+        1340,
+        320
+      ],
+      "width": 94,
+      "height": 144,
+      "pixel_count": 8964
+    },
+    {
+      "id": 21,
+      "filename": "dungeon_tileset_021.png",
+      "source_bbox": [
+        1359,
+        182,
+        1433,
+        319
+      ],
+      "width": 74,
+      "height": 137,
+      "pixel_count": 6628
+    },
+    {
+      "id": 22,
+      "filename": "dungeon_tileset_022.png",
+      "source_bbox": [
+        266,
+        331,
+        363,
+        464
+      ],
+      "width": 97,
+      "height": 133,
+      "pixel_count": 10023
+    },
+    {
+      "id": 23,
+      "filename": "dungeon_tileset_023.png",
+      "source_bbox": [
+        373,
+        327,
+        507,
+        461
+      ],
+      "width": 134,
+      "height": 134,
+      "pixel_count": 12582
+    },
+    {
+      "id": 24,
+      "filename": "dungeon_tileset_024.png",
+      "source_bbox": [
+        1010,
+        332,
+        1157,
+        475
+      ],
+      "width": 147,
+      "height": 143,
+      "pixel_count": 16316
+    },
+    {
+      "id": 25,
+      "filename": "dungeon_tileset_025.png",
+      "source_bbox": [
+        625,
+        333,
+        781,
+        470
+      ],
+      "width": 156,
+      "height": 137,
+      "pixel_count": 16984
+    },
+    {
+      "id": 26,
+      "filename": "dungeon_tileset_026.png",
+      "source_bbox": [
+        518,
+        332,
+        614,
+        446
+      ],
+      "width": 96,
+      "height": 114,
+      "pixel_count": 9049
+    },
+    {
+      "id": 27,
+      "filename": "dungeon_tileset_027.png",
+      "source_bbox": [
+        788,
+        332,
+        863,
+        472
+      ],
+      "width": 75,
+      "height": 140,
+      "pixel_count": 8174
+    },
+    {
+      "id": 28,
+      "filename": "dungeon_tileset_028.png",
+      "source_bbox": [
+        1164,
+        334,
+        1275,
+        472
+      ],
+      "width": 111,
+      "height": 138,
+      "pixel_count": 9778
+    },
+    {
+      "id": 29,
+      "filename": "dungeon_tileset_029.png",
+      "source_bbox": [
+        1288,
+        334,
+        1356,
+        463
+      ],
+      "width": 68,
+      "height": 129,
+      "pixel_count": 6167
+    },
+    {
+      "id": 30,
+      "filename": "dungeon_tileset_030.png",
+      "source_bbox": [
+        13,
+        333,
+        255,
+        455
+      ],
+      "width": 242,
+      "height": 122,
+      "pixel_count": 25622
+    },
+    {
+      "id": 31,
+      "filename": "dungeon_tileset_031.png",
+      "source_bbox": [
+        869,
+        336,
+        996,
+        468
+      ],
+      "width": 127,
+      "height": 132,
+      "pixel_count": 12279
+    },
+    {
+      "id": 32,
+      "filename": "dungeon_tileset_032.png",
+      "source_bbox": [
+        1374,
+        336,
+        1440,
+        473
+      ],
+      "width": 66,
+      "height": 137,
+      "pixel_count": 6170
+    },
+    {
+      "id": 33,
+      "filename": "dungeon_tileset_033.png",
+      "source_bbox": [
+        515,
+        463,
+        608,
+        636
+      ],
+      "width": 93,
+      "height": 173,
+      "pixel_count": 11277
+    },
+    {
+      "id": 34,
+      "filename": "dungeon_tileset_034.png",
+      "source_bbox": [
+        376,
+        466,
+        510,
+        648
+      ],
+      "width": 134,
+      "height": 182,
+      "pixel_count": 16141
+    },
+    {
+      "id": 35,
+      "filename": "dungeon_tileset_035.png",
+      "source_bbox": [
+        12,
+        472,
+        221,
+        642
+      ],
+      "width": 209,
+      "height": 170,
+      "pixel_count": 26579
+    },
+    {
+      "id": 36,
+      "filename": "dungeon_tileset_036.png",
+      "source_bbox": [
+        225,
+        475,
+        371,
+        649
+      ],
+      "width": 146,
+      "height": 174,
+      "pixel_count": 13897
+    },
+    {
+      "id": 37,
+      "filename": "dungeon_tileset_037.png",
+      "source_bbox": [
+        601,
+        480,
+        735,
+        649
+      ],
+      "width": 134,
+      "height": 169,
+      "pixel_count": 13925
+    },
+    {
+      "id": 38,
+      "filename": "dungeon_tileset_038.png",
+      "source_bbox": [
+        760,
+        480,
+        843,
+        642
+      ],
+      "width": 83,
+      "height": 162,
+      "pixel_count": 9246
+    },
+    {
+      "id": 39,
+      "filename": "dungeon_tileset_039.png",
+      "source_bbox": [
+        1012,
+        483,
+        1138,
+        651
+      ],
+      "width": 126,
+      "height": 168,
+      "pixel_count": 13270
+    },
+    {
+      "id": 40,
+      "filename": "dungeon_tileset_040.png",
+      "source_bbox": [
+        1227,
+        482,
+        1330,
+        649
+      ],
+      "width": 103,
+      "height": 167,
+      "pixel_count": 12233
+    },
+    {
+      "id": 41,
+      "filename": "dungeon_tileset_041.png",
+      "source_bbox": [
+        854,
+        485,
+        918,
+        642
+      ],
+      "width": 64,
+      "height": 157,
+      "pixel_count": 7790
+    },
+    {
+      "id": 42,
+      "filename": "dungeon_tileset_042.png",
+      "source_bbox": [
+        1144,
+        486,
+        1220,
+        642
+      ],
+      "width": 76,
+      "height": 156,
+      "pixel_count": 7672
+    },
+    {
+      "id": 43,
+      "filename": "dungeon_tileset_043.png",
+      "source_bbox": [
+        925,
+        487,
+        1006,
+        643
+      ],
+      "width": 81,
+      "height": 156,
+      "pixel_count": 7471
+    },
+    {
+      "id": 44,
+      "filename": "dungeon_tileset_044.png",
+      "source_bbox": [
+        1338,
+        487,
+        1440,
+        646
+      ],
+      "width": 102,
+      "height": 159,
+      "pixel_count": 9925
+    },
+    {
+      "id": 45,
+      "filename": "dungeon_tileset_045.png",
+      "source_bbox": [
+        171,
+        658,
+        318,
+        826
+      ],
+      "width": 147,
+      "height": 168,
+      "pixel_count": 21555
+    },
+    {
+      "id": 46,
+      "filename": "dungeon_tileset_046.png",
+      "source_bbox": [
+        19,
+        657,
+        159,
+        827
+      ],
+      "width": 140,
+      "height": 170,
+      "pixel_count": 20779
+    },
+    {
+      "id": 47,
+      "filename": "dungeon_tileset_047.png",
+      "source_bbox": [
+        1042,
+        658,
+        1198,
+        827
+      ],
+      "width": 156,
+      "height": 169,
+      "pixel_count": 24247
+    },
+    {
+      "id": 48,
+      "filename": "dungeon_tileset_048.png",
+      "source_bbox": [
+        329,
+        660,
+        477,
+        831
+      ],
+      "width": 148,
+      "height": 171,
+      "pixel_count": 20318
+    },
+    {
+      "id": 49,
+      "filename": "dungeon_tileset_049.png",
+      "source_bbox": [
+        489,
+        662,
+        675,
+        830
+      ],
+      "width": 186,
+      "height": 168,
+      "pixel_count": 25481
+    },
+    {
+      "id": 50,
+      "filename": "dungeon_tileset_050.png",
+      "source_bbox": [
+        685,
+        660,
+        840,
+        824
+      ],
+      "width": 155,
+      "height": 164,
+      "pixel_count": 24411
+    },
+    {
+      "id": 51,
+      "filename": "dungeon_tileset_051.png",
+      "source_bbox": [
+        857,
+        660,
+        1024,
+        826
+      ],
+      "width": 167,
+      "height": 166,
+      "pixel_count": 25550
+    },
+    {
+      "id": 52,
+      "filename": "dungeon_tileset_052.png",
+      "source_bbox": [
+        1218,
+        662,
+        1277,
+        721
+      ],
+      "width": 59,
+      "height": 59,
+      "pixel_count": 3172
+    },
+    {
+      "id": 53,
+      "filename": "dungeon_tileset_053.png",
+      "source_bbox": [
+        1290,
+        663,
+        1435,
+        730
+      ],
+      "width": 145,
+      "height": 67,
+      "pixel_count": 6844
+    },
+    {
+      "id": 54,
+      "filename": "dungeon_tileset_054.png",
+      "source_bbox": [
+        1216,
+        731,
+        1297,
+        827
+      ],
+      "width": 81,
+      "height": 96,
+      "pixel_count": 5639
+    },
+    {
+      "id": 55,
+      "filename": "dungeon_tileset_055.png",
+      "source_bbox": [
+        1305,
+        728,
+        1435,
+        827
+      ],
+      "width": 130,
+      "height": 99,
+      "pixel_count": 8710
+    },
+    {
+      "id": 56,
+      "filename": "dungeon_tileset_056.png",
+      "source_bbox": [
+        201,
+        836,
+        381,
+        1031
+      ],
+      "width": 180,
+      "height": 195,
+      "pixel_count": 32770
+    },
+    {
+      "id": 57,
+      "filename": "dungeon_tileset_057.png",
+      "source_bbox": [
+        385,
+        836,
+        567,
+        1031
+      ],
+      "width": 182,
+      "height": 195,
+      "pixel_count": 33128
+    },
+    {
+      "id": 58,
+      "filename": "dungeon_tileset_058.png",
+      "source_bbox": [
+        16,
+        838,
+        195,
+        1031
+      ],
+      "width": 179,
+      "height": 193,
+      "pixel_count": 33085
+    },
+    {
+      "id": 59,
+      "filename": "dungeon_tileset_059.png",
+      "source_bbox": [
+        1173,
+        838,
+        1238,
+        913
+      ],
+      "width": 65,
+      "height": 75,
+      "pixel_count": 3976
+    },
+    {
+      "id": 60,
+      "filename": "dungeon_tileset_060.png",
+      "source_bbox": [
+        566,
+        839,
+        748,
+        1031
+      ],
+      "width": 182,
+      "height": 192,
+      "pixel_count": 32949
+    },
+    {
+      "id": 61,
+      "filename": "dungeon_tileset_061.png",
+      "source_bbox": [
+        755,
+        841,
+        891,
+        963
+      ],
+      "width": 136,
+      "height": 122,
+      "pixel_count": 13040
+    },
+    {
+      "id": 62,
+      "filename": "dungeon_tileset_062.png",
+      "source_bbox": [
+        903,
+        841,
+        979,
+        946
+      ],
+      "width": 76,
+      "height": 105,
+      "pixel_count": 7335
+    },
+    {
+      "id": 63,
+      "filename": "dungeon_tileset_063.png",
+      "source_bbox": [
+        1049,
+        841,
+        1110,
+        891
+      ],
+      "width": 61,
+      "height": 50,
+      "pixel_count": 2898
+    },
+    {
+      "id": 64,
+      "filename": "dungeon_tileset_064.png",
+      "source_bbox": [
+        1114,
+        841,
+        1166,
+        894
+      ],
+      "width": 52,
+      "height": 53,
+      "pixel_count": 2368
+    },
+    {
+      "id": 65,
+      "filename": "dungeon_tileset_065.png",
+      "source_bbox": [
+        1248,
+        841,
+        1324,
+        928
+      ],
+      "width": 76,
+      "height": 87,
+      "pixel_count": 5368
+    },
+    {
+      "id": 66,
+      "filename": "dungeon_tileset_066.png",
+      "source_bbox": [
+        1329,
+        839,
+        1371,
+        924
+      ],
+      "width": 42,
+      "height": 85,
+      "pixel_count": 2627
+    },
+    {
+      "id": 67,
+      "filename": "dungeon_tileset_067.png",
+      "source_bbox": [
+        984,
+        842,
+        1037,
+        902
+      ],
+      "width": 53,
+      "height": 60,
+      "pixel_count": 2530
+    },
+    {
+      "id": 68,
+      "filename": "dungeon_tileset_068.png",
+      "source_bbox": [
+        1382,
+        842,
+        1434,
+        902
+      ],
+      "width": 52,
+      "height": 60,
+      "pixel_count": 2922
+    },
+    {
+      "id": 69,
+      "filename": "dungeon_tileset_069.png",
+      "source_bbox": [
+        984,
+        899,
+        1042,
+        956
+      ],
+      "width": 58,
+      "height": 57,
+      "pixel_count": 1965
+    },
+    {
+      "id": 70,
+      "filename": "dungeon_tileset_070.png",
+      "source_bbox": [
+        1015,
+        900,
+        1042,
+        927
+      ],
+      "width": 27,
+      "height": 27,
+      "pixel_count": 342
+    },
+    {
+      "id": 71,
+      "filename": "dungeon_tileset_071.png",
+      "source_bbox": [
+        1058,
+        905,
+        1108,
+        963
+      ],
+      "width": 50,
+      "height": 58,
+      "pixel_count": 2564
+    },
+    {
+      "id": 72,
+      "filename": "dungeon_tileset_072.png",
+      "source_bbox": [
+        1118,
+        903,
+        1166,
+        963
+      ],
+      "width": 48,
+      "height": 60,
+      "pixel_count": 2625
+    },
+    {
+      "id": 73,
+      "filename": "dungeon_tileset_073.png",
+      "source_bbox": [
+        1384,
+        901,
+        1435,
+        986
+      ],
+      "width": 51,
+      "height": 85,
+      "pixel_count": 3171
+    },
+    {
+      "id": 74,
+      "filename": "dungeon_tileset_074.png",
+      "source_bbox": [
+        1185,
+        918,
+        1238,
+        968
+      ],
+      "width": 53,
+      "height": 50,
+      "pixel_count": 1797
+    },
+    {
+      "id": 75,
+      "filename": "dungeon_tileset_075.png",
+      "source_bbox": [
+        1328,
+        932,
+        1373,
+        994
+      ],
+      "width": 45,
+      "height": 62,
+      "pixel_count": 2239
+    },
+    {
+      "id": 76,
+      "filename": "dungeon_tileset_076.png",
+      "source_bbox": [
+        1252,
+        936,
+        1309,
+        974
+      ],
+      "width": 57,
+      "height": 38,
+      "pixel_count": 1328
+    },
+    {
+      "id": 77,
+      "filename": "dungeon_tileset_077.png",
+      "source_bbox": [
+        756,
+        933,
+        893,
+        1034
+      ],
+      "width": 137,
+      "height": 101,
+      "pixel_count": 8618
+    },
+    {
+      "id": 78,
+      "filename": "dungeon_tileset_078.png",
+      "source_bbox": [
+        901,
+        955,
+        977,
+        1032
+      ],
+      "width": 76,
+      "height": 77,
+      "pixel_count": 5499
+    },
+    {
+      "id": 79,
+      "filename": "dungeon_tileset_079.png",
+      "source_bbox": [
+        756,
+        959,
+        797,
+        1008
+      ],
+      "width": 41,
+      "height": 49,
+      "pixel_count": 1069
+    },
+    {
+      "id": 80,
+      "filename": "dungeon_tileset_080.png",
+      "source_bbox": [
+        983,
+        962,
+        1050,
+        1030
+      ],
+      "width": 67,
+      "height": 68,
+      "pixel_count": 2624
+    },
+    {
+      "id": 81,
+      "filename": "dungeon_tileset_081.png",
+      "source_bbox": [
+        1063,
+        975,
+        1108,
+        1030
+      ],
+      "width": 45,
+      "height": 55,
+      "pixel_count": 2264
+    },
+    {
+      "id": 82,
+      "filename": "dungeon_tileset_082.png",
+      "source_bbox": [
+        1118,
+        972,
+        1168,
+        1031
+      ],
+      "width": 50,
+      "height": 59,
+      "pixel_count": 2542
+    },
+    {
+      "id": 83,
+      "filename": "dungeon_tileset_083.png",
+      "source_bbox": [
+        1185,
+        977,
+        1238,
+        1034
+      ],
+      "width": 53,
+      "height": 57,
+      "pixel_count": 2948
+    },
+    {
+      "id": 84,
+      "filename": "dungeon_tileset_084.png",
+      "source_bbox": [
+        1251,
+        979,
+        1314,
+        1037
+      ],
+      "width": 63,
+      "height": 58,
+      "pixel_count": 2534
+    },
+    {
+      "id": 85,
+      "filename": "dungeon_tileset_085.png",
+      "source_bbox": [
+        1390,
+        993,
+        1434,
+        1042
+      ],
+      "width": 44,
+      "height": 49,
+      "pixel_count": 1642
+    },
+    {
+      "id": 86,
+      "filename": "dungeon_tileset_086.png",
+      "source_bbox": [
+        1019,
+        994,
+        1050,
+        1030
+      ],
+      "width": 31,
+      "height": 36,
+      "pixel_count": 586
+    },
+    {
+      "id": 87,
+      "filename": "dungeon_tileset_087.png",
+      "source_bbox": [
+        1328,
+        996,
+        1383,
+        1035
+      ],
+      "width": 55,
+      "height": 39,
+      "pixel_count": 1251
+    }
+  ],
+  "background_rule": "pixels with all RGB > 200 and channel spread < 25 made transparent"
+}

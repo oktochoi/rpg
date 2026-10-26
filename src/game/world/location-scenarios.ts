@@ -1,12 +1,35 @@
 import { createGameOrchestrator } from '../core/orchestrator';
 import { createInitialGameState } from '../core/initial-state';
+import { applyEvents } from '../core/reducer';
 import { ENCOUNTER_ID } from '../combat/encounters/encounter-definitions';
 import { doesNpcKnowFact, doesPlayerKnowFact } from '../knowledge/knowledge-selectors';
 import { createMemoryStorage, createSaveService } from '../save';
+import { ITEM_ID } from '../inventory/item-definitions';
 import { QUEST_ID, RUINS_SEAL_FACT_ID } from '../quests/quest-definitions';
-import { LOCATION_ID } from './locations/location-definitions';
+import { LOCATION_ID, WORLD_FLAG } from './locations/location-definitions';
 import { getCurrentLocationNpcs, getNpcsAtLocation } from './locations/location-selectors';
 import { EXPLORATION_POINT_ID } from './exploration/exploration-definitions';
+
+function grantRuinsKey(state: ReturnType<typeof createInitialGameState>) {
+  return applyEvents(state, [
+    { type: 'WORLD_FLAG_SET', flagId: WORLD_FLAG.RUINS_KEY_ACQUIRED, value: true },
+    {
+      type: 'ITEM_OBTAINED',
+      itemId: ITEM_ID.RUINS_OLD_KEY,
+      quantity: 1,
+      sourceEventId: `test:location:ruins_key:${state.world.turn}`,
+    },
+  ]);
+}
+
+async function enterRuinsFromVillage(orch: ReturnType<typeof createGameOrchestrator>) {
+  await orch.dispatch({ type: 'COMPLETE_QUEST', questId: QUEST_ID.FOREST_GOBLIN_SCOUR });
+  await orch.dispatch({ type: 'ACCEPT_QUEST', questId: QUEST_ID.RUINS_MYSTERY });
+  const keyed = createGameOrchestrator(grantRuinsKey(orch.getState()));
+  await keyed.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.FOREST_ROAD });
+  await keyed.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.ANCIENT_RUINS });
+  return keyed;
+}
 
 async function discoverRuins() {
   const orch = createGameOrchestrator(createInitialGameState());
@@ -46,17 +69,14 @@ export async function runStep23LocationScenarios(): Promise<string[]> {
   if (
     stateB.world.currentLocationId === LOCATION_ID.LUEN_VILLAGE &&
     !stateB.lastActionResolution?.success &&
-    /알지 못|바로 갈 수는/.test(stateB.story.lastActionNarrative ?? stateB.lastActionResolution?.narrative ?? '')
+    /알지 못|바로 갈 수는|석문|열쇠/.test(stateB.story.lastActionNarrative ?? stateB.lastActionResolution?.narrative ?? '')
   ) {
     pass('B-blocked-ruins', stateB.story.lastActionNarrative ?? '');
   } else {
     fail('B-blocked-ruins', JSON.stringify({ loc: stateB.world.currentLocationId, res: stateB.lastActionResolution, narr: stateB.story.lastActionNarrative }));
   }
 
-  const orchC = await discoverRuins();
-  await orchC.dispatch({ type: 'ACCEPT_QUEST', questId: QUEST_ID.RUINS_MYSTERY });
-  await orchC.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.FOREST_ROAD });
-  await orchC.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.ANCIENT_RUINS });
+  const orchC = await enterRuinsFromVillage(await discoverRuins());
   const stateC = orchC.getState();
   const visitDone = stateC.quests[QUEST_ID.RUINS_MYSTERY]?.objectiveProgress.visit_ruins?.completed;
   if (
@@ -92,10 +112,7 @@ export async function runStep23LocationScenarios(): Promise<string[]> {
     fail('D-npc-presence', JSON.stringify({ villageNpcs, martaInVillage, innNpcs, seriaTalk, seriaAskFailed, res: orchD.getState().lastActionResolution }));
   }
 
-  const orchE = await discoverRuins();
-  await orchE.dispatch({ type: 'ACCEPT_QUEST', questId: QUEST_ID.RUINS_MYSTERY });
-  await orchE.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.FOREST_ROAD });
-  await orchE.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.ANCIENT_RUINS });
+  const orchE = await enterRuinsFromVillage(await discoverRuins());
   await orchE.dispatch({ type: 'FREE_ACTION', turnId: orchE.getState().world.turn, input: '부서진 제단을 조사한다.' });
   const stateE = orchE.getState();
   if (
@@ -108,9 +125,11 @@ export async function runStep23LocationScenarios(): Promise<string[]> {
     fail('E-solo-fact', JSON.stringify({ player: doesPlayerKnowFact(stateE, RUINS_SEAL_FACT_ID), seria: doesNpcKnowFact(stateE, 'seria', RUINS_SEAL_FACT_ID), seriaLoc: stateE.npcs.seria.locationId }));
   }
 
-  const orchF = await discoverRuins();
+  let orchF = await discoverRuins();
+  await orchF.dispatch({ type: 'COMPLETE_QUEST', questId: QUEST_ID.FOREST_GOBLIN_SCOUR });
   await orchF.dispatch({ type: 'ACCEPT_QUEST', questId: QUEST_ID.RUINS_MYSTERY });
   await orchF.dispatch({ type: 'MOVE_NPC', npcId: 'seria', locationId: LOCATION_ID.ANCIENT_RUINS });
+  orchF = createGameOrchestrator(grantRuinsKey(orchF.getState()));
   await orchF.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.FOREST_ROAD });
   await orchF.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.ANCIENT_RUINS });
   await orchF.dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.RUINS_MIXED_01 });
@@ -134,9 +153,7 @@ export async function runStep23LocationScenarios(): Promise<string[]> {
     fail('F-witness', JSON.stringify({ wonFact: wonFact?.id, seriaKnowsF, leonKnowsF, witnesses: wonFact?.witnessIds, seriaLoc: stateF.npcs.seria.locationId }));
   }
 
-  const orchG = await discoverRuins();
-  await orchG.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.FOREST_ROAD });
-  await orchG.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.ANCIENT_RUINS });
+  let orchG = await enterRuinsFromVillage(await discoverRuins());
   await orchG.dispatch({ type: 'FREE_ACTION', turnId: orchG.getState().world.turn, input: '부서진 제단을 조사한다.' });
   const afterFirst = orchG.getState();
   const factCount = afterFirst.world.facts.filter((fact) => fact.id === RUINS_SEAL_FACT_ID).length;
@@ -150,9 +167,11 @@ export async function runStep23LocationScenarios(): Promise<string[]> {
     fail('G-explore', JSON.stringify({ factCount, factCount2, explored, narr: afterSecond.lastActionResolution?.narrative }));
   }
 
-  const orchH = await discoverRuins();
+  let orchH = await discoverRuins();
+  await orchH.dispatch({ type: 'COMPLETE_QUEST', questId: QUEST_ID.FOREST_GOBLIN_SCOUR });
   await orchH.dispatch({ type: 'ACCEPT_QUEST', questId: QUEST_ID.RUINS_MYSTERY });
   await orchH.dispatch({ type: 'MOVE_NPC', npcId: 'seria', locationId: LOCATION_ID.ANCIENT_RUINS });
+  orchH = createGameOrchestrator(grantRuinsKey(orchH.getState()));
   await orchH.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.FOREST_ROAD });
   await orchH.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.ANCIENT_RUINS });
   await orchH.dispatch({ type: 'FREE_ACTION', turnId: orchH.getState().world.turn, input: '부서진 제단을 조사한다.' });

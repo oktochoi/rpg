@@ -61,6 +61,8 @@ export const ITEM_ID = {
   GOBLIN_EAR: 'goblin_ear',
   IRON_FRAGMENT: 'iron_fragment',
   OLD_COIN: 'old_coin',
+  RUINS_OLD_KEY: 'ruins_old_key',
+  GUARDIAN_CORE_FRAGMENT: 'guardian_core_fragment',
 } as const;
 
 const ALL_FAMILIES: readonly PlayerClassId[] = [
@@ -299,6 +301,25 @@ export const ITEM_DEFINITIONS: Readonly<Record<string, ItemDefinition>> = {
     buyPrice: 0,
     sellPrice: 3,
     maxStack: 50,
+  }),
+  [ITEM_ID.RUINS_OLD_KEY]: item({
+    id: ITEM_ID.RUINS_OLD_KEY,
+    name: '폐허의 낡은 열쇠',
+    description: '오래된 금속 열쇠. 표면에 희미한 왕실 문양이 새겨져 있다. 고블린이 왜 이걸 가지고 있었을까.',
+    type: ITEM_TYPE.KEY_ITEM,
+    buyPrice: 0,
+    sellPrice: 0,
+    maxStack: 1,
+  }),
+  [ITEM_ID.GUARDIAN_CORE_FRAGMENT]: item({
+    id: ITEM_ID.GUARDIAN_CORE_FRAGMENT,
+    name: '수호자의 핵',
+    description:
+      '강한 마력이 응축된 수호자의 핵. 길드나 마법 연구자라면 이 힘을 활용할 방법을 알지도 모른다.',
+    type: ITEM_TYPE.KEY_ITEM,
+    buyPrice: 0,
+    sellPrice: 0,
+    maxStack: 1,
   }),
 };
 

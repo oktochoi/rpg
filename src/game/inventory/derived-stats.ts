@@ -58,14 +58,23 @@ export function equipmentBonuses(
 export function derivedPlayerStats(player: PlayerState): DerivedPlayerStats {
   const bonus = equipmentBonuses(player.equipment, player.equipmentEnhancements);
   const allocated = allocatedStatBonuses(player.allocatedStats);
+  const mods = player.permanentMods ?? { attackPercent: 0, rangePercent: 0, maxHpFlat: 0 };
+  const attackFlat = bonus.attack + allocated.attack;
+  const attackScaled = Math.round(attackFlat * (1 + mods.attackPercent / 100));
   return {
-    maxHp: player.maxHp + bonus.hp + allocated.maxHp,
+    maxHp: player.maxHp + bonus.hp + allocated.maxHp + mods.maxHpFlat,
     maxMp: player.maxMp + bonus.mp + allocated.maxMp,
-    attackPower: (player.attackPower ?? 0) + bonus.attack + allocated.attack,
-    attackBonus: bonus.attack + allocated.attack,
-    hpBonus: bonus.hp + allocated.maxHp,
+    attackPower: (player.attackPower ?? 0) + attackScaled,
+    attackBonus: attackFlat,
+    hpBonus: bonus.hp + allocated.maxHp + mods.maxHpFlat,
     mpBonus: bonus.mp + allocated.maxMp,
   };
+}
+
+/** Scale applied to melee hitbox / projectile reach in Phaser combat. */
+export function combatRangeScale(player: PlayerState): number {
+  const rangePercent = player.permanentMods?.rangePercent ?? 0;
+  return 1 + rangePercent / 100;
 }
 
 export function clampResourceToDerived(player: PlayerState): { currentHp: number; currentMp: number } {

@@ -1,0 +1,88 @@
+.overlay {
+    position: fixed;
+    top: 268px;
+    right: 20px;
+    z-index: 80;
+    width: min(240px, calc(100vw - 40px));
+    pointer-events: none;
+}
+
+.card {
+    composes: dialog from '../ui/ui-kit.module.css';
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px 8px;
+    color: var(--text, #efe6d6);
+    pointer-events: auto;
+}
+
+.kicker {
+    margin: 0;
+    color: var(--gold, #d4b56a);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.title {
+    margin: 0;
+    font-size: 18px;
+    letter-spacing: 0.04em;
+}
+
+.body {
+    margin: 0;
+    line-height: 1.45;
+    color: var(--text-dim, #cbbda8);
+    font-size: 14px;
+    white-space: pre-line;
+}
+
+.steps {
+    display: flex;
+    gap: 6px;
+    margin: 4px 0 0;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #3a3228;
+}
+
+.dotActive {
+    background: var(--gold, #d4b56a);
+}
+
+.actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.actionsSingle {
+    grid-template-columns: 1fr;
+}
+
+.button {
+    composes: choice from '../ui/ui-kit.module.css';
+    min-height: 40px;
+    padding: 2px 8px;
+    color: var(--text, #efe6d6);
+    font: inherit;
+    cursor: pointer;
+}
+
+.primary {
+    color: var(--gold, #d4b56a);
+}
+
+.button:hover,
+.button:focus-visible {
+    outline: 2px solid var(--gold, #d4b56a);
+    outline-offset: 1px;
+}

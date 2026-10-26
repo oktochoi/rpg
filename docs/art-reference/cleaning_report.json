@@ -1,0 +1,107 @@
+{
+  "assets": {
+    "hero_swordsman": {
+      "idle": {
+        "removed_alpha_pixels": 34723
+      },
+      "run": {
+        "removed_alpha_pixels": 64793
+      },
+      "attack": {
+        "removed_alpha_pixels": 76282
+      },
+      "hurt": {
+        "removed_alpha_pixels": 67444
+      },
+      "death": {
+        "removed_alpha_pixels": 83517
+      }
+    },
+    "goblin_warrior": {
+      "idle": {
+        "removed_alpha_pixels": 46857
+      },
+      "run": {
+        "removed_alpha_pixels": 50500
+      },
+      "attack": {
+        "removed_alpha_pixels": 62645
+      },
+      "hurt": {
+        "removed_alpha_pixels": 71785
+      },
+      "death": {
+        "removed_alpha_pixels": 77207
+      }
+    },
+    "goblin_archer": {
+      "idle": {
+        "removed_alpha_pixels": 59169
+      },
+      "run": {
+        "removed_alpha_pixels": 88194
+      },
+      "attack": {
+        "removed_alpha_pixels": 72646
+      },
+      "hurt": {
+        "removed_alpha_pixels": 83224
+      },
+      "death": {
+        "removed_alpha_pixels": 88821
+      }
+    },
+    "goblin_mage": {
+      "idle": {
+        "removed_alpha_pixels": 56516
+      },
+      "run": {
+        "removed_alpha_pixels": 83341
+      },
+      "attack": {
+        "removed_alpha_pixels": 93256
+      },
+      "hurt": {
+        "removed_alpha_pixels": 125241
+      },
+      "death": {
+        "removed_alpha_pixels": 136539
+      }
+    },
+    "stone_golem": {
+      "idle": {
+        "removed_alpha_pixels": 47446
+      },
+      "run": {
+        "removed_alpha_pixels": 63174
+      },
+      "attack": {
+        "removed_alpha_pixels": 58164
+      },
+      "hurt": {
+        "removed_alpha_pixels": 70076
+      },
+      "death": {
+        "removed_alpha_pixels": 56504
+      }
+    },
+    "dire_wolf": {
+      "idle": {
+        "removed_alpha_pixels": 68929
+      },
+      "run": {
+        "removed_alpha_pixels": 82930
+      },
+      "attack": {
+        "removed_alpha_pixels": 91225
+      },
+      "hurt": {
+        "removed_alpha_pixels": 84009
+      },
+      "death": {
+        "removed_alpha_pixels": 88325
+      }
+    }
+  },
+  "note": "Removed disconnected cross-frame bleed (feet/limbs/effects from adjacent cells) while preserving main sprite components."
+}

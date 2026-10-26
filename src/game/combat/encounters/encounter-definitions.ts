@@ -9,12 +9,17 @@ export const ENCOUNTER_ID = {
   CH1_FOREST_SCOUTS: 'ch1_forest_scouts',
   CH1_FOREST_AMBUSH: 'ch1_forest_ambush',
   CH1_GOBLIN_CAMP: 'ch1_goblin_camp',
+  CH1_FOREST_DEEP: 'ch1_forest_deep',
+  CH1_FOREST_KEY_HOLDER: 'ch1_forest_key_holder',
   CH1_RUINS_GATE: 'ch1_ruins_gate',
   RUINS_ARCHER_01: 'ruins_archer_01',
   RUINS_BRUTE_01: 'ruins_brute_01',
+  RUINS_MAGE_01: 'ruins_mage_01',
+  FOREST_WOLF_01: 'forest_wolf_01',
   RUINS_MIXED_01: 'ruins_mixed_01',
   RUINS_HEAVY_01: 'ruins_heavy_01',
   RUINS_BOSS_01: 'ruins_boss_01',
+  TRAINING_GROUNDS: 'training_grounds',
 } as const;
 
 export type EncounterIdKey = (typeof ENCOUNTER_ID)[keyof typeof ENCOUNTER_ID];
@@ -50,6 +55,11 @@ export const ENCOUNTERS: Record<EncounterIdKey, EncounterDefinition> = {
         instanceId: 'forest_goblin_002',
         spawnPosition: { x: 0.7, y: 0.58 },
       },
+      {
+        enemyType: ENEMY_TYPE_ID.GOBLIN,
+        instanceId: 'forest_goblin_003',
+        spawnPosition: { x: 0.84, y: 0.42 },
+      },
     ],
     rewards: { gold: 18, items: [{ itemId: 'goblin_ear', quantity: 1 }] },
     tags: ['ch1', 'one_shot'],
@@ -70,6 +80,11 @@ export const ENCOUNTERS: Record<EncounterIdKey, EncounterDefinition> = {
         instanceId: 'scout_goblin_002',
         spawnPosition: { x: 0.7, y: 0.58 },
       },
+      {
+        enemyType: ENEMY_TYPE_ID.ARCHER,
+        instanceId: 'scout_archer_001',
+        spawnPosition: { x: 0.86, y: 0.4 },
+      },
     ],
     rewards: { gold: 18, items: [{ itemId: 'goblin_ear', quantity: 1 }] },
     tags: ['ch1', 'one_shot'],
@@ -86,9 +101,19 @@ export const ENCOUNTERS: Record<EncounterIdKey, EncounterDefinition> = {
         spawnPosition: { x: 0.38, y: 0.32 },
       },
       {
+        enemyType: ENEMY_TYPE_ID.GOBLIN,
+        instanceId: 'ambush_goblin_002',
+        spawnPosition: { x: 0.3, y: 0.74 },
+      },
+      {
         enemyType: ENEMY_TYPE_ID.ARCHER,
         instanceId: 'ambush_archer_001',
-        spawnPosition: { x: 0.8, y: 0.42 },
+        spawnPosition: { x: 0.82, y: 0.46 },
+      },
+      {
+        enemyType: ENEMY_TYPE_ID.GOBLIN,
+        instanceId: 'ambush_goblin_003',
+        spawnPosition: { x: 0.6, y: 0.22 },
       },
     ],
     rewards: { gold: 22, items: [{ itemId: 'goblin_ear', quantity: 1 }] },
@@ -118,11 +143,76 @@ export const ENCOUNTERS: Record<EncounterIdKey, EncounterDefinition> = {
       {
         enemyType: ENEMY_TYPE_ID.ARCHER,
         instanceId: 'camp_archer_001',
-        spawnPosition: { x: 0.82, y: 0.28 },
+        spawnPosition: { x: 0.84, y: 0.26 },
+      },
+      {
+        enemyType: ENEMY_TYPE_ID.GOBLIN,
+        instanceId: 'camp_goblin_004',
+        spawnPosition: { x: 0.86, y: 0.62 },
       },
     ],
     rewards: { gold: 28, items: [{ itemId: 'iron_fragment', quantity: 1 }] },
     tags: ['ch1', 'one_shot'],
+  },
+  [ENCOUNTER_ID.CH1_FOREST_DEEP]: {
+    id: ENCOUNTER_ID.CH1_FOREST_DEEP,
+    arenaId: ARENA_ID.FOREST_AMBUSH,
+    difficulty: 3,
+    difficultyTag: 'medium',
+    enemies: [
+      {
+        enemyType: ENEMY_TYPE_ID.GOBLIN,
+        instanceId: 'deep_goblin_001',
+        spawnPosition: { x: 0.36, y: 0.28 },
+      },
+      {
+        enemyType: ENEMY_TYPE_ID.GOBLIN,
+        instanceId: 'deep_goblin_002',
+        spawnPosition: { x: 0.32, y: 0.7 },
+      },
+      {
+        enemyType: ENEMY_TYPE_ID.ARCHER,
+        instanceId: 'deep_archer_001',
+        spawnPosition: { x: 0.84, y: 0.34 },
+      },
+      {
+        enemyType: ENEMY_TYPE_ID.GOBLIN,
+        instanceId: 'deep_goblin_003',
+        spawnPosition: { x: 0.58, y: 0.46 },
+      },
+    ],
+    rewards: { gold: 32, items: [{ itemId: 'goblin_ear', quantity: 1 }] },
+    tags: ['ch1'],
+  },
+  [ENCOUNTER_ID.CH1_FOREST_KEY_HOLDER]: {
+    id: ENCOUNTER_ID.CH1_FOREST_KEY_HOLDER,
+    arenaId: ARENA_ID.GOBLIN_CAMP,
+    difficulty: 3,
+    difficultyTag: 'medium_hard',
+    enemies: [
+      {
+        enemyType: ENEMY_TYPE_ID.GOBLIN,
+        instanceId: 'key_holder_goblin_001',
+        spawnPosition: { x: 0.52, y: 0.4 },
+      },
+      {
+        enemyType: ENEMY_TYPE_ID.GOBLIN,
+        instanceId: 'key_holder_goblin_002',
+        spawnPosition: { x: 0.68, y: 0.56 },
+      },
+      {
+        enemyType: ENEMY_TYPE_ID.DIRE_WOLF,
+        instanceId: 'key_holder_wolf_001',
+        spawnPosition: { x: 0.84, y: 0.4 },
+      },
+      {
+        enemyType: ENEMY_TYPE_ID.DIRE_WOLF,
+        instanceId: 'key_holder_wolf_002',
+        spawnPosition: { x: 0.46, y: 0.7 },
+      },
+    ],
+    rewards: { gold: 34, items: [{ itemId: 'goblin_ear', quantity: 1 }] },
+    tags: ['ch1', 'key_holder'],
   },
   [ENCOUNTER_ID.CH1_RUINS_GATE]: {
     id: ENCOUNTER_ID.CH1_RUINS_GATE,
@@ -131,19 +221,19 @@ export const ENCOUNTERS: Record<EncounterIdKey, EncounterDefinition> = {
     difficultyTag: 'medium_hard',
     enemies: [
       {
-        enemyType: ENEMY_TYPE_ID.GOBLIN,
-        instanceId: 'gate_goblin_001',
-        spawnPosition: { x: 0.48, y: 0.3 },
-      },
-      {
-        enemyType: ENEMY_TYPE_ID.ARCHER,
-        instanceId: 'gate_archer_001',
-        spawnPosition: { x: 0.82, y: 0.36 },
+        enemyType: ENEMY_TYPE_ID.BRUTE,
+        instanceId: 'gate_brute_001',
+        spawnPosition: { x: 0.56, y: 0.34 },
       },
       {
         enemyType: ENEMY_TYPE_ID.BRUTE,
-        instanceId: 'gate_brute_001',
-        spawnPosition: { x: 0.62, y: 0.54 },
+        instanceId: 'gate_brute_002',
+        spawnPosition: { x: 0.52, y: 0.64 },
+      },
+      {
+        enemyType: ENEMY_TYPE_ID.GOBLIN_MAGE,
+        instanceId: 'gate_mage_001',
+        spawnPosition: { x: 0.84, y: 0.46 },
       },
     ],
     rewards: { gold: 36, items: [{ itemId: 'goblin_ear', quantity: 1 }] },
@@ -156,9 +246,14 @@ export const ENCOUNTERS: Record<EncounterIdKey, EncounterDefinition> = {
     difficultyTag: 'tutorial',
     enemies: [
       {
+        enemyType: ENEMY_TYPE_ID.GOBLIN,
+        instanceId: 'archer_screen_001',
+        spawnPosition: { x: 0.56, y: 0.52 },
+      },
+      {
         enemyType: ENEMY_TYPE_ID.ARCHER,
         instanceId: 'archer_001',
-        spawnPosition: { x: 0.78, y: 0.4 },
+        spawnPosition: { x: 0.82, y: 0.36 },
       },
     ],
     rewards: { gold: 18 },
@@ -170,12 +265,70 @@ export const ENCOUNTERS: Record<EncounterIdKey, EncounterDefinition> = {
     difficultyTag: 'medium',
     enemies: [
       {
+        enemyType: ENEMY_TYPE_ID.GOBLIN,
+        instanceId: 'brute_escort_001',
+        spawnPosition: { x: 0.52, y: 0.32 },
+      },
+      {
+        enemyType: ENEMY_TYPE_ID.GOBLIN,
+        instanceId: 'brute_escort_002',
+        spawnPosition: { x: 0.54, y: 0.66 },
+      },
+      {
         enemyType: ENEMY_TYPE_ID.BRUTE,
         instanceId: 'brute_001',
-        spawnPosition: { x: 0.7, y: 0.48 },
+        spawnPosition: { x: 0.72, y: 0.48 },
       },
     ],
     rewards: { gold: 30 },
+  },
+  [ENCOUNTER_ID.RUINS_MAGE_01]: {
+    id: ENCOUNTER_ID.RUINS_MAGE_01,
+    arenaId: ARENA_ID.RUINS_ENTRANCE,
+    difficulty: 2,
+    difficultyTag: 'easy',
+    enemies: [
+      {
+        enemyType: ENEMY_TYPE_ID.GOBLIN,
+        instanceId: 'mage_escort_001',
+        spawnPosition: { x: 0.54, y: 0.32 },
+      },
+      {
+        enemyType: ENEMY_TYPE_ID.GOBLIN,
+        instanceId: 'mage_escort_002',
+        spawnPosition: { x: 0.56, y: 0.64 },
+      },
+      {
+        enemyType: ENEMY_TYPE_ID.GOBLIN_MAGE,
+        instanceId: 'mage_001',
+        spawnPosition: { x: 0.82, y: 0.44 },
+      },
+    ],
+    rewards: { gold: 22 },
+  },
+  [ENCOUNTER_ID.FOREST_WOLF_01]: {
+    id: ENCOUNTER_ID.FOREST_WOLF_01,
+    arenaId: ARENA_ID.FOREST_SCOUTS,
+    difficulty: 2,
+    difficultyTag: 'easy',
+    enemies: [
+      {
+        enemyType: ENEMY_TYPE_ID.DIRE_WOLF,
+        instanceId: 'wolf_001',
+        spawnPosition: { x: 0.68, y: 0.4 },
+      },
+      {
+        enemyType: ENEMY_TYPE_ID.DIRE_WOLF,
+        instanceId: 'wolf_002',
+        spawnPosition: { x: 0.8, y: 0.58 },
+      },
+      {
+        enemyType: ENEMY_TYPE_ID.GOBLIN,
+        instanceId: 'wolf_handler_001',
+        spawnPosition: { x: 0.58, y: 0.46 },
+      },
+    ],
+    rewards: { gold: 24 },
   },
   [ENCOUNTER_ID.RUINS_MIXED_01]: {
     id: ENCOUNTER_ID.RUINS_MIXED_01,
@@ -236,6 +389,31 @@ export const ENCOUNTERS: Record<EncounterIdKey, EncounterDefinition> = {
     tags: ['boss', 'ruins', 'guardian'],
     rewards: { gold: 120 },
   },
+  [ENCOUNTER_ID.TRAINING_GROUNDS]: {
+    id: ENCOUNTER_ID.TRAINING_GROUNDS,
+    arenaId: ARENA_ID.TRAINING_YARD,
+    difficulty: 0,
+    difficultyTag: 'tutorial',
+    enemies: [
+      {
+        enemyType: ENEMY_TYPE_ID.TRAINING_DUMMY,
+        instanceId: 'training_dummy_001',
+        spawnPosition: { x: 0.55, y: 0.35 },
+      },
+      {
+        enemyType: ENEMY_TYPE_ID.TRAINING_DUMMY,
+        instanceId: 'training_dummy_002',
+        spawnPosition: { x: 0.72, y: 0.5 },
+      },
+      {
+        enemyType: ENEMY_TYPE_ID.TRAINING_DUMMY,
+        instanceId: 'training_dummy_003',
+        spawnPosition: { x: 0.58, y: 0.68 },
+      },
+    ],
+    tags: ['training', 'village'],
+    rewards: { gold: 0 },
+  },
 };
 
 const COMBAT_TO_ENCOUNTER: Record<string, EncounterIdKey> = {
@@ -245,12 +423,17 @@ const COMBAT_TO_ENCOUNTER: Record<string, EncounterIdKey> = {
   [ENCOUNTER_ID.CH1_FOREST_SCOUTS]: ENCOUNTER_ID.CH1_FOREST_SCOUTS,
   [ENCOUNTER_ID.CH1_FOREST_AMBUSH]: ENCOUNTER_ID.CH1_FOREST_AMBUSH,
   [ENCOUNTER_ID.CH1_GOBLIN_CAMP]: ENCOUNTER_ID.CH1_GOBLIN_CAMP,
+  [ENCOUNTER_ID.CH1_FOREST_DEEP]: ENCOUNTER_ID.CH1_FOREST_DEEP,
+  [ENCOUNTER_ID.CH1_FOREST_KEY_HOLDER]: ENCOUNTER_ID.CH1_FOREST_KEY_HOLDER,
   [ENCOUNTER_ID.CH1_RUINS_GATE]: ENCOUNTER_ID.CH1_RUINS_GATE,
   [ENCOUNTER_ID.RUINS_ARCHER_01]: ENCOUNTER_ID.RUINS_ARCHER_01,
   [ENCOUNTER_ID.RUINS_BRUTE_01]: ENCOUNTER_ID.RUINS_BRUTE_01,
+  [ENCOUNTER_ID.RUINS_MAGE_01]: ENCOUNTER_ID.RUINS_MAGE_01,
+  [ENCOUNTER_ID.FOREST_WOLF_01]: ENCOUNTER_ID.FOREST_WOLF_01,
   [ENCOUNTER_ID.RUINS_MIXED_01]: ENCOUNTER_ID.RUINS_MIXED_01,
   [ENCOUNTER_ID.RUINS_HEAVY_01]: ENCOUNTER_ID.RUINS_HEAVY_01,
   [ENCOUNTER_ID.RUINS_BOSS_01]: ENCOUNTER_ID.RUINS_BOSS_01,
+  [ENCOUNTER_ID.TRAINING_GROUNDS]: ENCOUNTER_ID.TRAINING_GROUNDS,
 };
 
 export function getEncounter(encounterId: string): EncounterDefinition | null {

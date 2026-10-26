@@ -14,4 +14,7 @@ export interface StoryChapterDefinition {
   description: string;
   mainQuestIds: readonly string[];
   nextChapterId?: ChapterId;
+  dramaticQuestion?: string;
+  mainReveal?: string;
+  endHook?: string;
 }

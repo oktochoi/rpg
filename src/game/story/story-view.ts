@@ -1,4 +1,11 @@
-import { displayClassName, nextAdvancementsFor, getClassRank, resolvePlayerClassId, canChooseFirstAdvancement } from '../player/classes';
+import {
+  displayClassName,
+  nextAdvancementsFor,
+  getClassRank,
+  resolvePlayerClassId,
+  canChooseFirstAdvancement,
+  isAdventurer,
+} from '../player/classes';
 import type { GameState } from '../core/game-state';
 import type { NpcId } from '../core/ids';
 import type { NpcRelationView, StoryScreenView } from '../../components/story/types';
@@ -8,27 +15,44 @@ import { createRelationship, type RelationshipState } from '../npc/relationship'
 import { relationshipBandLabel } from '../relationships/relationship-selectors';
 import { getStoryScene } from './test-scenes';
 import { getQuestDefinition } from '../quests/quest-definitions';
+import { QUEST_STATUS } from '../quests/quest-types';
 import { currentObjective, featuredQuest, statusLabel } from '../quests/quest-selectors';
 import { getAvailableChoices } from './story-choice-service';
 import { getCurrentScene } from './story-scene-resolver';
+import { allStorySceneDefinitions } from './story-scene-definitions';
 import { getLocationDefinition } from '../world/locations/location-definitions';
 import { getLocationDescription } from '../world/locations/location-selectors';
 import { expRequiredForLevel } from '../player/progression/level-config';
-import { chapterProgress, currentChapterId, getChapterDefinition, getMainObjectiveText } from './chapters';
+import { chapterProgress, currentChapterId, getChapterDefinition, getMainObjectiveText, getNextStepText } from './chapters';
 import { derivedPlayerStats } from '../inventory/derived-stats';
 import { formatClock, timeOfDayFromTotalMinutes } from '../time/clock-types';
+import { getSequenceDefinition, getStoryFlowMode } from './sequences';
+import { getGamePhase } from './game-phase';
+
+function visibleSituation(state: Readonly<GameState>): string {
+  return state.story.narration || getLocationDescription(state.world.currentLocationId, state);
+}
 
 function jobLabel(classId: string, rankId?: string): string {
   return displayClassName(classId, rankId);
 }
 
-function openingLine(npcId: NpcId, sceneDialogue: string): string {
-  if (npcId === 'leon') {
-    return '용건을 말하게.';
+function normalizeLine(value: string | null | undefined): string {
+  return (value ?? '').replace(/\s+/g, ' ').trim();
+}
+
+/** A line written for a different scene should not keep playing after the player leaves. */
+function lineBelongsToAnotherScene(text: string, currentSceneId: string): boolean {
+  const normalized = normalizeLine(text);
+  if (!normalized) {
+    return false;
   }
-  if (npcId === 'innkeeper') {
-    return '어서 오게. 무슨 일이야?';
-  }
+  return allStorySceneDefinitions().some(
+    (scene) => scene.id !== currentSceneId && normalizeLine(scene.npcDialogue) === normalized
+  );
+}
+
+function openingLine(sceneDialogue: string): string {
   return sceneDialogue;
 }
 
@@ -51,12 +75,23 @@ export function toStoryScreenView(
 ): StoryScreenView {
   const sceneDefinition = getCurrentScene(state);
   const scene = getStoryScene(state.story.currentSceneId);
-  const npcId = state.story.currentNpcId ?? sceneDefinition?.npcId ?? 'seria';
-  const profile = getNpcProfile(npcId);
+  const sceneNpcId = sceneDefinition?.npcId ?? null;
+  const npcHere =
+    state.story.currentNpcId != null &&
+    state.npcs[state.story.currentNpcId]?.locationId === state.world.currentLocationId;
+  const npcId = sceneNpcId ?? (npcHere ? state.story.currentNpcId : null);
+  const profile = npcId ? getNpcProfile(npcId) : null;
+  const authoredLine = normalizeLine(sceneDefinition?.npcDialogue ?? scene.npcDialogue);
   const lastNpcLine = [...state.story.dialogue].reverse().find((message) => message.speaker === 'NPC');
+  const staleEventLine =
+    !npcId || (lastNpcLine ? lineBelongsToAnotherScene(lastNpcLine.text, state.story.currentSceneId) : false);
+  const dialogue = staleEventLine ? [] : state.story.dialogue;
   const questRuntime = featuredQuest(state);
   const questDefinition = questRuntime ? getQuestDefinition(questRuntime.id) : null;
-  const current = questRuntime && questDefinition ? currentObjective(questRuntime, questDefinition.objectives) : undefined;
+  const current =
+    questRuntime?.status === QUEST_STATUS.ACTIVE && questDefinition
+      ? currentObjective(questRuntime, questDefinition.objectives)
+      : undefined;
   const chapter = getChapterDefinition(currentChapterId(state));
   const progress = chapterProgress(state);
   const level = state.player.level ?? 1;
@@ -67,20 +102,28 @@ export function toStoryScreenView(
   const derived = derivedPlayerStats(state.player);
   const attack = derived.attackPower;
   const canAdvance = canChooseFirstAdvancement(state);
+  const isStillAdventurer = isAdventurer(state.player.classId);
   const nextRankLabel = canAdvance
     ? '검사 / 마법사 / 도적'
-    : nextList.length > 1
-      ? nextList.map((item) => getClassRank(item.toRank)?.name ?? item.toRank).join(' / ')
-      : nextList[0]
-        ? getClassRank(nextList[0].toRank)?.name ?? displayClassName(nextList[0].familyId, nextList[0].toRank)
-        : undefined;
+    : isStillAdventurer
+      ? undefined
+      : nextList.length > 1
+        ? nextList.map((item) => getClassRank(item.toRank)?.name ?? item.toRank).join(' / ')
+        : nextList[0]
+          ? getClassRank(nextList[0].toRank)?.name ?? displayClassName(nextList[0].familyId, nextList[0].toRank)
+          : undefined;
   const nextRankHint = canAdvance
-    ? '지금 선택 가능'
-    : nextList[0]
-      ? nextList.length > 1
-        ? `Lv.${nextList[0].levelRequirement} + 제1장 완료`
-        : `Lv.${nextList[0].levelRequirement} · 전직 퀘스트`
-      : undefined;
+    ? '길드에서 전직 가능'
+    : isStillAdventurer
+      ? '제1장을 마친 뒤 전직'
+      : nextList[0]
+        ? nextList.length > 1
+          ? `Lv.${nextList[0].levelRequirement} + 제1장 완료`
+          : `Lv.${nextList[0].levelRequirement} · 전직 퀘스트`
+        : undefined;
+
+  const choices = dynamicChoices ?? getAvailableChoices(state);
+  const suggestedNextAction = getNextStepText(state);
 
   return {
     title: chapter?.title ?? '잿빛 연대기',
@@ -93,6 +136,8 @@ export function toStoryScreenView(
     chapterTitle: chapter?.title ?? '제1장',
     chapterProgressLabel: progress.total > 0 ? `${progress.completed} / ${progress.total} 주요 목표` : undefined,
     mainObjective: getMainObjectiveText(state),
+    placeLine: getLocationDefinition(state.world.currentLocationId)?.description,
+    suggestedNextAction,
     player: {
       name: state.player.name,
       job: jobLabel(state.player.classId, state.player.classRankId),
@@ -117,14 +162,23 @@ export function toStoryScreenView(
       ],
     },
     story: {
-      npcId,
-      npcName: profile?.name ?? scene.npcName,
+      npcId: npcId ?? '',
+      npcName: npcId ? profile?.name ?? scene.npcName : '',
       npcRole: profile?.role ?? null,
       npcEmotion: options?.npcEmotion ?? 'neutral',
-      npcDialogue: lastNpcLine?.text ?? openingLine(npcId, sceneDefinition?.npcDialogue ?? scene.npcDialogue),
-      situation: state.story.narration || getLocationDescription(state.world.currentLocationId, state),
+      npcDialogue: npcId ? (!staleEventLine ? lastNpcLine?.text : '') || openingLine(authoredLine) : '',
+      situation: visibleSituation(state),
       lastActionNarrative: state.story.lastActionNarrative,
-      messages: state.story.dialogue,
+      messages: dialogue,
+      storyLog: (state.story.storyLog ?? []).map((entry) => ({
+        id: entry.id,
+        type: entry.type,
+        text: entry.text,
+        speaker: entry.type === 'dialogue' ? entry.speaker : undefined,
+      })),
+      flowMode: getStoryFlowMode(state),
+      gamePhase: getGamePhase(state),
+      sequenceTitle: getSequenceDefinition(state.story.currentSequenceId)?.title ?? null,
     },
     quest: questRuntime && questDefinition
       ? {
@@ -152,6 +206,6 @@ export function toStoryScreenView(
       toRelationView('도란', 'guildmaster_doran', state.relationships.guildmaster_doran),
       toRelationView('엘린', 'shopkeeper_elin', state.relationships.shopkeeper_elin),
     ],
-    choices: dynamicChoices ?? getAvailableChoices(state),
+    choices: choices,
   };
 }

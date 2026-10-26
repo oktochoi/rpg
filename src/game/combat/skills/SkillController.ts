@@ -90,7 +90,7 @@ export class SkillController {
       return {
         slot,
         skillId: skill?.id ?? null,
-        name: skill?.name ?? 'None',
+        name: skill?.name ?? '',
         implemented: skill?.implemented === true,
         cooldownRemainingMs,
         ready: Boolean(skill?.implemented && cooldownRemainingMs <= 0),

@@ -23,7 +23,7 @@ export function looksLikeInternalId(text: string | null | undefined): boolean {
 
 export function safeFallbackChoiceLabel(actionType?: string, intent?: string): string {
   if (intent === CHOICE_INTENT.PROGRESS_STORY || actionType === 'WAIT' && intent === 'PROGRESS_STORY') {
-    return '계속';
+    return '앞으로 움직인다';
   }
   if (actionType === 'MOVE') {
     return '이동한다';
@@ -40,7 +40,7 @@ export function safeFallbackChoiceLabel(actionType?: string, intent?: string): s
   if (actionType === 'INVESTIGATE') {
     return '주변을 살핀다';
   }
-  return '계속';
+  return '앞으로 움직인다';
 }
 
 export function resolvePlayerFacingChoiceLabel(input: {

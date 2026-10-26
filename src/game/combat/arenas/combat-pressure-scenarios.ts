@@ -1,6 +1,7 @@
 import { ARENA_ID } from '../arenas/arena-types';
 import { ARENA_DEFINITIONS } from '../arenas/arena-definitions';
 import { dashStoppedByWall, layoutArena, predictAim, toWorldRect, walkableRatio } from '../arenas/arena-geometry';
+import { clampToWalkable, createWalkableArea, walkableContains } from '../arenas/walkable-bounds';
 import { AttackTokenBoard, canGrantMeleeToken } from '../enemies/attack-tokens';
 import { ENEMY_DEFINITIONS } from '../enemies/enemy-definitions';
 import { ENEMY_TYPE_ID } from '../enemies/enemy-types';
@@ -61,7 +62,7 @@ export function runCombatPressureScenarios(): string[] {
     const solids = [...arena.walls, ...arena.obstacles].map((rect) => toWorldRect(rect, layout));
     return { id, ratio: walkableRatio(layout.width, layout.height, solids), obstacles: arena.obstacles.length };
   });
-  if (ratios.every((item) => item.ratio >= 0.52 && item.ratio <= 0.82 && item.obstacles >= 3)) {
+  if (ratios.every((item) => item.ratio >= 0.8 && item.ratio <= 0.92 && item.obstacles >= 3)) {
     pass(
       'arenas-walkable',
       ratios.map((item) => `${item.id}:${(item.ratio * 100).toFixed(0)}%`).join(' ')
@@ -107,6 +108,27 @@ export function runCombatPressureScenarios(): string[] {
     );
   } else {
     fail('player-feel', JSON.stringify({ adventurerDash, goblin, playerSpeed }));
+  }
+
+  const floors = (['forest', 'camp', 'ruins', 'guardian', 'yard'] as const).map((theme) => ({
+    theme,
+    area: createWalkableArea(theme, 1280, 720),
+  }));
+  const forestFloor = floors[0]?.area;
+  const sky = forestFloor ? walkableContains(forestFloor, 640, 80) : true;
+  const clearing = forestFloor ? walkableContains(forestFloor, 640, 520) : false;
+  const treeLine = forestFloor ? walkableContains(forestFloor, 40, 520) : true;
+  const pulled = forestFloor ? clampToWalkable(forestFloor, 40, 80, 16) : { x: 0, y: 0 };
+  const pulledInside = forestFloor ? walkableContains(forestFloor, pulled.x, pulled.y, 16) : false;
+  const themed = floors.every(({ area }) => {
+    const midX = area.aabb.x + area.aabb.width / 2;
+    const midY = area.aabb.y + area.aabb.height * 0.72;
+    return walkableContains(area, midX, midY) && !walkableContains(area, midX, 40);
+  });
+  if (forestFloor && !sky && clearing && !treeLine && pulledInside && pulled.y > forestFloor.aabb.y && themed) {
+    pass('walkable-floor', `forest center ok, edge ${pulled.x.toFixed(0)},${pulled.y.toFixed(0)}`);
+  } else {
+    fail('walkable-floor', JSON.stringify({ sky, clearing, treeLine, pulled, pulledInside, themed }));
   }
 
   const melee = new MeleeBehavior();

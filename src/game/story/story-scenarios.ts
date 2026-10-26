@@ -5,6 +5,7 @@ import { ENCOUNTER_ID } from '../combat/encounters/encounter-definitions';
 import { PLAYER_CLASS_ID } from '../player/classes';
 import { doesNpcKnowFact, doesPlayerKnowFact } from '../knowledge/knowledge-selectors';
 import { getMemoriesForNpc } from '../npc/memory/memory-selectors';
+import { withAuthoredRescue } from '../npc/memory/authored-rescue';
 import { QUEST_ID, RUINS_SEAL_FACT_ID } from '../quests/quest-definitions';
 import { QUEST_STATUS } from '../quests/quest-types';
 import { createMemoryStorage, createSaveService } from '../save';
@@ -20,8 +21,10 @@ import {
   CHOICE_RECALL_SAVED,
   STORY_SCENE_ID,
 } from './story-scene-definitions';
-import { CHOICE_REPORT_RUINS } from '../quests/quest-story-choices';
 import { CHOICE_TALK_SERIA } from '../world/locations/location-story-choices';
+import { CHOICE_REPORT_RUINS } from '../quests/quest-story-choices';
+import { runStoryDeadlockScenarios } from './story-deadlock-scenarios';
+import { runStoryFlowScenarios } from './story-flow-scenarios';
 
 function victoryResult(combatId: string) {
   return {
@@ -203,10 +206,10 @@ export async function runStep24StoryScenarios(): Promise<string[]> {
     );
   }
 
-  const orchF = createGameOrchestrator(createInitialGameState());
-  const beforeMemoryChoices = getAvailableChoices(orchF.getState()).map((choice) => choice.id);
-  const beforeMemoryScene = orchF.getState().story.currentSceneId;
-  await orchF.dispatch({ type: 'FREE_ACTION', turnId: 1, input: '세리아를 구한다.' });
+  const orchF = createGameOrchestrator(withAuthoredRescue(createInitialGameState()));
+  const beforeMemoryChoices = getAvailableChoices(createInitialGameState()).map((choice) => choice.id);
+  const beforeMemoryScene = createInitialGameState().story.currentSceneId;
+  await orchF.dispatch({ type: 'FREE_ACTION', turnId: orchF.getState().world.turn, input: '주변을 살펴본다.' });
   const afterMemory = orchF.getState();
   const saved = getMemoriesForNpc(afterMemory, 'seria').some((memory) => memory.type === 'PLAYER_SAVED_ME');
   const memoryChoice = getAvailableChoices(afterMemory).some((choice) => choice.id === CHOICE_RECALL_SAVED);
@@ -270,7 +273,7 @@ export async function runStep24StoryScenarios(): Promise<string[]> {
   const orchISaved = createGameOrchestrator(orchI.getState(), undefined, { saveService: saveServiceI });
   await travelToRuins(orchISaved);
   await winRuinsCombat(orchISaved);
-  await orchISaved.dispatch({ type: 'FREE_ACTION', turnId: orchISaved.getState().world.turn, input: '세리아를 구한다.' });
+  await orchISaved.dispatch({ type: 'FREE_ACTION', turnId: orchISaved.getState().world.turn, input: '주변을 살펴본다.' });
   const beforeSave = orchISaved.getState();
   await orchISaved.dispatch({ type: 'SAVE_GAME', slotId: 'slot_1' });
   const orchILoad = createGameOrchestrator(createInitialGameState(), undefined, { saveService: saveServiceI });
@@ -351,6 +354,9 @@ export async function runStep24StoryScenarios(): Promise<string[]> {
       })
     );
   }
+
+  lines.push(...(await runStoryDeadlockScenarios()));
+  lines.push(...(await runStoryFlowScenarios()));
 
   return lines;
 }

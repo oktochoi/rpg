@@ -102,7 +102,9 @@ export async function runStep29AnimationScenarios(): Promise<string[]> {
     resolveEnemyAnim({ attacking: true, attackActive: true }) === 'attack' &&
     resolveEnemyAnim({ dashing: true, moving: true }) === 'dash' &&
     publicExists(archer.path) &&
-    (archer.framePaths?.walk?.length ?? 0) === 2
+    archer.sourceKind === 'spritesheet' &&
+    archer.frameWidth === 256 &&
+    (archer.animations?.walk?.endFrame ?? 0) === 15
   ) {
     pass('E-archer', archer.path);
   } else {
@@ -114,12 +116,14 @@ export async function runStep29AnimationScenarios(): Promise<string[]> {
     brute.visualSize > archer.visualSize &&
     brute.originY >= 0.85 &&
     resolveEnemyAnim({ attacking: true, moving: true }) === 'attack_windup' &&
-    publicExists(brute.stateTextures?.charge ?? '') &&
-    publicExists(brute.stateTextures?.attack ?? '')
+    publicExists(brute.path) &&
+    brute.sourceKind === 'spritesheet' &&
+    brute.frameWidth === 256 &&
+    (brute.animations?.death?.endFrame ?? -1) === 39
   ) {
-    pass('F-brute', `visual ${brute.visualSize}`);
+    pass('F-brute', `stone_golem ${brute.path}`);
   } else {
-    fail('F-brute', JSON.stringify(brute));
+    fail('F-brute', JSON.stringify({ path: brute.path, sourceKind: brute.sourceKind, size: brute.visualSize }));
   }
 
   const boss = getBossAsset('RUINS_GUARDIAN');
@@ -194,7 +198,7 @@ export async function runStep29AnimationScenarios(): Promise<string[]> {
   }
 
   const hud = toCombatHudSkills(createSkills().getHudSlots(), 40);
-  if (hud[0]?.name === 'Charge Slash' && hud[1]?.name === 'Guard') {
+  if (hud[0]?.name === '돌진 베기' && hud[1]?.name === '방어') {
     pass('M-hud', hud.map((slot) => slot.name).join('/'));
   } else {
     fail('M-hud', JSON.stringify(hud));
@@ -222,7 +226,7 @@ export async function runStep29AnimationScenarios(): Promise<string[]> {
 
   const projectileKinds = ['MAGIC_BOLT', 'FIREBALL', 'ENEMY_ARROW', 'BOSS_ARCANE_BOLT'] as const;
   const effects = ['slash_basic', 'frost_nova', 'shadow_dash', 'boss_slam'] as const;
-  const rates = ANIMATION_FRAME_RATE.idle === 6 && ANIMATION_FRAME_RATE.walk === 8 && ANIMATION_FRAME_RATE.attack === 12;
+  const rates = ANIMATION_FRAME_RATE.idle === 5 && ANIMATION_FRAME_RATE.walk === 6 && ANIMATION_FRAME_RATE.attack === 10;
   const playerEffectsPresent =
     publicExists(getEffectAsset('slash_basic').path) &&
     publicExists(getEffectAsset('slash_charge').path) &&
@@ -251,8 +255,9 @@ export async function runStep29AnimationScenarios(): Promise<string[]> {
     adventurer.visualSize !== getClassAppearance(PLAYER_CLASS_ID.ADVENTURER).size &&
     Boolean(adventurer.portraitPath && publicExists(adventurer.portraitPath)) &&
     publicExists(adventurer.path) &&
-    (adventurer.framePaths?.walk?.length ?? 0) === 2 &&
-    publicExists(adventurer.framePaths?.walk?.[0] ?? '') &&
+    adventurer.sourceKind === 'spritesheet' &&
+    adventurer.frameWidth === 256 &&
+    (adventurer.animations?.idle?.endFrame ?? 0) === 7 &&
     resolvePlayerVisualId(PLAYER_CLASS_ID.ADVENTURER) === 'adventurer' &&
     resolvePlayerVisualId(PLAYER_CLASS_ID.WARRIOR) === 'swordsman' &&
     resolvePlayerVisualId('HIGH_SWORDSMAN') === 'swordsman' &&
@@ -267,25 +272,49 @@ export async function runStep29AnimationScenarios(): Promise<string[]> {
   if (adventurerMapped && firstWalk && !secondWalk) {
     pass(
       'Q-adventurer',
-      `${adventurer.portraitPath} originY ${adventurer.originY} portrait PRESENT combat-frames PRESENT`
+      `${adventurer.portraitPath} originY ${adventurer.originY} portrait PRESENT spritesheet PRESENT`
     );
   } else {
     fail('Q-adventurer', JSON.stringify({ adventurerMapped, firstWalk, secondWalk, path: adventurer.path, originY: adventurer.originY }));
   }
 
   const goblin = getEnemyAsset('goblin');
+  const goblinMage = getEnemyAsset('goblin_mage');
+  const wolf = getEnemyAsset('dire_wolf');
   const enemyPresent =
     publicExists(goblin.path) &&
     publicExists(archer.path) &&
     publicExists(brute.path) &&
+    publicExists(goblinMage.path) &&
+    publicExists(wolf.path) &&
     publicExists(boss.path) &&
-    publicExists(boss.stateTextures?.slam ?? '') &&
-    publicExists(boss.stateTextures?.burst ?? '') &&
-    (goblin.framePaths?.walk?.length ?? 0) === 2;
+    publicExists(boss.stateTextures?.idle ?? '') &&
+    publicExists(getProjectileAsset('ENEMY_ARROW').path) &&
+    publicExists(getProjectileAsset('FIREBALL').path) &&
+    goblin.sourceKind === 'spritesheet' &&
+    archer.sourceKind === 'spritesheet' &&
+    brute.sourceKind === 'spritesheet' &&
+    goblinMage.sourceKind === 'spritesheet' &&
+    wolf.sourceKind === 'spritesheet' &&
+    (goblin.animations?.attack?.startFrame ?? -1) === 16 &&
+    (goblin.animations?.death?.endFrame ?? -1) === 39;
   if (enemyPresent) {
-    pass('R-enemy-boss-sprites', `goblin/archer/brute/guardian PRESENT walkfps a=${archer.sequenceFrameRate?.walk} b=${brute.sequenceFrameRate?.walk} g=${boss.sequenceFrameRate?.walk}`);
+    pass(
+      'R-enemy-boss-sprites',
+      `smooth pack + boss + projectiles PRESENT walk=${goblin.animations?.walk?.frameRate}`
+    );
   } else {
-    fail('R-enemy-boss-sprites', JSON.stringify({ goblin: goblin.path, archer: archer.path, brute: brute.path, boss: boss.path }));
+    fail(
+      'R-enemy-boss-sprites',
+      JSON.stringify({
+        goblin: goblin.path,
+        archer: archer.path,
+        brute: brute.path,
+        goblinMage: goblinMage.path,
+        wolf: wolf.path,
+        boss: boss.path,
+      })
+    );
   }
 
   return lines;

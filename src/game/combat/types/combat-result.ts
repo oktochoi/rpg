@@ -18,4 +18,6 @@ export interface CombatResult {
   defeatedEnemyTypes?: string[];
   escapedEnemyIds?: string[];
   consumedItemIds?: string[];
+  /** Leave the fight and wake up in the village with playable HP. */
+  retreatToVillage?: boolean;
 }

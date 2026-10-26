@@ -24,6 +24,7 @@ import { eventsForRecordedFact } from '../game/knowledge/knowledge-service';
 import { validateAction } from '../game/actions/action-validator';
 import { buildActionParserContext } from '../game/actions/build-parser-context';
 import { getMemoriesForNpc } from '../game/npc/memory/memory-selectors';
+import { withAuthoredRescue } from '../game/npc/memory/authored-rescue';
 import { LOCATION_ID } from '../game/world/locations/location-definitions';
 import { QUEST_ID, RUINS_SEAL_FACT_ID } from '../game/quests/quest-definitions';
 import { createMemoryStorage, createSaveService } from '../game/save';
@@ -152,8 +153,7 @@ export async function runStep27AiScenarios(): Promise<string[]> {
     fail('B-knowledge-security', JSON.stringify({ payload: leonPayload.knownFacts, dialogue: leonReply.dialogue }));
   }
 
-  const orchC = createGameOrchestrator(createInitialGameState());
-  await orchC.dispatch({ type: 'FREE_ACTION', turnId: 1, input: '세리아를 구한다.' });
+  const orchC = createGameOrchestrator(withAuthoredRescue(createInitialGameState()));
   const saved = getMemoriesForNpc(orchC.getState(), 'seria')[0];
   const withMemory = createRealNpcDialogueService({
     readContext: (npcId, input) => buildNpcDialogueContext(orchC.getState(), npcId, input),
@@ -451,9 +451,8 @@ export async function runStep27AiScenarios(): Promise<string[]> {
   }
 
   const storage = createMemoryStorage();
-  const saveOrch = createGameOrchestrator(withStoneKnowledge(), undefined, { saveService: createSaveService(storage) });
+  const saveOrch = createGameOrchestrator(withAuthoredRescue(withStoneKnowledge()), undefined, { saveService: createSaveService(storage) });
   await saveOrch.dispatch({ type: 'SET_RELATIONSHIP', npcId: 'seria', trust: 80 });
-  await saveOrch.dispatch({ type: 'FREE_ACTION', turnId: saveOrch.getState().world.turn, input: '세리아를 구한다.' });
   const trustBeforeSave = saveOrch.getState().relationships.seria.trust;
   const memoriesBeforeSave = getMemoriesForNpc(saveOrch.getState(), 'seria').map((memory) => memory.type);
   await saveOrch.dispatch({ type: 'SAVE_GAME', slotId: 'slot_ai' });

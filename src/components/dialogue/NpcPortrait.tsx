@@ -7,9 +7,11 @@ interface NpcPortraitProps {
   npcId?: string | null;
   emotion?: string | null;
   role?: string | null;
+  compact?: boolean;
+  dock?: boolean;
 }
 
-export function NpcPortrait({ npcName, npcId, emotion = 'neutral', role = null }: NpcPortraitProps) {
+export function NpcPortrait({ npcName, npcId, emotion = 'neutral', role = null, compact = false, dock = false }: NpcPortraitProps) {
   const portrait = resolveNpcPortrait(npcId ?? inferNpcId(npcName), emotion);
   const [failed, setFailed] = useState(false);
 
@@ -18,8 +20,17 @@ export function NpcPortrait({ npcName, npcId, emotion = 'neutral', role = null }
   }, [portrait.path]);
 
   return (
-    <div className={styles.portrait} data-asset={portrait.path} data-emotion={portrait.emotion} data-npc={portrait.npcId}>
-      <div className={`${styles.frame} ${npcFrameClass(portrait.npcId)}`} aria-hidden="true">
+    <div className={dock ? styles.dockWrap : styles.portrait} data-asset={portrait.path} data-emotion={portrait.emotion} data-npc={portrait.npcId}>
+      <div
+        className={
+          dock
+            ? `${styles.dock} ${bustPortrait(portrait.npcId) ? styles.bust : ''}`
+            : compact
+              ? styles.bare
+              : `${styles.frame} ${npcFrameClass(portrait.npcId)}`
+        }
+        aria-hidden="true"
+      >
         {failed ? (
           <>
             <span className={styles.placeholder}>{portrait.letter}</span>
@@ -29,8 +40,12 @@ export function NpcPortrait({ npcName, npcId, emotion = 'neutral', role = null }
           <img className={styles.image} src={portrait.path} alt="" onError={() => setFailed(true)} />
         )}
       </div>
-      <p className={styles.name}>{npcName || '\u00a0'}</p>
-      <p className={styles.role}>{role ?? portrait.role ?? '\u00a0'}</p>
+      {compact || dock ? null : (
+        <>
+          <p className={styles.name}>{npcName || '\u00a0'}</p>
+          <p className={styles.role}>{role ?? portrait.role ?? '\u00a0'}</p>
+        </>
+      )}
     </div>
   );
 }
@@ -46,6 +61,10 @@ function inferNpcId(npcName: string): string {
     return 'shopkeeper_elin';
   }
   return 'seria';
+}
+
+function bustPortrait(npcId: string): boolean {
+  return npcId === 'shopkeeper_elin' || npcId === 'guildmaster_doran' || npcId === 'doran';
 }
 
 function npcFrameClass(npcId: string): string {

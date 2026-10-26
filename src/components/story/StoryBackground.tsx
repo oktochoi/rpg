@@ -21,7 +21,17 @@ export function StoryBackground({ locationId }: StoryBackgroundProps) {
       data-location={background.locationId}
     >
       {failed ? null : (
-        <img className={styles.image} src={background.path} alt="" onError={() => setFailed(true)} />
+        <img
+          className={styles.image}
+          src={background.path}
+          alt=""
+          onLoad={(event) => {
+            const image = event.currentTarget;
+            image.style.maxWidth = `${image.naturalWidth}px`;
+            image.style.maxHeight = `${image.naturalHeight}px`;
+          }}
+          onError={() => setFailed(true)}
+        />
       )}
       <span className={styles.label}>{background.label}</span>
     </div>

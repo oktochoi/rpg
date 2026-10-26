@@ -12,4 +12,6 @@ export interface WorldState {
   flags: Readonly<Record<string, boolean>>;
   exploredPointIds: readonly string[];
   clearedEncounterIds: readonly string[];
+  /** Pity counter for ruins key hunt (Save/Load). */
+  ruinsKeyFailedAttempts: number;
 }

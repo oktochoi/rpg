@@ -8,6 +8,6 @@ export const CHOICE_FIGHT_RUINS_MIXED = 'fight_ruins_mixed';
 export const CHOICE_TALK_RUINS_PROGRESS = 'talk_ruins_progress';
 export const CHOICE_REPORT_RUINS = 'report_ruins_mystery';
 
-export function storyChoicesForState(state: Readonly<GameState>): readonly [Choice, Choice, Choice] {
+export function storyChoicesForState(state: Readonly<GameState>): readonly Choice[] {
   return getAvailableChoices(state);
 }

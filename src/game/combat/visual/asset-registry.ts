@@ -2,12 +2,38 @@ import type { EffectAssetDefinition, GameAssetDefinition, SpriteAnimationDefinit
 import { ANIMATION_FRAME_RATE } from './animation-keys';
 import { resolvePlayerVisualId } from './resolve-player-visual';
 
-function frames(state: VisualAnimState, start: number, end: number, repeat = -1): SpriteAnimationDefinition {
+function frames(state: VisualAnimState, start: number, end: number, repeat = -1, frameRate?: number): SpriteAnimationDefinition {
   return {
     startFrame: start,
     endFrame: end,
-    frameRate: ANIMATION_FRAME_RATE[state],
+    frameRate: frameRate ?? ANIMATION_FRAME_RATE[state],
     repeat,
+  };
+}
+
+/** RPG Smooth Core pack: 8×5 sheet, 256px cells (idle/run/attack/hurt/death). */
+const SMOOTH_CORE_FRAME = 256;
+
+function smoothCoreSheet(folder: string, fileStem: string): Partial<GameAssetDefinition> {
+  const base = `/assets/${folder}`;
+  return {
+    path: `${base}/${fileStem}_spritesheet_8x5_256.png`,
+    sourceKind: 'spritesheet',
+    frameWidth: SMOOTH_CORE_FRAME,
+    frameHeight: SMOOTH_CORE_FRAME,
+    portraitPath: `${base}/frames/idle_01.png`,
+    animations: {
+      idle: frames('idle', 0, 7, -1, 5),
+      // Run cycle is already dynamic — keep fps low so it doesn't feel frantic.
+      walk: frames('walk', 8, 15, -1, 6),
+      attack_windup: frames('attack_windup', 16, 19, 0, 10),
+      attack: frames('attack', 16, 23, 0, 10),
+      dash: frames('dash', 8, 15, -1, 8),
+      skill1: frames('skill1', 16, 23, 0, 10),
+      skill2: frames('skill2', 16, 23, 0, 10),
+      hit: frames('hit', 24, 31, 0, 10),
+      death: frames('death', 32, 39, 0, 7),
+    },
   };
 }
 
@@ -30,35 +56,6 @@ function playerCombatFrames(folder: string, prefix: string): Partial<GameAssetDe
   };
 }
 
-const PLAYER_ANIMS: GameAssetDefinition['animations'] = {
-  idle: frames('idle', 0, 3, -1),
-  walk: frames('walk', 4, 7, -1),
-  attack: frames('attack', 8, 11, 0),
-  dash: frames('dash', 12, 14, 0),
-  skill1: frames('skill1', 15, 18, 0),
-  skill2: frames('skill2', 19, 22, 0),
-  hit: frames('hit', 23, 24, 0),
-  death: frames('death', 25, 28, 0),
-};
-
-const ENEMY_ANIMS: GameAssetDefinition['animations'] = {
-  idle: frames('idle', 0, 3, -1),
-  walk: frames('walk', 4, 7, -1),
-  attack: frames('attack', 8, 11, 0),
-  hit: frames('hit', 12, 13, 0),
-  death: frames('death', 14, 17, 0),
-};
-
-const BOSS_ANIMS: GameAssetDefinition['animations'] = {
-  idle: frames('idle', 0, 3, -1),
-  slam: frames('slam', 4, 7, 0),
-  burst: frames('burst', 8, 11, 0),
-  charge: frames('charge', 12, 15, 0),
-  hit: frames('hit', 16, 17, 0),
-  phase_transition: frames('phase_transition', 18, 21, 0),
-  death: frames('death', 22, 25, 0),
-};
-
 function character(
   id: string,
   type: GameAssetDefinition['type'],
@@ -72,7 +69,7 @@ function character(
     id,
     type,
     textureKey: `${type}_${id}`,
-    path: `/game-assets/${folder}/${file}`,
+    path: extras.path ?? `/game-assets/${folder}/${file}`,
     fallbackKey,
     scale: extras.scale ?? 1,
     originX: extras.originX ?? 0.5,
@@ -81,6 +78,7 @@ function character(
     sourceKind: extras.sourceKind ?? 'image',
     visualOffsetX: extras.visualOffsetX ?? 0,
     visualOffsetY: extras.visualOffsetY ?? 0,
+    artFacesLeft: extras.artFacesLeft,
     hpBarOffsetY: extras.hpBarOffsetY ?? visualSize * 0.35,
     damageTextOffsetY: extras.damageTextOffsetY ?? visualSize * 0.55,
     animations: extras.animations,
@@ -94,24 +92,35 @@ function character(
   };
 }
 
-const PLAYER_VISUAL_SIZE = 108;
+const PLAYER_VISUAL_SIZE = 112;
+const GUARDIAN_SHEET = '/assets/bosses/ruins_guardian/sheet';
+
+function guardianFrames(name: string, indexes: readonly number[]): string[] {
+  return indexes.map((index) => `${GUARDIAN_SHEET}/${name}_${String(index).padStart(2, '0')}.png`);
+}
 
 export const GAME_ASSETS = {
   PLAYER: {
+    // Only hero pack available — used for pre-class adventurer + swordsman.
     adventurer: character('adventurer', 'player', 'characters/adventurer', 'adventurer_idle.png', 'placeholder_adventurer', PLAYER_VISUAL_SIZE, {
       scale: 1,
       originX: 0.5,
-      originY: 0.88,
-      portraitPath: '/game-assets/characters/adventurer/adventurer_portrait.png',
-      ...playerCombatFrames('adventurer', 'adventurer'),
+      originY: 0.92,
+      // Smooth pack hero faces right at rest.
+      artFacesLeft: false,
+      hpBarOffsetY: 58,
+      damageTextOffsetY: 62,
+      ...smoothCoreSheet('characters/hero_swordsman', 'hero_swordsman'),
     }),
     swordsman: character('swordsman', 'player', 'characters/swordsman', 'swordsman_idle.png', 'placeholder_warrior', PLAYER_VISUAL_SIZE, {
       scale: 1,
       originX: 0.5,
-      originY: 0.88,
-      portraitPath: '/game-assets/characters/swordsman/swordsman_portrait.png',
+      originY: 0.92,
+      artFacesLeft: false,
+      hpBarOffsetY: 58,
+      damageTextOffsetY: 62,
       skillEffectPath: '/game-assets/characters/swordsman/swordsman_skill_effects.png',
-      ...playerCombatFrames('swordsman', 'swordsman'),
+      ...smoothCoreSheet('characters/hero_swordsman', 'hero_swordsman'),
     }),
     mage: character('mage', 'player', 'characters/mage', 'mage_idle.png', 'placeholder_mage', PLAYER_VISUAL_SIZE, {
       scale: 1,
@@ -131,82 +140,68 @@ export const GAME_ASSETS = {
     }),
   },
   ENEMY: {
-    goblin: character('goblin', 'enemy', 'enemies/goblin', 'goblin_idle.png', 'placeholder_goblin', 64, {
-      scale: 1,
-      originX: 0.5,
-      originY: 0.88,
-      hpBarOffsetY: 40,
-      damageTextOffsetY: 42,
-      sequenceFrameRate: { walk: 4 },
-      framePaths: {
-        walk: [
-          '/game-assets/enemies/goblin/goblin_walk_1.png',
-          '/game-assets/enemies/goblin/goblin_walk_2.png',
-        ],
-      },
-      stateTextures: {
-        idle: '/game-assets/enemies/goblin/goblin_idle.png',
-        walk: '/game-assets/enemies/goblin/goblin_walk_1.png',
-        attack_windup: '/game-assets/enemies/goblin/goblin_attack_windup.png',
-        attack: '/game-assets/enemies/goblin/goblin_attack.png',
-        dash: '/game-assets/enemies/goblin/goblin_dash.png',
-        hit: '/game-assets/enemies/goblin/goblin_hit.png',
-        death: '/game-assets/enemies/goblin/goblin_death.png',
-      },
-    }),
-    archer: character('archer', 'enemy', 'enemies/goblin-archer', 'goblin_archer_idle.png', 'placeholder_archer', 72, {
-      scale: 1,
-      originX: 0.5,
-      originY: 0.88,
-      hpBarOffsetY: 44,
-      damageTextOffsetY: 46,
-      sequenceFrameRate: { walk: 4 },
-      framePaths: {
-        walk: [
-          '/game-assets/enemies/goblin-archer/goblin_archer_walk_1.png',
-          '/game-assets/enemies/goblin-archer/goblin_archer_walk_2.png',
-        ],
-      },
-      stateTextures: {
-        idle: '/game-assets/enemies/goblin-archer/goblin_archer_idle.png',
-        walk: '/game-assets/enemies/goblin-archer/goblin_archer_walk_1.png',
-        attack_windup: '/game-assets/enemies/goblin-archer/goblin_archer_attack_windup.png',
-        attack: '/game-assets/enemies/goblin-archer/goblin_archer_attack_shot.png',
-        dash: '/game-assets/enemies/goblin-archer/goblin_archer_dash.png',
-        hit: '/game-assets/enemies/goblin-archer/goblin_archer_hit.png',
-        death: '/game-assets/enemies/goblin-archer/goblin_archer_death.png',
-      },
-    }),
-    brute: character('brute', 'enemy', 'enemies/brute', 'brute_idle.png', 'placeholder_brute', 148, {
+    training_dummy: character(
+      'training_dummy',
+      'enemy',
+      'characters/training_dummy',
+      'training_dummy.png',
+      'placeholder_goblin',
+      120,
+      {
+        scale: 1,
+        originX: 0.5,
+        originY: 0.95,
+        hpBarOffsetY: 118,
+        damageTextOffsetY: 110,
+        path: '/assets/characters/training_dummy/training_dummy.png',
+      }
+    ),
+    goblin: character('goblin', 'enemy', 'enemies/goblin', 'goblin_idle.png', 'placeholder_goblin', 88, {
       scale: 1,
       originX: 0.5,
       originY: 0.9,
+      hpBarOffsetY: 48,
+      damageTextOffsetY: 52,
+      ...smoothCoreSheet('sprites/goblin_warrior', 'goblin_warrior'),
+    }),
+    archer: character('archer', 'enemy', 'enemies/goblin-archer', 'goblin_archer_idle.png', 'placeholder_archer', 92, {
+      scale: 1,
+      originX: 0.5,
+      originY: 0.9,
+      hpBarOffsetY: 50,
+      damageTextOffsetY: 54,
+      ...smoothCoreSheet('sprites/goblin_archer', 'goblin_archer'),
+    }),
+    goblin_mage: character('goblin_mage', 'enemy', 'enemies/goblin-mage', 'goblin_mage_idle.png', 'placeholder_goblin_mage', 96, {
+      scale: 1,
+      originX: 0.5,
+      originY: 0.9,
+      hpBarOffsetY: 52,
+      damageTextOffsetY: 56,
+      ...smoothCoreSheet('sprites/goblin_mage', 'goblin_mage'),
+    }),
+    brute: character('brute', 'enemy', 'enemies/stone-golem', 'stone_golem_idle.png', 'placeholder_brute', 148, {
+      scale: 1,
+      originX: 0.5,
+      originY: 0.92,
       hpBarOffsetY: 84,
       damageTextOffsetY: 76,
-      sequenceFrameRate: { walk: 3.2 },
-      framePaths: {
-        walk: [
-          '/game-assets/enemies/brute/brute_walk_1.png',
-          '/game-assets/enemies/brute/brute_walk_2.png',
-        ],
-      },
-      stateTextures: {
-        idle: '/game-assets/enemies/brute/brute_idle.png',
-        walk: '/game-assets/enemies/brute/brute_walk_1.png',
-        attack_windup: '/game-assets/enemies/brute/brute_attack_windup.png',
-        attack: '/game-assets/enemies/brute/brute_attack_swing.png',
-        charge: '/game-assets/enemies/brute/brute_charge.png',
-        dash: '/game-assets/enemies/brute/brute_charge.png',
-        hit: '/game-assets/enemies/brute/brute_hit.png',
-        death: '/game-assets/enemies/brute/brute_death.png',
-      },
+      ...smoothCoreSheet('sprites/stone_golem', 'stone_golem'),
+    }),
+    dire_wolf: character('dire_wolf', 'enemy', 'enemies/dire-wolf', 'dire_wolf_idle.png', 'placeholder_dire_wolf', 110, {
+      scale: 1,
+      originX: 0.5,
+      originY: 0.9,
+      hpBarOffsetY: 58,
+      damageTextOffsetY: 62,
+      ...smoothCoreSheet('sprites/dire_wolf', 'dire_wolf'),
     }),
   },
   BOSS: {
     ruins_guardian: character(
       'ruins_guardian',
       'boss',
-      'bosses/ruins-guardian',
+      'bosses/ruins_guardian',
       'ruins_guardian_idle.png',
       'placeholder_ruins_guardian',
       232,
@@ -214,23 +209,39 @@ export const GAME_ASSETS = {
         scale: 1,
         originX: 0.5,
         originY: 0.92,
+        // Sheet walk and slam face left at rest.
+        artFacesLeft: true,
         hpBarOffsetY: 128,
         damageTextOffsetY: 118,
-        sequenceFrameRate: { walk: 2.4 },
+        path: `${GUARDIAN_SHEET}/idle_01.png`,
+        sequenceFrameRate: {
+          idle: 5,
+          walk: 8,
+          attack_windup: 7,
+          slam: 9,
+          burst: 8,
+          hit: 12,
+          death: 6,
+          phase_transition: 7,
+        },
         framePaths: {
-          walk: [
-            '/game-assets/bosses/ruins-guardian/ruins_guardian_walk_1.png',
-            '/game-assets/bosses/ruins-guardian/ruins_guardian_walk_2.png',
-          ],
+          idle: guardianFrames('idle', [1, 2, 3, 4, 5, 6, 7, 8, 9]),
+          walk: guardianFrames('walk', [1, 2, 3, 4, 5, 6, 7, 8, 9]),
+          attack_windup: guardianFrames('slam', [1, 2]),
+          slam: guardianFrames('slam', [6, 8, 9]),
+          burst: guardianFrames('cast', [1, 2, 3, 4]),
+          hit: guardianFrames('hit', [1, 2, 5]),
+          death: guardianFrames('death', [1, 2, 3, 4]),
+          phase_transition: guardianFrames('phase', [1, 2, 3, 4, 5, 6]),
         },
         stateTextures: {
-          idle: '/game-assets/bosses/ruins-guardian/ruins_guardian_idle.png',
-          walk: '/game-assets/bosses/ruins-guardian/ruins_guardian_walk_1.png',
-          attack_windup: '/game-assets/bosses/ruins-guardian/ruins_guardian_slam_windup.png',
-          slam: '/game-assets/bosses/ruins-guardian/ruins_guardian_slam_attack.png',
-          burst: '/game-assets/bosses/ruins-guardian/ruins_guardian_projectile_cast.png',
-          hit: '/game-assets/bosses/ruins-guardian/ruins_guardian_hit.png',
-          death: '/game-assets/bosses/ruins-guardian/ruins_guardian_death.png',
+          idle: `${GUARDIAN_SHEET}/idle_01.png`,
+          walk: `${GUARDIAN_SHEET}/walk_01.png`,
+          attack_windup: `${GUARDIAN_SHEET}/slam_01.png`,
+          slam: `${GUARDIAN_SHEET}/slam_06.png`,
+          burst: `${GUARDIAN_SHEET}/cast_01.png`,
+          hit: `${GUARDIAN_SHEET}/hit_01.png`,
+          death: `${GUARDIAN_SHEET}/death_01.png`,
         },
       }
     ),
@@ -249,36 +260,47 @@ export const GAME_ASSETS = {
     rogue_backstab: { id: 'rogue_backstab', icon: 'dagger' },
   },
   PROJECTILE: {
-    MAGIC_BOLT: character('magic_bolt', 'projectile', 'effects', 'magic_bolt.png', 'placeholder_bolt', 18, { originY: 0.5 }),
-    FIREBALL: character('fireball', 'projectile', 'effects', 'fireball.png', 'placeholder_fire', 22, { originY: 0.5 }),
-    ENEMY_ARROW: character('enemy_arrow', 'projectile', 'effects', 'enemy_arrow.png', 'placeholder_arrow', 16, { originY: 0.5 }),
-    BOSS_ARCANE_BOLT: character('boss_arcane_bolt', 'projectile', 'effects', 'boss_arcane_bolt.png', 'placeholder_arcane', 20, {
+    MAGIC_BOLT: character('magic_bolt', 'projectile', 'effects', 'magic_bolt.png', 'placeholder_bolt', 48, {
       originY: 0.5,
+      path: '/assets/vfx/projectiles/frames/shadow_bolt_01.png',
+    }),
+    FIREBALL: character('fireball', 'projectile', 'effects', 'fireball.png', 'placeholder_fire', 56, {
+      originY: 0.5,
+      path: '/assets/vfx/projectiles/frames/fireball_01.png',
+    }),
+    ENEMY_ARROW: character('enemy_arrow', 'projectile', 'effects', 'enemy_arrow.png', 'placeholder_arrow', 140, {
+      originY: 0.5,
+      path: '/assets/vfx/projectiles/frames/arrow_01.png',
+    }),
+    BOSS_ARCANE_BOLT: character('boss_arcane_bolt', 'projectile', 'effects', 'boss_arcane_bolt.png', 'placeholder_arcane', 52, {
+      originY: 0.5,
+      path: '/assets/RPG_Boss_Page1_Page2_Sliced/page1_guardian/guardian_projectile_04.png',
     }),
   },
   EFFECT: {
-    slash_basic: effect('slash_basic', 'slash_basic.png'),
+    slash_basic: effectFromPack('slash_basic', '/assets/vfx/projectiles/frames/slash_hit_01.png'),
     slash_charge: effect('slash_charge', 'slash_charge.png'),
     guard_shield: effect('guard_shield', 'guard_shield.png'),
     frost_nova: effect('frost_nova', 'frost_nova.png'),
     shadow_dash: effect('shadow_dash', 'shadow_dash.png'),
     backstab: effect('backstab', 'backstab.png'),
-    hit_spark: effect('hit_spark', 'hit_spark.png'),
+    hit_spark: effectFromPack('hit_spark', '/assets/vfx/projectiles/frames/slash_hit_04.png'),
     boss_slam: effect('boss_slam', 'boss_slam.png'),
     boss_charge: effect('boss_charge', 'boss_charge.png'),
     boss_phase: effect('boss_phase', 'boss_phase.png'),
   } satisfies Record<string, EffectAssetDefinition>,
   STORY_BACKGROUND: {
-    luen_village: { id: 'luen_village', path: '/assets/story_assets_pack/01_luen_village_square.png', theme: 'village' },
-    blue_moon_inn: { id: 'blue_moon_inn', path: '/assets/story_assets_pack/02_blue_moon_inn_interior.png', theme: 'inn' },
+    luen_village: { id: 'luen_village', path: '/assets/story/01_luen_village_square.png', theme: 'village' },
+    blue_moon_inn: { id: 'blue_moon_inn', path: '/assets/story/02_blue_moon_inn_interior.png', theme: 'inn' },
     luen_adventurers_guild: {
       id: 'luen_adventurers_guild',
-      path: '/assets/story_assets_pack/03_adventurers_guild_hall.png',
+      path: '/assets/story/03_adventurers_guild_hall.png',
       theme: 'guild',
     },
-    luen_general_store: { id: 'luen_general_store', path: '/assets/story_assets_pack/01_luen_village_square.png', theme: 'village' },
-    forest_road: { id: 'forest_road', path: '/assets/story_assets_pack/04_forest_road.png', theme: 'forest' },
-    ancient_ruins: { id: 'ancient_ruins', path: '/assets/story_assets_pack/05_ancient_ruins.png', theme: 'ruins' },
+    luen_general_store: { id: 'luen_general_store', path: '/assets/story/general_store_interior.png', theme: 'inn' },
+    luen_training_ground: { id: 'luen_training_ground', path: '/assets/story/training_ground.png', theme: 'village' },
+    forest_road: { id: 'forest_road', path: '/assets/story/04_forest_road.png', theme: 'forest' },
+    ancient_ruins: { id: 'ancient_ruins', path: '/assets/story/05_ancient_ruins.png', theme: 'ruins' },
     northern_gate: { id: 'northern_gate', path: '/game-assets/backgrounds/northern-gate/northern_gate.png', theme: 'gate' },
   },
 } as const;
@@ -292,6 +314,15 @@ function effect(id: string, file: string): EffectAssetDefinition {
   };
 }
 
+function effectFromPack(id: string, path: string): EffectAssetDefinition {
+  return {
+    id,
+    textureKey: `effect_${id}`,
+    path,
+    fallbackKey: 'graphics',
+  };
+}
+
 export const PLACEHOLDER_STYLES = [
   { key: 'placeholder_adventurer', size: 64, fill: 0xb8a078, accent: 0x3d6ea6, kind: 'adventurer' as const },
   { key: 'placeholder_warrior', size: 64, fill: 0x3d6ea6, accent: 0xc4d4ee, kind: 'warrior' as const },
@@ -299,7 +330,9 @@ export const PLACEHOLDER_STYLES = [
   { key: 'placeholder_rogue', size: 64, fill: 0x3d8a5a, accent: 0xb8e0c4, kind: 'rogue' as const },
   { key: 'placeholder_goblin', size: 48, fill: 0xa84a38, accent: 0xe08a6a, kind: 'goblin' as const },
   { key: 'placeholder_archer', size: 48, fill: 0xc47a28, accent: 0xf0c070, kind: 'archer' as const },
+  { key: 'placeholder_goblin_mage', size: 48, fill: 0x7a4ab8, accent: 0xd4b8f0, kind: 'mage' as const },
   { key: 'placeholder_brute', size: 80, fill: 0x3a3238, accent: 0x8a7078, kind: 'brute' as const },
+  { key: 'placeholder_dire_wolf', size: 56, fill: 0x5a4a48, accent: 0xa89888, kind: 'goblin' as const },
   { key: 'placeholder_ruins_guardian', size: 96, fill: 0x4a3870, accent: 0xe0b060, kind: 'boss' as const },
   { key: 'placeholder_bolt', size: 24, fill: 0x7ec8ff, accent: 0xe8f6ff, kind: 'bolt' as const },
   { key: 'placeholder_fire', size: 28, fill: 0xff7a3d, accent: 0xffd080, kind: 'fire' as const },
@@ -317,11 +350,20 @@ export function getPlayerAsset(classId: string, rankId?: string): GameAssetDefin
 }
 
 export function getEnemyAsset(typeId: string): GameAssetDefinition {
+  if (typeId === 'training_dummy') {
+    return GAME_ASSETS.ENEMY.training_dummy;
+  }
   if (typeId === 'archer' || typeId === 'goblin_archer') {
     return GAME_ASSETS.ENEMY.archer;
   }
-  if (typeId === 'brute') {
+  if (typeId === 'goblin_mage' || typeId === 'mage') {
+    return GAME_ASSETS.ENEMY.goblin_mage;
+  }
+  if (typeId === 'brute' || typeId === 'stone_golem' || typeId === 'golem') {
     return GAME_ASSETS.ENEMY.brute;
+  }
+  if (typeId === 'dire_wolf' || typeId === 'wolf') {
+    return GAME_ASSETS.ENEMY.dire_wolf;
   }
   return GAME_ASSETS.ENEMY.goblin;
 }
@@ -334,26 +376,34 @@ export function getNpcAsset(npcId: string): GameAssetDefinition {
   if (npcId === 'leon') {
     return {
       ...GAME_ASSETS.NPC.leon,
-      path: '/assets/story_assets_pack/07_leon_knight_npc.png',
+      path: '/assets/story/07_leon_knight_npc.png',
     };
   }
   if (npcId === 'innkeeper' || npcId === 'marta') {
     return {
       ...GAME_ASSETS.NPC.marta,
-      path: '/assets/story_assets_pack/08_marta_innkeeper_npc.png',
+      path: '/assets/story/08_marta_innkeeper_npc.png',
     };
   }
   if (npcId === 'shopkeeper_elin') {
     return {
       ...GAME_ASSETS.NPC.seria,
       id: 'shopkeeper_elin',
-      path: '/assets/story_assets_pack/shopkeeper_elin_placeholder.png',
+      path: '/assets/story/shopkeeper_elin.png',
       fallbackKey: 'placeholder_npc_elin',
+    };
+  }
+  if (npcId === 'guildmaster_doran' || npcId === 'doran') {
+    return {
+      ...GAME_ASSETS.NPC.seria,
+      id: 'guildmaster_doran',
+      path: '/assets/story/guild_master_doran.png',
+      fallbackKey: 'placeholder_npc_seria',
     };
   }
   return {
     ...GAME_ASSETS.NPC.seria,
-    path: '/assets/story_assets_pack/06_seria_scholar_npc.png',
+    path: '/assets/story/06_seria_scholar_npc.png',
   };
 }
 

@@ -1,0 +1,1437 @@
+{
+  "source": "다크_판타지_rpg_지형_타일셋.png",
+  "count": 110,
+  "items": [
+    {
+      "id": 1,
+      "filename": "terrain_tileset_001.png",
+      "source_bbox": [
+        239,
+        3,
+        369,
+        144
+      ],
+      "width": 130,
+      "height": 141,
+      "pixel_count": 14429
+    },
+    {
+      "id": 2,
+      "filename": "terrain_tileset_002.png",
+      "source_bbox": [
+        360,
+        3,
+        489,
+        144
+      ],
+      "width": 129,
+      "height": 141,
+      "pixel_count": 14268
+    },
+    {
+      "id": 3,
+      "filename": "terrain_tileset_003.png",
+      "source_bbox": [
+        479,
+        3,
+        603,
+        144
+      ],
+      "width": 124,
+      "height": 141,
+      "pixel_count": 13410
+    },
+    {
+      "id": 4,
+      "filename": "terrain_tileset_004.png",
+      "source_bbox": [
+        1079,
+        3,
+        1208,
+        140
+      ],
+      "width": 129,
+      "height": 137,
+      "pixel_count": 13667
+    },
+    {
+      "id": 5,
+      "filename": "terrain_tileset_005.png",
+      "source_bbox": [
+        1199,
+        3,
+        1331,
+        144
+      ],
+      "width": 132,
+      "height": 141,
+      "pixel_count": 14812
+    },
+    {
+      "id": 6,
+      "filename": "terrain_tileset_006.png",
+      "source_bbox": [
+        116,
+        4,
+        248,
+        148
+      ],
+      "width": 132,
+      "height": 144,
+      "pixel_count": 14577
+    },
+    {
+      "id": 7,
+      "filename": "terrain_tileset_007.png",
+      "source_bbox": [
+        596,
+        5,
+        722,
+        144
+      ],
+      "width": 126,
+      "height": 139,
+      "pixel_count": 12437
+    },
+    {
+      "id": 8,
+      "filename": "terrain_tileset_008.png",
+      "source_bbox": [
+        727,
+        6,
+        851,
+        145
+      ],
+      "width": 124,
+      "height": 139,
+      "pixel_count": 13779
+    },
+    {
+      "id": 9,
+      "filename": "terrain_tileset_009.png",
+      "source_bbox": [
+        848,
+        6,
+        969,
+        144
+      ],
+      "width": 121,
+      "height": 138,
+      "pixel_count": 12659
+    },
+    {
+      "id": 10,
+      "filename": "terrain_tileset_010.png",
+      "source_bbox": [
+        961,
+        7,
+        1085,
+        144
+      ],
+      "width": 124,
+      "height": 137,
+      "pixel_count": 12645
+    },
+    {
+      "id": 11,
+      "filename": "terrain_tileset_011.png",
+      "source_bbox": [
+        1322,
+        7,
+        1439,
+        144
+      ],
+      "width": 117,
+      "height": 137,
+      "pixel_count": 11372
+    },
+    {
+      "id": 12,
+      "filename": "terrain_tileset_012.png",
+      "source_bbox": [
+        14,
+        45,
+        126,
+        144
+      ],
+      "width": 112,
+      "height": 99,
+      "pixel_count": 7156
+    },
+    {
+      "id": 13,
+      "filename": "terrain_tileset_013.png",
+      "source_bbox": [
+        359,
+        141,
+        489,
+        285
+      ],
+      "width": 130,
+      "height": 144,
+      "pixel_count": 14220
+    },
+    {
+      "id": 14,
+      "filename": "terrain_tileset_014.png",
+      "source_bbox": [
+        595,
+        141,
+        726,
+        286
+      ],
+      "width": 131,
+      "height": 145,
+      "pixel_count": 13075
+    },
+    {
+      "id": 15,
+      "filename": "terrain_tileset_015.png",
+      "source_bbox": [
+        1082,
+        142,
+        1438,
+        286
+      ],
+      "width": 356,
+      "height": 144,
+      "pixel_count": 39847
+    },
+    {
+      "id": 16,
+      "filename": "terrain_tileset_016.png",
+      "source_bbox": [
+        480,
+        143,
+        603,
+        284
+      ],
+      "width": 123,
+      "height": 141,
+      "pixel_count": 13334
+    },
+    {
+      "id": 17,
+      "filename": "terrain_tileset_017.png",
+      "source_bbox": [
+        729,
+        143,
+        851,
+        284
+      ],
+      "width": 122,
+      "height": 141,
+      "pixel_count": 13773
+    },
+    {
+      "id": 18,
+      "filename": "terrain_tileset_018.png",
+      "source_bbox": [
+        846,
+        143,
+        970,
+        285
+      ],
+      "width": 124,
+      "height": 142,
+      "pixel_count": 12756
+    },
+    {
+      "id": 19,
+      "filename": "terrain_tileset_019.png",
+      "source_bbox": [
+        239,
+        147,
+        367,
+        284
+      ],
+      "width": 128,
+      "height": 137,
+      "pixel_count": 14205
+    },
+    {
+      "id": 20,
+      "filename": "terrain_tileset_020.png",
+      "source_bbox": [
+        962,
+        145,
+        1085,
+        285
+      ],
+      "width": 123,
+      "height": 140,
+      "pixel_count": 12770
+    },
+    {
+      "id": 21,
+      "filename": "terrain_tileset_021.png",
+      "source_bbox": [
+        9,
+        145,
+        248,
+        289
+      ],
+      "width": 239,
+      "height": 144,
+      "pixel_count": 23057
+    },
+    {
+      "id": 22,
+      "filename": "terrain_tileset_022.png",
+      "source_bbox": [
+        1078,
+        282,
+        1440,
+        428
+      ],
+      "width": 362,
+      "height": 146,
+      "pixel_count": 39543
+    },
+    {
+      "id": 23,
+      "filename": "terrain_tileset_023.png",
+      "source_bbox": [
+        239,
+        284,
+        368,
+        427
+      ],
+      "width": 129,
+      "height": 143,
+      "pixel_count": 14716
+    },
+    {
+      "id": 24,
+      "filename": "terrain_tileset_024.png",
+      "source_bbox": [
+        360,
+        284,
+        491,
+        428
+      ],
+      "width": 131,
+      "height": 144,
+      "pixel_count": 14644
+    },
+    {
+      "id": 25,
+      "filename": "terrain_tileset_025.png",
+      "source_bbox": [
+        595,
+        284,
+        727,
+        427
+      ],
+      "width": 132,
+      "height": 143,
+      "pixel_count": 12378
+    },
+    {
+      "id": 26,
+      "filename": "terrain_tileset_026.png",
+      "source_bbox": [
+        119,
+        285,
+        249,
+        428
+      ],
+      "width": 130,
+      "height": 143,
+      "pixel_count": 14815
+    },
+    {
+      "id": 27,
+      "filename": "terrain_tileset_027.png",
+      "source_bbox": [
+        478,
+        285,
+        603,
+        428
+      ],
+      "width": 125,
+      "height": 143,
+      "pixel_count": 13770
+    },
+    {
+      "id": 28,
+      "filename": "terrain_tileset_028.png",
+      "source_bbox": [
+        727,
+        285,
+        851,
+        427
+      ],
+      "width": 124,
+      "height": 142,
+      "pixel_count": 14194
+    },
+    {
+      "id": 29,
+      "filename": "terrain_tileset_029.png",
+      "source_bbox": [
+        849,
+        285,
+        970,
+        427
+      ],
+      "width": 121,
+      "height": 142,
+      "pixel_count": 12906
+    },
+    {
+      "id": 30,
+      "filename": "terrain_tileset_030.png",
+      "source_bbox": [
+        962,
+        286,
+        1084,
+        426
+      ],
+      "width": 122,
+      "height": 140,
+      "pixel_count": 12797
+    },
+    {
+      "id": 31,
+      "filename": "terrain_tileset_031.png",
+      "source_bbox": [
+        13,
+        290,
+        127,
+        407
+      ],
+      "width": 114,
+      "height": 117,
+      "pixel_count": 8024
+    },
+    {
+      "id": 32,
+      "filename": "terrain_tileset_032.png",
+      "source_bbox": [
+        1289,
+        422,
+        1436,
+        619
+      ],
+      "width": 147,
+      "height": 197,
+      "pixel_count": 17256
+    },
+    {
+      "id": 33,
+      "filename": "terrain_tileset_033.png",
+      "source_bbox": [
+        152,
+        424,
+        284,
+        658
+      ],
+      "width": 132,
+      "height": 234,
+      "pixel_count": 25024
+    },
+    {
+      "id": 34,
+      "filename": "terrain_tileset_034.png",
+      "source_bbox": [
+        279,
+        425,
+        421,
+        658
+      ],
+      "width": 142,
+      "height": 233,
+      "pixel_count": 26954
+    },
+    {
+      "id": 35,
+      "filename": "terrain_tileset_035.png",
+      "source_bbox": [
+        424,
+        425,
+        523,
+        553
+      ],
+      "width": 99,
+      "height": 128,
+      "pixel_count": 8248
+    },
+    {
+      "id": 36,
+      "filename": "terrain_tileset_036.png",
+      "source_bbox": [
+        523,
+        425,
+        738,
+        678
+      ],
+      "width": 215,
+      "height": 253,
+      "pixel_count": 36368
+    },
+    {
+      "id": 37,
+      "filename": "terrain_tileset_037.png",
+      "source_bbox": [
+        1131,
+        425,
+        1286,
+        647
+      ],
+      "width": 155,
+      "height": 222,
+      "pixel_count": 21919
+    },
+    {
+      "id": 38,
+      "filename": "terrain_tileset_038.png",
+      "source_bbox": [
+        10,
+        426,
+        159,
+        659
+      ],
+      "width": 149,
+      "height": 233,
+      "pixel_count": 29519
+    },
+    {
+      "id": 39,
+      "filename": "terrain_tileset_039.png",
+      "source_bbox": [
+        741,
+        426,
+        848,
+        563
+      ],
+      "width": 107,
+      "height": 137,
+      "pixel_count": 8974
+    },
+    {
+      "id": 40,
+      "filename": "terrain_tileset_040.png",
+      "source_bbox": [
+        1004,
+        427,
+        1137,
+        625
+      ],
+      "width": 133,
+      "height": 198,
+      "pixel_count": 17877
+    },
+    {
+      "id": 41,
+      "filename": "terrain_tileset_041.png",
+      "source_bbox": [
+        849,
+        431,
+        993,
+        553
+      ],
+      "width": 144,
+      "height": 122,
+      "pixel_count": 12003
+    },
+    {
+      "id": 42,
+      "filename": "terrain_tileset_042.png",
+      "source_bbox": [
+        841,
+        548,
+        936,
+        665
+      ],
+      "width": 95,
+      "height": 117,
+      "pixel_count": 6825
+    },
+    {
+      "id": 43,
+      "filename": "terrain_tileset_043.png",
+      "source_bbox": [
+        421,
+        553,
+        503,
+        660
+      ],
+      "width": 82,
+      "height": 107,
+      "pixel_count": 5864
+    },
+    {
+      "id": 44,
+      "filename": "terrain_tileset_044.png",
+      "source_bbox": [
+        936,
+        553,
+        1036,
+        662
+      ],
+      "width": 100,
+      "height": 109,
+      "pixel_count": 6945
+    },
+    {
+      "id": 45,
+      "filename": "terrain_tileset_045.png",
+      "source_bbox": [
+        736,
+        556,
+        837,
+        660
+      ],
+      "width": 101,
+      "height": 104,
+      "pixel_count": 6733
+    },
+    {
+      "id": 46,
+      "filename": "terrain_tileset_046.png",
+      "source_bbox": [
+        498,
+        579,
+        589,
+        673
+      ],
+      "width": 91,
+      "height": 94,
+      "pixel_count": 5462
+    },
+    {
+      "id": 47,
+      "filename": "terrain_tileset_047.png",
+      "source_bbox": [
+        1281,
+        591,
+        1437,
+        790
+      ],
+      "width": 156,
+      "height": 199,
+      "pixel_count": 23412
+    },
+    {
+      "id": 48,
+      "filename": "terrain_tileset_048.png",
+      "source_bbox": [
+        1131,
+        607,
+        1287,
+        792
+      ],
+      "width": 156,
+      "height": 185,
+      "pixel_count": 20916
+    },
+    {
+      "id": 49,
+      "filename": "terrain_tileset_049.png",
+      "source_bbox": [
+        1019,
+        621,
+        1131,
+        791
+      ],
+      "width": 112,
+      "height": 170,
+      "pixel_count": 14690
+    },
+    {
+      "id": 50,
+      "filename": "terrain_tileset_050.png",
+      "source_bbox": [
+        869,
+        652,
+        1021,
+        792
+      ],
+      "width": 152,
+      "height": 140,
+      "pixel_count": 16183
+    },
+    {
+      "id": 51,
+      "filename": "terrain_tileset_051.png",
+      "source_bbox": [
+        295,
+        658,
+        472,
+        792
+      ],
+      "width": 177,
+      "height": 134,
+      "pixel_count": 18539
+    },
+    {
+      "id": 52,
+      "filename": "terrain_tileset_052.png",
+      "source_bbox": [
+        9,
+        659,
+        147,
+        792
+      ],
+      "width": 138,
+      "height": 133,
+      "pixel_count": 14570
+    },
+    {
+      "id": 53,
+      "filename": "terrain_tileset_053.png",
+      "source_bbox": [
+        148,
+        660,
+        296,
+        792
+      ],
+      "width": 148,
+      "height": 132,
+      "pixel_count": 15710
+    },
+    {
+      "id": 54,
+      "filename": "terrain_tileset_054.png",
+      "source_bbox": [
+        733,
+        662,
+        873,
+        792
+      ],
+      "width": 140,
+      "height": 130,
+      "pixel_count": 14357
+    },
+    {
+      "id": 55,
+      "filename": "terrain_tileset_055.png",
+      "source_bbox": [
+        470,
+        674,
+        609,
+        792
+      ],
+      "width": 139,
+      "height": 118,
+      "pixel_count": 13242
+    },
+    {
+      "id": 56,
+      "filename": "terrain_tileset_056.png",
+      "source_bbox": [
+        603,
+        681,
+        738,
+        792
+      ],
+      "width": 135,
+      "height": 111,
+      "pixel_count": 11730
+    },
+    {
+      "id": 57,
+      "filename": "terrain_tileset_057.png",
+      "source_bbox": [
+        466,
+        789,
+        597,
+        924
+      ],
+      "width": 131,
+      "height": 135,
+      "pixel_count": 13654
+    },
+    {
+      "id": 58,
+      "filename": "terrain_tileset_058.png",
+      "source_bbox": [
+        1021,
+        789,
+        1164,
+        922
+      ],
+      "width": 143,
+      "height": 133,
+      "pixel_count": 13615
+    },
+    {
+      "id": 59,
+      "filename": "terrain_tileset_059.png",
+      "source_bbox": [
+        1345,
+        789,
+        1434,
+        921
+      ],
+      "width": 89,
+      "height": 132,
+      "pixel_count": 8542
+    },
+    {
+      "id": 60,
+      "filename": "terrain_tileset_060.png",
+      "source_bbox": [
+        325,
+        790,
+        464,
+        921
+      ],
+      "width": 139,
+      "height": 131,
+      "pixel_count": 12081
+    },
+    {
+      "id": 61,
+      "filename": "terrain_tileset_061.png",
+      "source_bbox": [
+        9,
+        791,
+        205,
+        920
+      ],
+      "width": 196,
+      "height": 129,
+      "pixel_count": 17132
+    },
+    {
+      "id": 62,
+      "filename": "terrain_tileset_062.png",
+      "source_bbox": [
+        212,
+        791,
+        311,
+        920
+      ],
+      "width": 99,
+      "height": 129,
+      "pixel_count": 7011
+    },
+    {
+      "id": 63,
+      "filename": "terrain_tileset_063.png",
+      "source_bbox": [
+        773,
+        791,
+        928,
+        921
+      ],
+      "width": 155,
+      "height": 130,
+      "pixel_count": 12648
+    },
+    {
+      "id": 64,
+      "filename": "terrain_tileset_064.png",
+      "source_bbox": [
+        937,
+        791,
+        1020,
+        917
+      ],
+      "width": 83,
+      "height": 126,
+      "pixel_count": 6731
+    },
+    {
+      "id": 65,
+      "filename": "terrain_tileset_065.png",
+      "source_bbox": [
+        678,
+        795,
+        766,
+        925
+      ],
+      "width": 88,
+      "height": 130,
+      "pixel_count": 8296
+    },
+    {
+      "id": 66,
+      "filename": "terrain_tileset_066.png",
+      "source_bbox": [
+        1237,
+        796,
+        1343,
+        919
+      ],
+      "width": 106,
+      "height": 123,
+      "pixel_count": 8696
+    },
+    {
+      "id": 67,
+      "filename": "terrain_tileset_067.png",
+      "source_bbox": [
+        1155,
+        797,
+        1244,
+        916
+      ],
+      "width": 89,
+      "height": 119,
+      "pixel_count": 5973
+    },
+    {
+      "id": 68,
+      "filename": "terrain_tileset_068.png",
+      "source_bbox": [
+        594,
+        798,
+        676,
+        922
+      ],
+      "width": 82,
+      "height": 124,
+      "pixel_count": 7758
+    },
+    {
+      "id": 69,
+      "filename": "terrain_tileset_069.png",
+      "source_bbox": [
+        191,
+        922,
+        261,
+        994
+      ],
+      "width": 70,
+      "height": 72,
+      "pixel_count": 2088
+    },
+    {
+      "id": 70,
+      "filename": "terrain_tileset_070.png",
+      "source_bbox": [
+        474,
+        924,
+        595,
+        1008
+      ],
+      "width": 121,
+      "height": 84,
+      "pixel_count": 4758
+    },
+    {
+      "id": 71,
+      "filename": "terrain_tileset_071.png",
+      "source_bbox": [
+        1070,
+        927,
+        1164,
+        997
+      ],
+      "width": 94,
+      "height": 70,
+      "pixel_count": 2868
+    },
+    {
+      "id": 72,
+      "filename": "terrain_tileset_072.png",
+      "source_bbox": [
+        13,
+        930,
+        79,
+        985
+      ],
+      "width": 66,
+      "height": 55,
+      "pixel_count": 1829
+    },
+    {
+      "id": 73,
+      "filename": "terrain_tileset_073.png",
+      "source_bbox": [
+        705,
+        931,
+        784,
+        1004
+      ],
+      "width": 79,
+      "height": 73,
+      "pixel_count": 3224
+    },
+    {
+      "id": 74,
+      "filename": "terrain_tileset_074.png",
+      "source_bbox": [
+        391,
+        932,
+        522,
+        1069
+      ],
+      "width": 131,
+      "height": 137,
+      "pixel_count": 5300
+    },
+    {
+      "id": 75,
+      "filename": "terrain_tileset_075.png",
+      "source_bbox": [
+        607,
+        933,
+        698,
+        999
+      ],
+      "width": 91,
+      "height": 66,
+      "pixel_count": 2731
+    },
+    {
+      "id": 76,
+      "filename": "terrain_tileset_076.png",
+      "source_bbox": [
+        1224,
+        933,
+        1341,
+        1005
+      ],
+      "width": 117,
+      "height": 72,
+      "pixel_count": 2784
+    },
+    {
+      "id": 77,
+      "filename": "terrain_tileset_077.png",
+      "source_bbox": [
+        1338,
+        933,
+        1427,
+        1000
+      ],
+      "width": 89,
+      "height": 67,
+      "pixel_count": 2714
+    },
+    {
+      "id": 78,
+      "filename": "terrain_tileset_078.png",
+      "source_bbox": [
+        845,
+        934,
+        948,
+        992
+      ],
+      "width": 103,
+      "height": 58,
+      "pixel_count": 1739
+    },
+    {
+      "id": 79,
+      "filename": "terrain_tileset_079.png",
+      "source_bbox": [
+        321,
+        935,
+        406,
+        1006
+      ],
+      "width": 85,
+      "height": 71,
+      "pixel_count": 2209
+    },
+    {
+      "id": 80,
+      "filename": "terrain_tileset_080.png",
+      "source_bbox": [
+        137,
+        939,
+        197,
+        991
+      ],
+      "width": 60,
+      "height": 52,
+      "pixel_count": 1239
+    },
+    {
+      "id": 81,
+      "filename": "terrain_tileset_081.png",
+      "source_bbox": [
+        256,
+        936,
+        324,
+        1000
+      ],
+      "width": 68,
+      "height": 64,
+      "pixel_count": 1782
+    },
+    {
+      "id": 82,
+      "filename": "terrain_tileset_082.png",
+      "source_bbox": [
+        949,
+        936,
+        1034,
+        999
+      ],
+      "width": 85,
+      "height": 63,
+      "pixel_count": 1955
+    },
+    {
+      "id": 83,
+      "filename": "terrain_tileset_083.png",
+      "source_bbox": [
+        1163,
+        936,
+        1243,
+        987
+      ],
+      "width": 80,
+      "height": 51,
+      "pixel_count": 888
+    },
+    {
+      "id": 84,
+      "filename": "terrain_tileset_084.png",
+      "source_bbox": [
+        1024,
+        939,
+        1074,
+        987
+      ],
+      "width": 50,
+      "height": 48,
+      "pixel_count": 818
+    },
+    {
+      "id": 85,
+      "filename": "terrain_tileset_085.png",
+      "source_bbox": [
+        75,
+        939,
+        127,
+        981
+      ],
+      "width": 52,
+      "height": 42,
+      "pixel_count": 1010
+    },
+    {
+      "id": 86,
+      "filename": "terrain_tileset_086.png",
+      "source_bbox": [
+        786,
+        941,
+        844,
+        994
+      ],
+      "width": 58,
+      "height": 53,
+      "pixel_count": 1671
+    },
+    {
+      "id": 87,
+      "filename": "terrain_tileset_087.png",
+      "source_bbox": [
+        1187,
+        958,
+        1223,
+        999
+      ],
+      "width": 36,
+      "height": 41,
+      "pixel_count": 330
+    },
+    {
+      "id": 88,
+      "filename": "terrain_tileset_088.png",
+      "source_bbox": [
+        563,
+        973,
+        638,
+        1038
+      ],
+      "width": 75,
+      "height": 65,
+      "pixel_count": 2610
+    },
+    {
+      "id": 89,
+      "filename": "terrain_tileset_089.png",
+      "source_bbox": [
+        85,
+        977,
+        144,
+        1032
+      ],
+      "width": 59,
+      "height": 55,
+      "pixel_count": 1706
+    },
+    {
+      "id": 90,
+      "filename": "terrain_tileset_090.png",
+      "source_bbox": [
+        7,
+        983,
+        74,
+        1064
+      ],
+      "width": 67,
+      "height": 81,
+      "pixel_count": 2542
+    },
+    {
+      "id": 91,
+      "filename": "terrain_tileset_091.png",
+      "source_bbox": [
+        628,
+        983,
+        733,
+        1065
+      ],
+      "width": 105,
+      "height": 82,
+      "pixel_count": 4869
+    },
+    {
+      "id": 92,
+      "filename": "terrain_tileset_092.png",
+      "source_bbox": [
+        147,
+        987,
+        229,
+        1058
+      ],
+      "width": 82,
+      "height": 71,
+      "pixel_count": 2651
+    },
+    {
+      "id": 93,
+      "filename": "terrain_tileset_093.png",
+      "source_bbox": [
+        926,
+        990,
+        1032,
+        1059
+      ],
+      "width": 106,
+      "height": 69,
+      "pixel_count": 3150
+    },
+    {
+      "id": 94,
+      "filename": "terrain_tileset_094.png",
+      "source_bbox": [
+        1097,
+        992,
+        1164,
+        1058
+      ],
+      "width": 67,
+      "height": 66,
+      "pixel_count": 2025
+    },
+    {
+      "id": 95,
+      "filename": "terrain_tileset_095.png",
+      "source_bbox": [
+        732,
+        993,
+        817,
+        1064
+      ],
+      "width": 85,
+      "height": 71,
+      "pixel_count": 3541
+    },
+    {
+      "id": 96,
+      "filename": "terrain_tileset_096.png",
+      "source_bbox": [
+        819,
+        993,
+        881,
+        1063
+      ],
+      "width": 62,
+      "height": 70,
+      "pixel_count": 1909
+    },
+    {
+      "id": 97,
+      "filename": "terrain_tileset_097.png",
+      "source_bbox": [
+        224,
+        994,
+        335,
+        1064
+      ],
+      "width": 111,
+      "height": 70,
+      "pixel_count": 3271
+    },
+    {
+      "id": 98,
+      "filename": "terrain_tileset_098.png",
+      "source_bbox": [
+        1026,
+        994,
+        1105,
+        1058
+      ],
+      "width": 79,
+      "height": 64,
+      "pixel_count": 2404
+    },
+    {
+      "id": 99,
+      "filename": "terrain_tileset_099.png",
+      "source_bbox": [
+        1368,
+        998,
+        1432,
+        1057
+      ],
+      "width": 64,
+      "height": 59,
+      "pixel_count": 1506
+    },
+    {
+      "id": 100,
+      "filename": "terrain_tileset_100.png",
+      "source_bbox": [
+        320,
+        1003,
+        431,
+        1063
+      ],
+      "width": 111,
+      "height": 60,
+      "pixel_count": 1999
+    },
+    {
+      "id": 101,
+      "filename": "terrain_tileset_101.png",
+      "source_bbox": [
+        1187,
+        1004,
+        1227,
+        1065
+      ],
+      "width": 40,
+      "height": 61,
+      "pixel_count": 703
+    },
+    {
+      "id": 102,
+      "filename": "terrain_tileset_102.png",
+      "source_bbox": [
+        1274,
+        1005,
+        1327,
+        1057
+      ],
+      "width": 53,
+      "height": 52,
+      "pixel_count": 1059
+    },
+    {
+      "id": 103,
+      "filename": "terrain_tileset_103.png",
+      "source_bbox": [
+        1155,
+        1006,
+        1185,
+        1046
+      ],
+      "width": 30,
+      "height": 40,
+      "pixel_count": 430
+    },
+    {
+      "id": 104,
+      "filename": "terrain_tileset_104.png",
+      "source_bbox": [
+        1320,
+        1007,
+        1369,
+        1060
+      ],
+      "width": 49,
+      "height": 53,
+      "pixel_count": 1006
+    },
+    {
+      "id": 105,
+      "filename": "terrain_tileset_105.png",
+      "source_bbox": [
+        521,
+        1009,
+        584,
+        1064
+      ],
+      "width": 63,
+      "height": 55,
+      "pixel_count": 1394
+    },
+    {
+      "id": 106,
+      "filename": "terrain_tileset_106.png",
+      "source_bbox": [
+        1226,
+        1011,
+        1267,
+        1061
+      ],
+      "width": 41,
+      "height": 50,
+      "pixel_count": 866
+    },
+    {
+      "id": 107,
+      "filename": "terrain_tileset_107.png",
+      "source_bbox": [
+        878,
+        1011,
+        916,
+        1041
+      ],
+      "width": 38,
+      "height": 30,
+      "pixel_count": 423
+    },
+    {
+      "id": 108,
+      "filename": "terrain_tileset_108.png",
+      "source_bbox": [
+        73,
+        1024,
+        111,
+        1057
+      ],
+      "width": 38,
+      "height": 33,
+      "pixel_count": 458
+    },
+    {
+      "id": 109,
+      "filename": "terrain_tileset_109.png",
+      "source_bbox": [
+        113,
+        1026,
+        152,
+        1059
+      ],
+      "width": 39,
+      "height": 33,
+      "pixel_count": 508
+    },
+    {
+      "id": 110,
+      "filename": "terrain_tileset_110.png",
+      "source_bbox": [
+        883,
+        1030,
+        928,
+        1056
+      ],
+      "width": 45,
+      "height": 26,
+      "pixel_count": 305
+    }
+  ],
+  "background_rule": "pixels with all RGB > 200 and channel spread < 25 made transparent"
+}

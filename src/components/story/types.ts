@@ -29,6 +29,13 @@ export interface DialogueTurnView {
   text: string;
 }
 
+export interface StoryLogEntryView {
+  id: string;
+  type: 'narration' | 'dialogue' | 'choice' | 'system';
+  text: string;
+  speaker?: string;
+}
+
 export interface StoryPanelView {
   npcId: string;
   npcName: string;
@@ -38,6 +45,10 @@ export interface StoryPanelView {
   situation: string;
   lastActionNarrative: string | null;
   messages: readonly DialogueTurnView[];
+  storyLog: readonly StoryLogEntryView[];
+  flowMode: 'STORY_LOCKED' | 'FREE_ROAM';
+  gamePhase: 'VILLAGE' | 'ADVENTURE' | 'COMBAT';
+  sequenceTitle?: string | null;
 }
 
 export interface QuestObjectiveView {
@@ -74,6 +85,8 @@ export interface StoryScreenView {
   chapterTitle?: string;
   chapterProgressLabel?: string;
   mainObjective?: string;
+  placeLine?: string;
+  suggestedNextAction?: string;
   player: PlayerPanelView;
   story: StoryPanelView;
   quest: QuestPanelView;

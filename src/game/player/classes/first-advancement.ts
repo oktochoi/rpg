@@ -1,12 +1,13 @@
 import type { GameState } from '../../core/game-state';
 import { PLAYER_CLASS_ID, type PlayerClassId } from './class-types';
 import { isSpecializedClassId } from './class-definitions';
-import { QUEST_ID } from '../../quests/quest-definitions';
-import { QUEST_STATUS } from '../../quests/quest-types';
 import { WORLD_FLAG } from '../../world/locations/location-definitions';
 import { worldFlag } from '../../world/locations/location-selectors';
 
-export const FIRST_ADVANCEMENT_LEVEL = 5;
+/**
+ * First job change opens after Chapter 1 is finished, at the guild.
+ */
+export const FIRST_ADVANCEMENT_LEVEL = 1;
 
 export function isAdventurer(classId: string): boolean {
   return classId === PLAYER_CLASS_ID.ADVENTURER || classId === 'wanderer';
@@ -19,15 +20,10 @@ export function canChooseFirstAdvancement(state: Readonly<GameState>): boolean {
   if (worldFlag(state, WORLD_FLAG.FIRST_ADVANCEMENT_DONE)) {
     return false;
   }
-  if ((state.player.level ?? 1) < FIRST_ADVANCEMENT_LEVEL) {
+  if (!worldFlag(state, WORLD_FLAG.GUILD_REGISTERED)) {
     return false;
   }
-  const mainQuestDone = state.quests[QUEST_ID.RUINS_MYSTERY]?.status === QUEST_STATUS.COMPLETED;
-  return (
-    mainQuestDone &&
-    worldFlag(state, WORLD_FLAG.RUINS_GUARDIAN_DEFEATED) &&
-    worldFlag(state, WORLD_FLAG.GUILD_RECOGNITION_DONE)
-  );
+  return worldFlag(state, WORLD_FLAG.CHAPTER_1_COMPLETE);
 }
 
 export function firstAdvancementTargetClass(classId: string): PlayerClassId | null {

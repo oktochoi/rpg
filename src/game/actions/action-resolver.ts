@@ -6,6 +6,7 @@ import { jobModifier, type ActionResolution, type ActionValidationResult, type P
 import { combatIdForAttack } from './action-validator';
 import { resolveExplorationForInvestigate } from '../world/exploration/exploration-service';
 import { getLocationDefinition } from '../world/locations/location-definitions';
+import { withEuro } from '../text/korean-josa';
 
 export interface ResolvedFreeAction {
   resolution: ActionResolution;
@@ -135,13 +136,13 @@ export function resolveAction(
         resolution: {
           success: true,
           actionType: 'RESCUE',
-          narrative: '당신이 상대를 위험에서 건져낸다.',
+          narrative: '당신은 상대를 지키려 손을 뻗는다. 당장은 목숨을 걸 만한 위기가 보이지 않는다.',
           nextMode: 'STORY',
         },
         recordPlayerLine: true,
         targetNpcId: action.targetId,
-        recordFact: 'IMPORTANT_EVENT',
-        factKey: `saved_${action.targetId ?? 'unknown'}`,
+        recordFact: 'NPC_HELPED',
+        factKey: action.targetId ?? 'unknown',
         factTargetIds: action.targetId ? [action.targetId] : [],
       };
     case 'INVESTIGATE': {
@@ -256,7 +257,7 @@ export function resolveAction(
         resolution: {
           success: true,
           actionType: 'MOVE',
-          narrative: `${definition.name}(으)로 향한다.`,
+          narrative: `${withEuro(definition.name)} 향한다.`,
           nextMode: 'STORY',
         },
         moveToLocationId: locationId,

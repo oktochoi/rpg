@@ -1,50 +1,76 @@
+import type { RewardBundle } from './economy-types';
 import { ENCOUNTER_ID } from '../combat/encounters/encounter-definitions';
 import { ITEM_ID } from '../inventory/item-definitions';
 import { QUEST_ID } from '../quests/quest-definitions';
-import type { RewardBundle } from './economy-types';
 
-export const ENCOUNTER_REWARDS: Readonly<Record<string, RewardBundle>> = {
+export interface EncounterRewardTiers {
+  firstClear: RewardBundle;
+  repeatClear: RewardBundle;
+}
+
+/**
+ * First clear: permanent growth (EXP granted separately) + meaningful gold.
+ * Repeat: gold drip only — no items / no major loot.
+ */
+export const ENCOUNTER_REWARD_TIERS: Readonly<Record<string, EncounterRewardTiers>> = {
   [ENCOUNTER_ID.RUINS_EASY_01]: {
-    gold: 12,
-    items: [{ itemId: ITEM_ID.GOBLIN_EAR, quantity: 1 }],
+    firstClear: { gold: 12, items: [{ itemId: ITEM_ID.GOBLIN_EAR, quantity: 1 }] },
+    repeatClear: { gold: 8 },
   },
   [ENCOUNTER_ID.FOREST_GOBLIN_01]: {
-    gold: 18,
-    items: [{ itemId: ITEM_ID.GOBLIN_EAR, quantity: 1 }],
+    firstClear: { gold: 100, items: [{ itemId: ITEM_ID.GOBLIN_EAR, quantity: 1 }] },
+    repeatClear: { gold: 20 },
   },
   [ENCOUNTER_ID.CH1_FOREST_SCOUTS]: {
-    gold: 18,
-    items: [{ itemId: ITEM_ID.GOBLIN_EAR, quantity: 1 }],
+    firstClear: { gold: 180, items: [{ itemId: ITEM_ID.GOBLIN_EAR, quantity: 1 }] },
+    repeatClear: { gold: 25 },
   },
   [ENCOUNTER_ID.CH1_FOREST_AMBUSH]: {
-    gold: 22,
-    items: [{ itemId: ITEM_ID.GOBLIN_EAR, quantity: 1 }],
+    firstClear: { gold: 120, items: [{ itemId: ITEM_ID.GOBLIN_EAR, quantity: 1 }] },
+    repeatClear: { gold: 22 },
   },
   [ENCOUNTER_ID.CH1_GOBLIN_CAMP]: {
-    gold: 28,
-    items: [{ itemId: ITEM_ID.IRON_FRAGMENT, quantity: 1 }],
+    firstClear: { gold: 140, items: [{ itemId: ITEM_ID.IRON_FRAGMENT, quantity: 1 }] },
+    repeatClear: { gold: 28 },
+  },
+  [ENCOUNTER_ID.CH1_FOREST_DEEP]: {
+    firstClear: { gold: 150, items: [{ itemId: ITEM_ID.GOBLIN_EAR, quantity: 1 }] },
+    repeatClear: { gold: 26 },
+  },
+  [ENCOUNTER_ID.CH1_FOREST_KEY_HOLDER]: {
+    firstClear: { gold: 160, items: [{ itemId: ITEM_ID.GOBLIN_EAR, quantity: 1 }] },
+    repeatClear: { gold: 28 },
   },
   [ENCOUNTER_ID.CH1_RUINS_GATE]: {
-    gold: 36,
-    items: [{ itemId: ITEM_ID.GOBLIN_EAR, quantity: 1 }],
+    firstClear: { gold: 160, items: [{ itemId: ITEM_ID.GOBLIN_EAR, quantity: 1 }] },
+    repeatClear: { gold: 30 },
   },
   [ENCOUNTER_ID.RUINS_ARCHER_01]: {
-    gold: 18,
+    firstClear: { gold: 18 },
+    repeatClear: { gold: 10 },
   },
   [ENCOUNTER_ID.RUINS_BRUTE_01]: {
-    gold: 30,
+    firstClear: { gold: 30 },
+    repeatClear: { gold: 12 },
   },
   [ENCOUNTER_ID.RUINS_MIXED_01]: {
-    gold: 32,
-    items: [{ itemId: ITEM_ID.GOBLIN_EAR, quantity: 1 }],
+    firstClear: { gold: 160, items: [{ itemId: ITEM_ID.GOBLIN_EAR, quantity: 1 }] },
+    repeatClear: { gold: 30 },
   },
   [ENCOUNTER_ID.RUINS_HEAVY_01]: {
-    gold: 40,
+    firstClear: { gold: 40 },
+    repeatClear: { gold: 15 },
   },
   [ENCOUNTER_ID.RUINS_BOSS_01]: {
-    gold: 100,
+    firstClear: { gold: 220 },
+    repeatClear: { gold: 40 },
   },
 };
+
+/** @deprecated Prefer encounterRewardTiersFor — kept for callers expecting a flat bundle. */
+export const ENCOUNTER_REWARDS: Readonly<Record<string, RewardBundle>> = Object.fromEntries(
+  Object.entries(ENCOUNTER_REWARD_TIERS).map(([id, tiers]) => [id, tiers.firstClear])
+);
 
 export const QUEST_REWARD_FALLBACK: Readonly<Record<string, RewardBundle>> = {
   [QUEST_ID.FOREST_GOBLIN_SCOUR]: {
@@ -66,6 +92,16 @@ export const QUEST_REWARD_FALLBACK: Readonly<Record<string, RewardBundle>> = {
   },
 };
 
-export function encounterRewardFor(combatId: string): RewardBundle {
-  return ENCOUNTER_REWARDS[combatId] ?? {};
+export function encounterRewardTiersFor(combatId: string): EncounterRewardTiers {
+  return (
+    ENCOUNTER_REWARD_TIERS[combatId] ?? {
+      firstClear: {},
+      repeatClear: { gold: 10 },
+    }
+  );
+}
+
+export function encounterRewardFor(combatId: string, firstClear = true): RewardBundle {
+  const tiers = encounterRewardTiersFor(combatId);
+  return firstClear ? tiers.firstClear : tiers.repeatClear;
 }

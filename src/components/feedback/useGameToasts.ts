@@ -7,7 +7,19 @@ import { getChapterDefinition } from '@/game/story/chapters';
 import { getMainObjectiveText } from '@/game/story/chapters/main-objective';
 import type { GameToastItem } from './GameToast';
 
-const TOAST_MS = 1800;
+const TOAST_MS = 2000;
+const LEVEL_UP_TOAST_MS = 4200;
+
+function pushTimedToast(
+  setItems: Dispatch<SetStateAction<GameToastItem[]>>,
+  item: GameToastItem,
+  durationMs: number
+) {
+  setItems((current) => [...current, item]);
+  window.setTimeout(() => {
+    setItems((current) => current.filter((entry) => entry.id !== item.id));
+  }, durationMs);
+}
 
 function importantFactLabel(factId: string): string | null {
   if (factId === RUINS_SEAL_FACT_ID) {
@@ -35,15 +47,20 @@ function completedObjectives(state: GameState): string[] {
 }
 
 function pushToast(setItems: Dispatch<SetStateAction<GameToastItem[]>>, item: GameToastItem) {
-  setItems((current) => [...current, item]);
-  window.setTimeout(() => {
-    setItems((current) => current.filter((entry) => entry.id !== item.id));
-  }, TOAST_MS);
+  pushTimedToast(setItems, item, TOAST_MS);
+}
+
+function questStatusSignature(state: GameState): string {
+  return Object.values(state.quests)
+    .map((quest) => `${quest.id}:${quest.status}`)
+    .sort()
+    .join('|');
 }
 
 export function useGameToasts(state: GameState): GameToastItem[] {
   const [items, setItems] = useState<GameToastItem[]>([]);
   const questsRef = useRef<string[]>([]);
+  const questStatusRef = useRef(questStatusSignature(state));
   const factsRef = useRef<readonly string[]>(state.knowledge.knownFactIds);
   const levelRef = useRef(state.player.level ?? 1);
   const dayRef = useRef(state.world.day ?? 1);
@@ -56,6 +73,7 @@ export function useGameToasts(state: GameState): GameToastItem[] {
   useEffect(() => {
     if (!readyRef.current) {
       questsRef.current = completedObjectives(state);
+      questStatusRef.current = questStatusSignature(state);
       factsRef.current = state.knowledge.knownFactIds;
       levelRef.current = state.player.level ?? 1;
       dayRef.current = state.world.day ?? 1;
@@ -74,10 +92,14 @@ export function useGameToasts(state: GameState): GameToastItem[] {
       audioManager.playSfx(SFX_ID.QUEST_UPDATE);
       pushToast(setItems, {
         id: `quest-${key}-${state.world.turn}`,
-        title: 'OBJECTIVE COMPLETE',
+        title: '목표 완료',
         detail: description,
       });
     }
+
+    const statusSig = questStatusSignature(state);
+    const questPhaseChanged = statusSig !== questStatusRef.current;
+    questStatusRef.current = statusSig;
 
     const addedFacts = state.knowledge.knownFactIds.filter((factId) => !factsRef.current.includes(factId));
     factsRef.current = state.knowledge.knownFactIds;
@@ -92,11 +114,18 @@ export function useGameToasts(state: GameState): GameToastItem[] {
 
     const level = state.player.level ?? 1;
     if (level > levelRef.current) {
-      pushToast(setItems, {
-        id: `level-${level}-${state.world.turn}`,
-        title: 'LEVEL UP!',
-        detail: `Lv.${level} · 능력치 포인트 +1`,
-      });
+      const from = levelRef.current;
+      audioManager.playSfx(SFX_ID.IMPORTANT_DISCOVERY);
+      pushTimedToast(
+        setItems,
+        {
+          id: `level-${level}-${state.world.turn}`,
+          title: '레벨 업',
+          detail: `Lv.${from} → Lv.${level} · 스탯 포인트 +${level - from}`,
+          kind: 'levelup',
+        },
+        LEVEL_UP_TOAST_MS
+      );
     }
     levelRef.current = level;
 
@@ -116,20 +145,20 @@ export function useGameToasts(state: GameState): GameToastItem[] {
     const chapters = (state.story.completedChapterIds ?? []).join(',');
     if (chapters !== chapterRef.current) {
       const latest = (state.story.completedChapterIds ?? []).at(-1);
-      const title = getChapterDefinition(latest)?.title ?? 'CHAPTER COMPLETE';
+      const title = getChapterDefinition(latest)?.title ?? '장을 마쳤다';
       pushToast(setItems, {
         id: `chapter-${latest ?? chapters}`,
-        title: 'CHAPTER COMPLETE',
+        title: '장 완료',
         detail: title,
       });
     }
     chapterRef.current = chapters;
 
     const objective = getMainObjectiveText(state);
-    if (objective !== objectiveRef.current && addedQuests.length > 0) {
+    if (objective !== objectiveRef.current && (addedQuests.length > 0 || questPhaseChanged)) {
       pushToast(setItems, {
         id: `objective-${state.world.turn}`,
-        title: '새 목표',
+        title: '다음 목표',
         detail: objective,
       });
     }
@@ -138,6 +167,7 @@ export function useGameToasts(state: GameState): GameToastItem[] {
     const notice = state.lastEconomyNotice;
     if (notice && notice.id !== economyRef.current) {
       economyRef.current = notice.id;
+      audioManager.playSfx(notice.title.startsWith('★') ? SFX_ID.IMPORTANT_DISCOVERY : SFX_ID.UI_CONFIRM);
       pushToast(setItems, { id: notice.id, title: notice.title, detail: notice.detail });
     }
 
@@ -149,7 +179,7 @@ export function useGameToasts(state: GameState): GameToastItem[] {
         parts.push(`${summary.minutes}분 경과`);
       }
       if (summary.exp > 0) {
-        parts.push(`+${summary.exp} EXP`);
+        parts.push(`+${summary.exp} 경험치`);
       }
       if (parts.length > 0) {
         pushToast(setItems, {

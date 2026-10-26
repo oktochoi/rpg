@@ -33,7 +33,7 @@ export function createFallbackCandidates(state?: Readonly<GameState>): ChoiceCan
 export function mainStoryFallbackCandidates(state: Readonly<GameState>): ChoiceCandidate[] {
   const objective = getMainObjectiveText(state);
   const candidates: ChoiceCandidate[] = [];
-  if (canChooseFirstAdvancement(state) || objective.includes('첫 번째 직업') || objective.includes('길을 정')) {
+  if (objective.includes('첫 전직') || objective.includes('길을 고르')) {
     if (isNpcAtCurrentLocation(state, 'guildmaster_doran')) {
       candidates.push({
         id: 'fallback_talk_doran_advance',
@@ -47,8 +47,6 @@ export function mainStoryFallbackCandidates(state: Readonly<GameState>): ChoiceC
         metadata: { storyAction: { type: 'TALK', promptId: 'talk_doran_here' }, promptId: 'talk_doran_here' },
         critical: true,
       });
-    } else if (validateMoveDestination(state, LOCATION_ID.LUEN_ADVENTURERS_GUILD).allowed) {
-      candidates.push(moveCandidate('fallback_move_guild', LOCATION_ID.LUEN_ADVENTURERS_GUILD, '모험가 길드로 향한다.', true));
     }
   }
   if (objective.includes('길드') && !canChooseFirstAdvancement(state)) {

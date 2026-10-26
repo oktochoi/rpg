@@ -1,5 +1,6 @@
 import { RUINS_GUARDIAN_FACT_ID } from '../../world/locations/location-definitions';
 import { RUINS_SEAL_FACT_ID } from '../../quests/quest-definitions';
+import { withEuro } from '../../text/korean-josa';
 
 export const CHOICE_TEXT = {
   lookAround: '주변을 살핀다.',
@@ -10,7 +11,6 @@ export const CHOICE_TEXT = {
   investigate: '{targetName}을 자세히 조사한다.',
   fight: '{enemyName}에게 맞선다.',
   shareFact: '{npcName}에게 {factTopic}에 대해 이야기한다.',
-  moveTo: '{locationName}으로 향한다.',
   highTrust: '{npcName}에게 자신의 의심을 솔직하게 털어놓는다.',
   stepBackFear: '더 압박하지 않고 한발 물러선다.',
   recallSaved: '폐허에서 있었던 일을 다시 꺼낸다.',
@@ -25,6 +25,10 @@ const PLAYER_FACT_TOPICS: Readonly<Record<string, string>> = {
 };
 
 const LEAK_TERMS = ['암살', '암살자', 'assassin', 'assassination'] as const;
+
+export function moveTowardLabel(locationName: string): string {
+  return `${withEuro(locationName)} 향한다.`;
+}
 
 export function fillTemplate(template: string, vars: Readonly<Record<string, string>>): string {
   return template.replace(/\{([a-zA-Z0-9_]+)\}/g, (_, key: string) => vars[key] ?? '');

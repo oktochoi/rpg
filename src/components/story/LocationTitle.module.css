@@ -1,16 +1,18 @@
 .title {
     position: absolute;
     left: 50%;
-    top: 18%;
+    top: 12px;
     z-index: 3;
     transform: translateX(-50%);
     pointer-events: none;
     opacity: 0;
-    color: var(--gold);
-    letter-spacing: 0.22em;
-    font-family: var(--font-story), serif;
-    font-size: 22px;
-    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
+    margin: 0;
+    padding: 4px 10px;
+    border: 1px solid rgba(196, 165, 116, 0.28);
+    background: rgba(8, 6, 4, 0.55);
+    color: #f3ead8;
+    letter-spacing: 0.08em;
+    font-size: 14px;
     transition: opacity 220ms ease;
 }
 

@@ -1,16 +1,16 @@
 export const COMBAT_FEEL = {
-  enemyHitFlashMs: 90,
-  playerHitFlashMs: 100,
-  enemyHitColor: 0xfff3ee,
+  enemyHitFlashMs: 220,
+  playerHitFlashMs: 220,
+  enemyHitColor: 0xff2a2a,
   playerHitColor: 0xfff8ee,
 
-  normalHitStopMs: 32,
-  skillHitStopMs: 50,
-  receivedHitStopMs: 32,
+  normalHitStopMs: 55,
+  skillHitStopMs: 70,
+  receivedHitStopMs: 55,
   receivedHeavyHitStopMs: 60,
 
-  playerHitShakeDurationMs: 45,
-  playerHitShakeIntensity: 0.0022,
+  playerHitShakeDurationMs: 70,
+  playerHitShakeIntensity: 0.0055,
   skillShakeDurationMs: 55,
   skillShakeIntensity: 0.0046,
   receivedHitShakeDurationMs: 70,
@@ -28,7 +28,7 @@ export const COMBAT_FEEL = {
   slashThickness: 6,
   slashColor: 0xfff2d4,
 
-  damageNumberLifetimeMs: 550,
+  damageNumberLifetimeMs: 780,
   damageNumberRisePx: 28,
 
   enemyDeathFadeMs: 280,
@@ -39,7 +39,7 @@ export const COMBAT_FEEL = {
   playerDeathColor: 0x6b5a48,
 
   bossChipShakeScale: 0.28,
-  bossDeathHitStopMs: 70,
-  bossDeathShakeDurationMs: 130,
+  bossDeathHitStopMs: 140,
+  bossDeathShakeDurationMs: 180,
   bossDeathShakeIntensity: 0.01,
 } as const;

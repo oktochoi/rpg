@@ -2,8 +2,9 @@
 .fallback {
   display: block;
   object-fit: contain;
-  background: #120e0c;
-  border: 1px solid var(--panel-border, #3a3228);
+  object-position: center bottom;
+  background: transparent;
+  border: 0;
 }
 
 .sm {
@@ -17,8 +18,19 @@
 }
 
 .lg {
-  width: 100%;
-  height: 168px;
+  width: auto;
+  max-width: 100%;
+  height: 220px;
+}
+
+.sheet {
+  width: auto;
+  max-width: 100%;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  object-fit: contain;
+  object-position: center bottom;
 }
 
 .rect {

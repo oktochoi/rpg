@@ -32,7 +32,7 @@ export function locationAtmosphere(locationId: string, state: Readonly<GameState
     if (key === 'AFTER_FIRST_QUEST') {
       return '길드 쪽에서 신참이 숲길을 다녀왔다는 말이 들린다. 상점 간판이 더 잘 보인다.';
     }
-    return '낮은 지붕과 흙길이 이어진 작은 마을이다. 사람들이 오가며 오늘의 소문을 나눈다.';
+    return '광장 끝의 흙길에 발자국이 겹쳐 있다. 경비가 숲길을 보고 서 있다.';
   }
   if (locationId === LOCATION_ID.BLUE_MOON_INN) {
     if (key === 'POST_GUARDIAN') {

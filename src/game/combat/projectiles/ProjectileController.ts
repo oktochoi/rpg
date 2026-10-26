@@ -5,10 +5,11 @@ import type { PlayerDamageHit } from '../player/PlayerHealthController';
 import type { CombatBounds, CombatProjectile } from './projectile-types';
 import { aimDirection, createProjectile, projectileHitsTarget, stepProjectile } from './projectile-runtime';
 import { circleHitsRect } from '../arenas/arena-geometry';
-import { createProjectileVisual, projectileKindFromSpawn } from '../visual/ProjectileVisual';
+import { damageNumberForStrike, readCombatHp } from '../attacks/basic-attack-strike';
+import { createProjectileVisual, projectileKindFromSpawn, type ProjectileVisualObject } from '../visual/ProjectileVisual';
 
 const FIREBALL_COLOR = 0xff7a3d;
-const FIREBALL_RADIUS = 8;
+const FIREBALL_RADIUS = 14;
 const FIREBALL_DEFAULT_SPEED = 420;
 const FIREBALL_DEFAULT_LIFETIME_MS = 1400;
 const FIREBALL_DEFAULT_DAMAGE = 35;
@@ -30,6 +31,8 @@ export interface SpawnProjectileOptions {
   knockbackScale?: number;
   owner?: 'player' | 'enemy';
   sourceId?: string;
+  /** Set only for a basic-attack projectile. Absent on skills. */
+  critical?: boolean;
 }
 
 export interface ProjectilePlayerTarget {
@@ -80,9 +83,11 @@ export class ProjectileController {
     lifetimeMs: number;
     radius: number;
     sourceId?: string;
+    color?: number;
+    skillId?: string;
   }): CombatProjectile {
     return this.spawn({
-      skillId: 'enemy_shot',
+      skillId: params.skillId ?? 'enemy_shot',
       x: params.x,
       y: params.y,
       dirX: params.dirX,
@@ -91,7 +96,7 @@ export class ProjectileController {
       damage: params.damage,
       lifetimeMs: params.lifetimeMs,
       radius: params.radius,
-      color: ENEMY_SHOT_COLOR,
+      color: params.color ?? ENEMY_SHOT_COLOR,
       knockbackScale: 0.7,
       owner: 'enemy',
       sourceId: params.sourceId,
@@ -126,9 +131,16 @@ export class ProjectileController {
       projectile.x,
       projectile.y,
       options.radius,
-      projectileKindFromSpawn(options.skillId, options.owner ?? 'player', options.color)
+      projectileKindFromSpawn(options.skillId, options.owner ?? 'player', options.color),
+      direction.x,
+      direction.y
     );
-    this.projectiles.push({ state: projectile, visual, knockbackScale: options.knockbackScale ?? 1 });
+    this.projectiles.push({
+      state: projectile,
+      visual,
+      knockbackScale: options.knockbackScale ?? 1,
+      critical: options.critical,
+    });
     return projectile;
   }
 
@@ -136,7 +148,7 @@ export class ProjectileController {
     deltaMs: number,
     enemies: readonly CombatHittable[],
     player?: ProjectilePlayerTarget,
-    onEnemyHit?: (enemy: CombatHittable, damage: number) => void,
+    onEnemyHit?: (enemy: CombatHittable, damage: number, critical?: boolean) => void,
     onPlayerHit?: (damage: number) => void,
     solids?: readonly { x: number; y: number; w: number; h: number }[]
   ): void {
@@ -192,7 +204,7 @@ export class ProjectileController {
   private tryHitEnemies(
     item: TrackedProjectile,
     enemies: readonly CombatHittable[],
-    onEnemyHit?: (enemy: CombatHittable, damage: number) => void
+    onEnemyHit?: (enemy: CombatHittable, damage: number, critical?: boolean) => void
   ): void {
     for (const enemy of enemies) {
       if (enemy.isDead) {
@@ -202,6 +214,7 @@ export class ProjectileController {
       if (!projectileHitsTarget(item.state, { x: target.x, y: target.y, radius: enemy.size / 2 })) {
         continue;
       }
+      const before = readCombatHp(enemy);
       const applied = enemy.takeDamage({
         amount: item.state.damage,
         direction: new Phaser.Math.Vector2(item.state.dirX, item.state.dirY),
@@ -210,7 +223,11 @@ export class ProjectileController {
       });
       item.state = { ...item.state, alive: false };
       if (applied) {
-        onEnemyHit?.(enemy, item.state.damage);
+        const shown =
+          item.critical === undefined
+            ? item.state.damage
+            : damageNumberForStrike(before, readCombatHp(enemy), item.state.damage);
+        onEnemyHit?.(enemy, shown, item.critical === true);
       }
       return;
     }
@@ -259,6 +276,7 @@ export class ProjectileController {
         this.projectiles.splice(index, 1);
       } else {
         item.visual.setPosition(item.state.x, item.state.y);
+        item.visual.setRotation?.(Math.atan2(item.state.dirY, item.state.dirX));
       }
     }
   }
@@ -273,6 +291,7 @@ function projectileHitsSolid(
 
 interface TrackedProjectile {
   state: CombatProjectile;
-  visual: Phaser.GameObjects.GameObject & { setPosition: (x: number, y: number) => unknown; destroy: () => void };
+  visual: ProjectileVisualObject;
   knockbackScale: number;
+  critical?: boolean;
 }

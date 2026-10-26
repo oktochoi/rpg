@@ -18,8 +18,6 @@ const DEFAULT_DASH: DashProfile = {
   invincibleMs: 120,
   style: 'dash',
 };
-const DASH_ALPHA = 0.45;
-const IDLE_ALPHA = 1;
 
 export interface PlayerMovementOptions {
   moveSpeed?: number;
@@ -50,6 +48,7 @@ export class PlayerController {
   private readonly skillMoveDirection = new Phaser.Math.Vector2(1, 0);
   private skillMoveSpeed = 0;
   private attackMoveMultiplier = 1;
+  private readonly walkTarget = new Phaser.Math.Vector2();
   private dashLocked = false;
   private readonly clampBlinkFn?: (x: number, y: number, radius: number) => { x: number; y: number };
 
@@ -63,6 +62,9 @@ export class PlayerController {
     this.clampBlinkFn = options?.clampBlink;
     this.body.setAllowGravity(false);
     this.body.setCollideWorldBounds(true);
+    this.body.setBounce(0, 0);
+    this.body.setDrag(0, 0);
+    this.body.setAcceleration(0, 0);
 
     const keyboard = scene.input.keyboard;
     if (!keyboard) {
@@ -118,7 +120,10 @@ export class PlayerController {
   }
 
   get isMoving(): boolean {
-    return this.body.velocity.lengthSq() > 4;
+    if (this._isDashing || this.skillMoveRemainingMs > 0) {
+      return true;
+    }
+    return this.moveInput.x !== 0 || this.moveInput.y !== 0;
   }
 
   get isInvincible(): boolean {
@@ -148,12 +153,16 @@ export class PlayerController {
     this.syncVisual();
   }
 
+  unlockCombat(): void {
+    this._combatLocked = false;
+  }
+
   applyKnockback(direction: Phaser.Math.Vector2): void {
     if (this._isDead || this._isDashing || this.skillMoveRemainingMs > 0 || this._combatLocked) {
       return;
     }
 
-    if (direction.x === 0 && direction.y === 0) {
+    if ((direction.x === 0 && direction.y === 0) || this.knockbackRemainingMs > 0) {
       return;
     }
 
@@ -356,18 +365,19 @@ export class PlayerController {
       return;
     }
 
-    this.body.setVelocity(this.moveInput.x, this.moveInput.y);
-    this.body.velocity.normalize().scale(this.speed * this.attackMoveMultiplier);
+    const target = this.walkTarget.set(this.moveInput.x, this.moveInput.y);
+    if (target.lengthSq() > 0) {
+      target.normalize().scale(this.speed * this.attackMoveMultiplier);
+    }
+    this.body.setVelocity(target.x, target.y);
   }
 
   private syncVisual(): void {
-    if (this._isDead) {
-      return;
-    }
+    // Physics body is an invisible collider — never reveal it as a debug square.
+    // Sprite alpha is owned by PlayerVisual.
     const visual = this.body.gameObject as Phaser.GameObjects.GameObject & {
       setAlpha?: (value: number) => unknown;
     };
-
-    visual.setAlpha?.(this._isDashing || this.skillMoveRemainingMs > 0 ? DASH_ALPHA : IDLE_ALPHA);
+    visual.setAlpha?.(0);
   }
 }

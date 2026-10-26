@@ -20,7 +20,7 @@ export function AudioSettings() {
     <section className={styles.panel} aria-label="소리 설정">
       <h3 className={styles.heading}>소리</h3>
       <label className={styles.row}>
-        <span>Master</span>
+        <span>전체</span>
         <input
           type="range"
           min={0}
@@ -31,7 +31,7 @@ export function AudioSettings() {
         <span className={styles.value}>{toPercent(settings.masterVolume)}</span>
       </label>
       <label className={styles.row}>
-        <span>BGM</span>
+        <span>배경음</span>
         <input
           type="range"
           min={0}
@@ -42,7 +42,7 @@ export function AudioSettings() {
         <span className={styles.value}>{toPercent(settings.bgmVolume)}</span>
       </label>
       <label className={styles.row}>
-        <span>SFX</span>
+        <span>효과음</span>
         <input
           type="range"
           min={0}
@@ -63,7 +63,7 @@ export function AudioSettings() {
             }
           }}
         />
-        Mute
+        음소거
       </label>
     </section>
   );

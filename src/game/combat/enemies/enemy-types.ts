@@ -2,6 +2,9 @@ export const ENEMY_TYPE_ID = {
   GOBLIN: 'goblin',
   ARCHER: 'archer',
   BRUTE: 'brute',
+  GOBLIN_MAGE: 'goblin_mage',
+  DIRE_WOLF: 'dire_wolf',
+  TRAINING_DUMMY: 'training_dummy',
 } as const;
 
 export type EnemyTypeId = (typeof ENEMY_TYPE_ID)[keyof typeof ENEMY_TYPE_ID];
@@ -10,6 +13,7 @@ export const ENEMY_BEHAVIOR_TYPE = {
   MELEE: 'MELEE',
   RANGED: 'RANGED',
   HEAVY_MELEE: 'HEAVY_MELEE',
+  IDLE: 'IDLE',
 } as const;
 
 export type EnemyBehaviorType = (typeof ENEMY_BEHAVIOR_TYPE)[keyof typeof ENEMY_BEHAVIOR_TYPE];
@@ -49,6 +53,8 @@ export interface EnemyDefinition {
   maxRetreatDistance?: number;
   knockbackResist?: number;
   stunLockImmune?: boolean;
+  /** Training dummies: reset to full HP instead of dying. */
+  respawnOnDeath?: boolean;
 }
 
 export function isEnemyTypeId(value: string): value is EnemyTypeId {

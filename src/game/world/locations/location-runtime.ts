@@ -23,7 +23,8 @@ export function createInitialLocationRuntimes(): Record<string, LocationRuntimeS
       definition.id === LOCATION_ID.LUEN_VILLAGE ||
       definition.id === LOCATION_ID.BLUE_MOON_INN ||
       definition.id === LOCATION_ID.LUEN_ADVENTURERS_GUILD ||
-      definition.id === LOCATION_ID.LUEN_GENERAL_STORE;
+      definition.id === LOCATION_ID.LUEN_GENERAL_STORE ||
+      definition.id === LOCATION_ID.LUEN_TRAINING_GROUND;
     const visited = definition.id === LOCATION_ID.LUEN_VILLAGE;
     locations[definition.id] = createLocationRuntime(definition.id, {
       discovered: knownStart,

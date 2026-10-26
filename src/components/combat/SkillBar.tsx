@@ -21,7 +21,7 @@ export function SkillBar({ player }: SkillBarProps) {
       <div className={styles.slot}>
         <p className={styles.slotKey}>LMB</p>
         <div className={styles.icon} data-icon="slash" />
-        <p className={styles.slotName}>Basic Attack</p>
+        <p className={styles.slotName}>기본 공격</p>
       </div>
       <div className={`${styles.slot} ${dashReady ? '' : styles.slotDisabled}`}>
         <p className={styles.slotKey}>SPACE</p>
@@ -33,7 +33,7 @@ export function SkillBar({ player }: SkillBarProps) {
             </div>
           )}
         </div>
-        <p className={styles.slotName}>{dashReady ? 'DASH Ready' : 'DASH'}</p>
+        <p className={styles.slotName}>{dashReady ? '대시 가능' : '대시'}</p>
       </div>
       <div className={`${styles.slot} ${potionReady ? '' : styles.slotDisabled}`}>
         <p className={styles.slotKey}>H</p>
@@ -45,7 +45,7 @@ export function SkillBar({ player }: SkillBarProps) {
             </div>
           )}
         </div>
-        <p className={styles.slotName}>{`Potion ${player.potionCount}`}</p>
+        <p className={styles.slotName}>{`물약 ${player.potionCount}`}</p>
       </div>
       {player.skills.map((slot) => (
         <SkillSlot currentMp={player.mp} key={slot.slot} slot={slot} />

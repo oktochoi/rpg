@@ -4,6 +4,7 @@ import { QUEST_ID } from '../quests/quest-definitions';
 import { QUEST_STATUS } from '../quests/quest-types';
 import { WORLD_FLAG } from '../world/locations/location-definitions';
 import { worldFlag } from '../world/locations/location-selectors';
+import { getCombatUpgrade, shopListedUpgradeIds } from './combat-upgrades';
 import { SHOP_DEFINITIONS, SHOP_ID } from './shop-definitions';
 
 export const SHOP_STOCK_PHASE = {
@@ -39,13 +40,11 @@ export function shopItemIdsFor(state: Readonly<GameState>, shopId: string = SHOP
     return SHOP_DEFINITIONS[shopId]?.itemIds ?? [];
   }
   const phase = shopStockPhase(state);
-  if (phase === SHOP_STOCK_PHASE.C) {
-    return PHASE_C;
-  }
-  if (phase === SHOP_STOCK_PHASE.B) {
-    return PHASE_B;
-  }
-  return PHASE_A;
+  const base =
+    phase === SHOP_STOCK_PHASE.C ? PHASE_C : phase === SHOP_STOCK_PHASE.B ? PHASE_B : PHASE_A;
+  // Permanent combat upgrades unlock by story progress (see combat-upgrades unlock).
+  const upgrades = phase === SHOP_STOCK_PHASE.A ? [] : shopListedUpgradeIds(state);
+  return [...upgrades, ...base];
 }
 
 export function isShopConsumable(itemId: string): boolean {
@@ -55,6 +54,10 @@ export function isShopConsumable(itemId: string): boolean {
 export function affordableShopItemIds(state: Readonly<GameState>): string[] {
   return shopItemIdsFor(state).filter((itemId) => {
     const definition = getItemDefinition(itemId);
-    return Boolean(definition && state.player.gold >= definition.buyPrice);
+    if (definition) {
+      return state.player.gold >= definition.buyPrice;
+    }
+    const upgrade = getCombatUpgrade(itemId);
+    return Boolean(upgrade && state.player.gold >= upgrade.buyPrice);
   });
 }

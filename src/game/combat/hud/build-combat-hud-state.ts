@@ -1,6 +1,5 @@
 import type { SkillHudSlotView } from '../skills/SkillController';
-import { getClassAppearance } from '../player/class-appearance';
-import { resolvePlayerClassId } from '../../player/classes';
+import { getPlayerClass, resolvePlayerClassId } from '../../player/classes';
 import { getSkillIconId } from '../visual/asset-registry';
 import type { CombatStatus } from '../combat-state';
 import type { CombatHudSkillSlot, CombatHudState } from './combat-hud-types';
@@ -9,7 +8,7 @@ export function toCombatHudSkills(
   slots: readonly SkillHudSlotView[],
   currentMp: number
 ): CombatHudSkillSlot[] {
-  return slots.map((slot) => {
+  return slots.filter((slot) => slot.skillId).map((slot) => {
     const mpCost = slot.mpCost ?? 0;
     const maxCooldown = slot.maxCooldownMs ?? 0;
     const available = slot.implemented && slot.cooldownRemainingMs <= 0 && currentMp >= mpCost;
@@ -48,7 +47,7 @@ export function buildCombatHudState(input: {
     status: input.status,
     player: {
       classId,
-      className: getClassAppearance(classId).label,
+      className: getPlayerClass(classId).name,
       hp: input.hp,
       maxHp: input.maxHp,
       mp: input.mp,

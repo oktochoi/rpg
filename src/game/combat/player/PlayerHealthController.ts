@@ -1,10 +1,6 @@
 import * as Phaser from 'phaser';
 import {
-  PLAYER_COLOR,
-  PLAYER_DEATH_ALPHA,
-  PLAYER_DEATH_COLOR,
   PLAYER_DEATH_FADE_MS,
-  PLAYER_HIT_COLOR,
   PLAYER_HIT_FLASH_MS,
   PLAYER_HIT_INVINCIBLE_MS,
   PLAYER_HP_BAR_BG,
@@ -34,25 +30,36 @@ export class PlayerHealthController {
   private _currentHp: number;
   private _currentMp: number;
   private _isDead = false;
+  private readonly infiniteResources: boolean;
+  private readonly invulnerable: boolean;
   private hitFlashRemainingMs = 0;
   private deathFadeRemainingMs = 0;
   private lastHitAttackId = -1;
   private guardRemainingMs = 0;
   private guardReduction = 0;
-  private readonly bodyColor: number;
   private readonly bodySize: number;
 
   constructor(
     scene: Phaser.Scene,
     private readonly player: Phaser.GameObjects.Rectangle | Phaser.GameObjects.Arc,
     private readonly movement: PlayerController,
-    health?: { maxHp: number; currentHp: number; maxMp?: number; currentMp?: number; bodyColor?: number; size?: number }
+    health?: {
+      maxHp: number;
+      currentHp: number;
+      maxMp?: number;
+      currentMp?: number;
+      bodyColor?: number;
+      size?: number;
+      infiniteResources?: boolean;
+      invulnerable?: boolean;
+    }
   ) {
     this._maxHp = health?.maxHp ?? PLAYER_MAX_HP;
     this._currentHp = Math.max(0, Math.min(this._maxHp, health?.currentHp ?? this._maxHp));
     this._maxMp = Math.max(0, health?.maxMp ?? 0);
     this._currentMp = Math.max(0, Math.min(this._maxMp, health?.currentMp ?? this._maxMp));
-    this.bodyColor = health?.bodyColor ?? PLAYER_COLOR;
+    this.infiniteResources = health?.infiniteResources === true;
+    this.invulnerable = health?.invulnerable === true;
     this.bodySize = health?.size ?? PLAYER_SIZE;
     this.body = player.body as Phaser.Physics.Arcade.Body;
     this.hpBarBg = scene.add.rectangle(0, 0, PLAYER_HP_BAR_WIDTH, PLAYER_HP_BAR_HEIGHT, PLAYER_HP_BAR_BG);
@@ -105,6 +112,9 @@ export class PlayerHealthController {
     if (amount <= 0) {
       return true;
     }
+    if (this.infiniteResources) {
+      return true;
+    }
     if (this._currentMp < amount) {
       return false;
     }
@@ -145,6 +155,7 @@ export class PlayerHealthController {
   takeDamage(hit: PlayerDamageHit): boolean {
     if (
       this._isDead ||
+      this.invulnerable ||
       this.movement.isInvincible ||
       hit.amount <= 0 ||
       this.lastHitAttackId === hit.attackId
@@ -169,7 +180,7 @@ export class PlayerHealthController {
 
   playHitFeedback(): void {
     this.hitFlashRemainingMs = PLAYER_HIT_FLASH_MS;
-    this.player.setFillStyle(PLAYER_HIT_COLOR);
+    this.player.setAlpha(0);
   }
 
   private tickHitFlash(delta: number): void {
@@ -180,10 +191,8 @@ export class PlayerHealthController {
     this.hitFlashRemainingMs -= delta;
     if (this.hitFlashRemainingMs <= 0) {
       this.hitFlashRemainingMs = 0;
-      if (!this._isDead) {
-        this.player.setFillStyle(this.bodyColor);
-      }
     }
+    this.player.setAlpha(0);
   }
 
   private tickGuard(delta: number): void {
@@ -202,7 +211,7 @@ export class PlayerHealthController {
     this.movement.markDead();
     this.body.setVelocity(0, 0);
     this.body.setEnable(false);
-    this.player.setFillStyle(PLAYER_DEATH_COLOR);
+    this.player.setAlpha(0);
     this.deathFadeRemainingMs = PLAYER_DEATH_FADE_MS;
   }
 
@@ -212,11 +221,8 @@ export class PlayerHealthController {
     }
 
     this.deathFadeRemainingMs -= delta;
-    const t = 1 - Math.max(0, this.deathFadeRemainingMs / PLAYER_DEATH_FADE_MS);
-    const alpha = 1 - t * (1 - PLAYER_DEATH_ALPHA);
-    this.player.setAlpha(alpha);
-    this.hpBarBg.setAlpha(alpha);
-    this.hpBarFill.setAlpha(alpha);
+    // Keep collider body hidden; PlayerVisual handles death fade.
+    this.player.setAlpha(0);
 
     if (this.deathFadeRemainingMs <= 0) {
       this.deathFadeRemainingMs = 0;

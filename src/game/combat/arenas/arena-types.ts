@@ -4,6 +4,7 @@ export const ARENA_ID = {
   GOBLIN_CAMP: 'goblin_camp_arena',
   RUINS_ENTRANCE: 'ruins_entrance',
   RUINS_GUARDIAN: 'ruins_guardian_arena',
+  TRAINING_YARD: 'training_yard_arena',
 } as const;
 
 export type ArenaId = (typeof ARENA_ID)[keyof typeof ARENA_ID];

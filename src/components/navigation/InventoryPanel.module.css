@@ -1,50 +1,43 @@
-.overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(8, 6, 4, 0.72);
-}
-
-.panel {
-  width: min(760px, calc(100vw - 32px));
-  max-height: calc(100vh - 32px);
-  overflow: auto;
-  padding: 20px;
-  border: 1px solid var(--panel-border);
-  background: var(--panel);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-}
-
 .tabs {
   display: flex;
   gap: 8px;
 }
 
-.tab,
-.tabActive,
-.item,
-.itemActive {
-  border: 1px solid var(--panel-border);
-  background: transparent;
+.tab {
+  composes: choice from '../ui/ui-kit.module.css';
   color: inherit;
+  font: inherit;
+  cursor: pointer;
 }
 
-.tabActive,
-.itemActive {
-  border-color: var(--gold);
+.tabActive {
+  composes: choice from '../ui/ui-kit.module.css';
   color: var(--gold);
+  font: inherit;
+  cursor: pointer;
+}
+
+.tabActive::before,
+.tabActive::after,
+.itemActive::before,
+.itemActive::after {
+  background-image: url('/assets/ui/dark-fantasy/choice_button_hover.png');
+}
+
+.item {
+  composes: choice from '../ui/ui-kit.module.css';
+  width: 100%;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.itemActive {
+  composes: choice from '../ui/ui-kit.module.css';
+  width: 100%;
+  color: var(--gold);
+  font: inherit;
+  cursor: pointer;
 }
 
 .body {
@@ -69,24 +62,41 @@
 .itemActive {
   width: 100%;
   display: grid;
-  grid-template-columns: 18px 1fr auto;
+  grid-template-columns: 40px 1fr auto;
   gap: 8px;
   align-items: center;
   text-align: left;
   padding: 8px;
 }
 
-.icon {
-  width: 14px;
-  height: 14px;
-  background: #3d3428;
-  border: 1px solid var(--panel-border);
+.icon,
+.itemIcon {
+  width: 40px;
+  height: 40px;
+  background: url('/assets/ui/dark-fantasy/reward_item_slot_1.png') center / contain no-repeat;
+}
+
+.itemIcon {
+  background-color: rgba(12, 10, 8, 0.55);
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .detail {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.action {
+  composes: choice from '../ui/ui-kit.module.css';
+  align-self: flex-start;
+  flex: 0 0 auto;
+  width: 120px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
 }
 
 @media (max-width: 640px) {

@@ -6,6 +6,7 @@ import { ENCOUNTER_ID } from '../../combat/encounters/encounter-definitions';
 import { PLAYER_CLASS_ID } from '../../player/classes';
 import { doesPlayerKnowFact } from '../../knowledge/knowledge-selectors';
 import { getMemoriesForNpc } from '../../npc/memory/memory-selectors';
+import { withAuthoredRescue } from '../../npc/memory/authored-rescue';
 import { QUEST_ID, RUINS_SEAL_FACT_ID } from '../../quests/quest-definitions';
 import { QUEST_STATUS } from '../../quests/quest-types';
 import { createMemoryStorage, createSaveService } from '../../save';
@@ -113,8 +114,7 @@ export async function runStep26DirectorScenarios(): Promise<string[]> {
   }
 
   const memNone = liveCandidates(createInitialGameState()).some((choice) => choice.source === CHOICE_SOURCE.MEMORY);
-  const memOrch = createGameOrchestrator(createInitialGameState());
-  await memOrch.dispatch({ type: 'FREE_ACTION', turnId: 1, input: '세리아를 구한다.' });
+  const memOrch = createGameOrchestrator(withAuthoredRescue(createInitialGameState()));
   const saved = getMemoriesForNpc(memOrch.getState(), 'seria').some((memory) => memory.type === 'PLAYER_SAVED_ME');
   const memChoice = liveCandidates(memOrch.getState()).some((choice) => choice.id === 'memory_seria_PLAYER_SAVED_ME');
   if (!memNone && saved && memChoice) {

@@ -1,0 +1,55 @@
+.empty,
+.section,
+.status,
+.objective,
+.summary {
+    margin: 0;
+}
+
+.section {
+    color: var(--gold);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+}
+
+.block {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(61, 52, 40, 0.7);
+}
+
+.name {
+    margin: 0;
+    font-size: 16px;
+}
+
+.status {
+    color: var(--gold);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+}
+
+.objective {
+    color: var(--text);
+    line-height: 1.5;
+}
+
+.summary {
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.done {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.empty {
+    color: var(--text-dim);
+}

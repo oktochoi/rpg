@@ -1,6 +1,6 @@
 import { BGM_ASSETS, SFX_ASSETS, listAudioAssets } from './audio-registry';
 import { bgmContextForCombat, bgmContextForCombatResult, bgmContextForLocation } from './audio-context';
-import { sfxForDash, sfxForEnemyAttack, sfxForPlayerAttack, sfxForSkill } from './combat-audio';
+import { playerSwingVoice, sfxForDash, sfxForEnemyAttack, sfxForPlayerAttack, sfxForSkill } from './combat-audio';
 import { BGM_CONTEXT, DEFAULT_AUDIO_SETTINGS, SFX_ID } from './audio-types';
 import { clampVolume, normalizeAudioSettings } from './audio-settings';
 import { audioManager } from './AudioManager';
@@ -75,6 +75,20 @@ export async function runStep30AudioScenarios(): Promise<string[]> {
     pass('sfx-map', 'class/skill/enemy');
   } else {
     fail('sfx-map', 'mapping mismatch');
+  }
+
+  const sword = playerSwingVoice('wanderer', 0);
+  const mageSwing = playerSwingVoice('mage', 0);
+  if (
+    sword.id === SFX_ID.PLAYER_ATTACK &&
+    sword.tone === 'blade' &&
+    sword.rate <= 0.9 &&
+    mageSwing.id === SFX_ID.MAGE_MAGIC_BOLT &&
+    mageSwing.tone === 'flat'
+  ) {
+    pass('swing-vs-click', `sword ${sword.rate} blade / mage flat`);
+  } else {
+    fail('swing-vs-click', JSON.stringify({ sword, mageSwing }));
   }
 
   if (

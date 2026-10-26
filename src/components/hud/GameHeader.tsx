@@ -14,7 +14,7 @@ export function GameHeader({ locationName, title, day, clock, progressLabel }: G
       <p className={styles.location}>{locationName}</p>
       <div>
         <h1 className={styles.title}>{title}</h1>
-        {progressLabel ? <p className={styles.day}>{progressLabel}</p> : null}
+        {progressLabel ? <p className={styles.progress}>{progressLabel}</p> : null}
       </div>
       <p className={styles.day}>{clock ?? `DAY ${day}`}</p>
     </header>

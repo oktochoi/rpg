@@ -35,6 +35,19 @@ export interface PlayerState {
   skills: readonly PlayerSkill[];
   unspentStatPoints: number;
   allocatedStats: AllocatedStats;
+  /** Permanent combat upgrades from shop / boss rewards. */
+  permanentMods: PermanentCombatMods;
+  purchasedUpgradeIds: readonly string[];
+}
+
+export interface PermanentCombatMods {
+  attackPercent: number;
+  rangePercent: number;
+  maxHpFlat: number;
+}
+
+export function emptyPermanentMods(): PermanentCombatMods {
+  return { attackPercent: 0, rangePercent: 0, maxHpFlat: 0 };
 }
 
 export function playerHasItem(player: PlayerState, itemId: string): boolean {

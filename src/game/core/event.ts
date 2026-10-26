@@ -38,6 +38,7 @@ export type GameEvent =
   | { type: 'LOCATION_DISCOVERED'; locationId: string }
   | { type: 'NPC_MOVED'; npcId: NpcId; fromLocationId: string; toLocationId: string }
   | { type: 'WORLD_FLAG_SET'; flagId: string; value: boolean }
+  | { type: 'WORLD_COUNTER_SET'; counterId: string; value: number }
   | { type: 'EXPLORATION_POINT_COMPLETED'; pointId: string; locationId: string }
   | { type: 'PLAYER_GOLD_UPDATED'; gold: number }
   | { type: 'PLAYER_CLASS_UPDATED'; classId: string }
@@ -99,5 +100,13 @@ export type GameEvent =
   | { type: 'STORY_CONTINUED'; sceneId?: string }
   | { type: 'CHAPTER_STARTED'; chapterId: string }
   | { type: 'CHAPTER_COMPLETED'; chapterId: string }
+  | { type: 'ADVENTURE_STARTED'; adventureId: string }
+  | { type: 'ADVENTURE_ENDED'; adventureId: string }
   | { type: 'HISTORY_RECORDED'; entry: HistoryEntry }
-  | { type: 'ITEM_CONSUMED'; itemId: string };
+  | { type: 'ITEM_CONSUMED'; itemId: string }
+  | {
+      type: 'COMBAT_UPGRADE_APPLIED';
+      upgradeId: string;
+      sourceEventId: string;
+      mods: { attackPercent: number; rangePercent: number; maxHpFlat: number };
+    };

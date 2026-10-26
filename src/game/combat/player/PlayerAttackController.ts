@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import type { BasicAttackProfile } from '../attacks/attack-types';
 import type { PlayerController } from './PlayerController';
+import { isCombatHitboxDebug } from '../visual/hitbox-debug';
 
 const DEFAULT_HITBOX_COLOR = 0xf5ead0;
 const HITBOX_ALPHA = 0.35;
@@ -160,7 +161,7 @@ export class PlayerAttackController {
       return;
     }
 
-    this.hitbox.setVisible(true);
+    this.hitbox.setVisible(isCombatHitboxDebug());
     this.syncHitboxTransform();
     this.syncHitboxActive();
   }

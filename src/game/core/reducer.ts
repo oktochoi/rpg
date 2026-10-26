@@ -7,7 +7,8 @@ import { trimNpcMemories } from '../npc/memory/memory-service';
 import { withItemAdded, withItemConsumed, withItemRemoved } from '../player/player-state';
 import { clampResourceToDerived, derivedPlayerStats } from '../inventory/derived-stats';
 import { emptyEquipment, slotKey } from '../inventory/equipment-types';
-import { getItemDefinition, type EquipmentSlot } from '../inventory/item-definitions';
+import { ITEM_TYPE, getItemDefinition, type EquipmentSlot } from '../inventory/item-definitions';
+import { getCombatUpgrade, mergePermanentMods } from '../economy/combat-upgrades';
 import type { EconomyNotice } from './game-state';
 import { applyPlayerClass } from '../player/classes';
 import { withHistoryEntry } from '../history/history-rules';
@@ -24,6 +25,7 @@ import { createLocationRuntime } from '../world/locations/location-runtime';
 import { getLocationDescription } from '../world/locations/location-selectors';
 import type { LocationRuntimeState } from '../world/locations/location-types';
 import { withEnteredStoryScene, sanitizeStoryState } from '../story/story-runtime';
+import { appendStoryLog, choiceLogEntry, dialogueLogEntry, systemLogEntry, STORY_FLOW_MODE } from '../story/sequences';
 import {
   SCENE_GOBLIN_DEFEAT,
   SCENE_GOBLIN_INTRO,
@@ -81,17 +83,20 @@ function presentNpcId(state: GameState, locationId: string, preferred?: string |
   if (preferred && present.some((npc) => npc.id === preferred)) {
     return preferred;
   }
-  return present[0]?.id ?? preferred ?? null;
+  return present[0]?.id ?? null;
 }
 
 function withLocationNarration(state: GameState): GameState {
   const locationId = state.world.currentLocationId;
+  const nextNpcId = presentNpcId(state, locationId, state.story.currentNpcId);
+  const speakerLeft = state.story.currentNpcId != null && nextNpcId !== state.story.currentNpcId;
   return withQuestAwareChoices({
     ...state,
     story: {
       ...state.story,
-      currentNpcId: presentNpcId(state, locationId, state.story.currentNpcId),
+      currentNpcId: nextNpcId,
       narration: getLocationDescription(locationId, state),
+      dialogue: speakerLeft ? [] : state.story.dialogue,
     },
   });
 }
@@ -201,7 +206,18 @@ function applyEvent(state: GameState, event: GameEvent): GameState {
         return withEnteredStoryScene({ ...state, mode: 'STORY' }, event.sceneId, { countVisit: false });
       }
       return withEnteredStoryScene({ ...state, mode: 'STORY' }, event.sceneId);
-    case 'CHOICE_RESOLVED':
+    case 'CHOICE_RESOLVED': {
+      const choiceLabel =
+        state.story.choices.find((choice) => choice.id === event.choiceId)?.label ?? event.choiceId;
+      return {
+        ...state,
+        mode: state.mode === 'RESOLVING' ? 'RESOLVING' : 'STORY',
+        story: {
+          ...state.story,
+          storyLog: appendStoryLog(state.story.storyLog, [choiceLogEntry(`> ${choiceLabel}`)]),
+        },
+      };
+    }
     case 'FREE_INPUT_RESOLVED':
     case 'ENEMY_DEFEATED':
     case 'PLAYER_DEFEATED':
@@ -277,6 +293,21 @@ function applyEvent(state: GameState, event: GameEvent): GameState {
       };
       return withLocationNarration(next);
     }
+    case 'WORLD_COUNTER_SET': {
+      if (event.counterId === 'ruinsKeyFailedAttempts') {
+        if (state.world.ruinsKeyFailedAttempts === event.value) {
+          return state;
+        }
+        return {
+          ...state,
+          world: {
+            ...state.world,
+            ruinsKeyFailedAttempts: Math.max(0, event.value),
+          },
+        };
+      }
+      return state;
+    }
     case 'EXPLORATION_POINT_COMPLETED': {
       if (state.world.exploredPointIds.includes(event.pointId)) {
         return state;
@@ -295,7 +326,12 @@ function applyEvent(state: GameState, event: GameEvent): GameState {
         mode: 'RESOLVING',
         pendingFreeActionTurnId: event.turnId,
       };
-    case 'ACTION_RESOLVED':
+    case 'ACTION_RESOLVED': {
+      const kind = event.resolution.actionType;
+      const showDiscovery =
+        event.resolution.success &&
+        Boolean(event.resolution.narrative) &&
+        (kind === 'INVESTIGATE' || kind === 'TALK' || kind === 'ASK');
       return {
         ...state,
         mode: event.resolution.nextMode === 'COMBAT' ? state.mode : event.resolution.nextMode ?? 'STORY',
@@ -304,8 +340,10 @@ function applyEvent(state: GameState, event: GameEvent): GameState {
         story: {
           ...state.story,
           lastActionNarrative: event.resolution.narrative,
+          narration: showDiscovery ? event.resolution.narrative : state.story.narration,
         },
       };
+    }
     case 'PLAYER_LINE_RECORDED':
       return withDialogue(state, 'PLAYER', event.text);
     case 'GOLD_SPENT':
@@ -343,10 +381,16 @@ function applyEvent(state: GameState, event: GameEvent): GameState {
           },
           event.sourceEventId
         ),
-        {
-          id: event.sourceEventId,
-          title: `${definition.name} x${event.quantity} 획득`,
-        }
+        definition.type === ITEM_TYPE.KEY_ITEM
+          ? {
+              id: event.sourceEventId,
+              title: '★ 중요한 아이템 발견',
+              detail: definition.name,
+            }
+          : {
+              id: event.sourceEventId,
+              title: `${definition.name} x${event.quantity} 획득`,
+            }
       );
     }
     case 'ITEM_PURCHASED': {
@@ -481,12 +525,17 @@ function applyEvent(state: GameState, event: GameEvent): GameState {
         { speaker: 'PLAYER' as const, text: event.playerText },
         { speaker: 'NPC' as const, text: event.npcText },
       ].slice(-MAX_DIALOGUE_MESSAGES);
+      const npcName = state.npcs[event.npcId]?.name ?? event.npcId;
       return {
         ...state,
         story: {
           ...state.story,
           currentNpcId: event.npcId,
           dialogue,
+          storyLog: appendStoryLog(state.story.storyLog, [
+            dialogueLogEntry('Player', event.playerText),
+            dialogueLogEntry(npcName, event.npcText),
+          ]),
         },
       };
     }
@@ -788,7 +837,7 @@ function applyEvent(state: GameState, event: GameEvent): GameState {
       if ((state.processedExpSourceIds ?? []).includes(event.sourceEventId)) {
         return state;
       }
-      return {
+      const next = {
         ...state,
         processedExpSourceIds: [...(state.processedExpSourceIds ?? []), event.sourceEventId],
         player: {
@@ -796,6 +845,23 @@ function applyEvent(state: GameState, event: GameEvent): GameState {
           exp: (state.player.exp ?? 0) + event.amount,
         },
       };
+      const highlight =
+        event.sourceEventId.startsWith('exp:combat:first:') ||
+        event.sourceEventId.startsWith('exp:milestone:') ||
+        event.sourceEventId.startsWith('exp:chapter:');
+      if (!highlight) {
+        return next;
+      }
+      const title = event.sourceEventId.startsWith('exp:combat:first:')
+        ? '★ 첫 클리어'
+        : event.sourceEventId.startsWith('exp:milestone:')
+          ? '새로운 사실'
+          : '장의 진행';
+      return withEconomyNotice(next, {
+        id: event.sourceEventId,
+        title,
+        detail: `+${event.amount} 경험치`,
+      });
     }
     case 'PLAYER_LEVEL_UP': {
       const needed = expRequiredForLevel(event.fromLevel);
@@ -862,6 +928,41 @@ function applyEvent(state: GameState, event: GameEvent): GameState {
         },
       };
     }
+    case 'ADVENTURE_STARTED': {
+      if (
+        state.story.currentSequenceId === event.adventureId &&
+        state.story.flowMode === STORY_FLOW_MODE.STORY_LOCKED
+      ) {
+        return state;
+      }
+      return {
+        ...state,
+        story: {
+          ...state.story,
+          flowMode: STORY_FLOW_MODE.STORY_LOCKED,
+          currentSequenceId: event.adventureId,
+          storyLog: appendStoryLog(state.story.storyLog, [systemLogEntry('— 모험 시작 —')]),
+        },
+      };
+    }
+    case 'ADVENTURE_ENDED': {
+      const completed = [...(state.story.completedSequenceIds ?? [])];
+      if (!completed.includes(event.adventureId)) {
+        completed.push(event.adventureId);
+      }
+      return {
+        ...state,
+        story: {
+          ...state.story,
+          flowMode: STORY_FLOW_MODE.FREE_ROAM,
+          currentSequenceId: null,
+          completedSequenceIds: completed,
+          storyLog: appendStoryLog(state.story.storyLog, [
+            systemLogEntry('모험을 마쳤다. 마을에서 정비할 수 있다.'),
+          ]),
+        },
+      };
+    }
     case 'HISTORY_RECORDED':
       return {
         ...state,
@@ -880,6 +981,42 @@ function applyEvent(state: GameState, event: GameEvent): GameState {
           inventory: withItemConsumed(state.player.inventory, event.itemId),
         },
       };
+    case 'COMBAT_UPGRADE_APPLIED': {
+      if ((state.processedRewardIds ?? []).includes(event.sourceEventId)) {
+        return state;
+      }
+      if ((state.player.purchasedUpgradeIds ?? []).includes(event.upgradeId)) {
+        return state;
+      }
+      const nextMods = mergePermanentMods(state.player.permanentMods, event.mods);
+      const upgrade = getCombatUpgrade(event.upgradeId);
+      return withClampedResources(
+        withEconomyNotice(
+          withRewardId(
+            {
+              ...state,
+              player: {
+                ...state.player,
+                permanentMods: nextMods,
+                purchasedUpgradeIds: [...(state.player.purchasedUpgradeIds ?? []), event.upgradeId],
+              },
+            },
+            event.sourceEventId
+          ),
+          {
+            id: event.sourceEventId,
+            title: upgrade ? `${upgrade.name} 적용` : '전투 강화 적용',
+            detail: [
+              event.mods.attackPercent ? `공격력 +${event.mods.attackPercent}%` : null,
+              event.mods.rangePercent ? `사거리 +${event.mods.rangePercent}%` : null,
+              event.mods.maxHpFlat ? `최대 HP +${event.mods.maxHpFlat}` : null,
+            ]
+              .filter(Boolean)
+              .join(' · '),
+          }
+        )
+      );
+    }
     case 'EQUIPMENT_ENHANCED': {
       const nextLevel = Math.max(event.toLevel, (state.player.equipmentEnhancements ?? {})[event.itemId] ?? 0);
       const definition = getItemDefinition(event.itemId);

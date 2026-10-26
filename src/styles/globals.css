@@ -40,6 +40,14 @@ body {
     overflow: hidden;
 }
 
+#app :where(p, h1, h2, h3, li, dd, dt, button, label) {
+    min-width: 0;
+    max-width: 100%;
+    word-break: keep-all;
+    line-break: strict;
+    overflow-wrap: break-word;
+}
+
 .spritePosition {
     margin: 10px 0 0 10px;
     font-size: 0.8em;

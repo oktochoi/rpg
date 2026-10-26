@@ -1,6 +1,12 @@
 import type { NpcId, SceneId } from '../core/ids';
 import type { Choice } from './choice';
 import { CHAPTER_ID } from './chapters/chapter-types';
+import {
+  STORY_FLOW_MODE,
+  type StoryFlowMode,
+  type StoryLogEntry,
+} from './sequences/story-sequence-types';
+import { STORY_SEQUENCE_ID } from './sequences/chapter1-sequences';
 
 export type DialogueSpeaker = 'PLAYER' | 'NPC';
 
@@ -28,6 +34,11 @@ export interface StoryState {
   consumedTopicIds: readonly string[];
   recentSemanticKeys: readonly string[];
   lastActionStateHash?: string;
+  /** STORY_LOCKED while a Sequence runs; FREE_ROAM between sequences. */
+  flowMode: StoryFlowMode;
+  currentSequenceId: string | null;
+  completedSequenceIds: readonly string[];
+  storyLog: readonly StoryLogEntry[];
 }
 
 export function emptyStoryVisitState(sceneId: SceneId): Pick<
@@ -41,6 +52,10 @@ export function emptyStoryVisitState(sceneId: SceneId): Pick<
   | 'completedChapterIds'
   | 'consumedTopicIds'
   | 'recentSemanticKeys'
+  | 'flowMode'
+  | 'currentSequenceId'
+  | 'completedSequenceIds'
+  | 'storyLog'
 > {
   return {
     visitedSceneIds: [sceneId],
@@ -52,5 +67,9 @@ export function emptyStoryVisitState(sceneId: SceneId): Pick<
     completedChapterIds: [],
     consumedTopicIds: [],
     recentSemanticKeys: [],
+    flowMode: STORY_FLOW_MODE.STORY_LOCKED,
+    currentSequenceId: STORY_SEQUENCE_ID.LUEN_ARRIVAL,
+    completedSequenceIds: [],
+    storyLog: [],
   };
 }

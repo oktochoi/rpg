@@ -5,10 +5,10 @@ import { applyEvents } from '../../core/reducer';
 import { ENCOUNTER_ID } from '../../combat/encounters/encounter-definitions';
 import { timeCostForAction, travelMinutesBetween, COMBAT_TIME_COST } from '../../time/action-time-config';
 import { dayFromTotalMinutes, nextMorningTotalMinutes } from '../../time/clock-types';
-import { eventsForExpGrant } from './progression-rules';
+import { eventsForExpGrant, MILESTONE_FACT_EXP } from './progression-rules';
 import { ACTION_EXP } from './level-config';
 
-const REPEAT_EXP = 1;
+const REPEAT_EXP = 0;
 
 export function repeatKeyFor(state: Readonly<GameState>, actionType: string, targetId?: string): string {
   return `${actionType}:${targetId ?? state.world.currentLocationId}:${state.story.currentSceneId}`;
@@ -150,6 +150,10 @@ export function eventsForTurnRewards(state: Readonly<GameState>, incoming: reado
       pushExp(ACTION_EXP.NEW_LOCATION, `exp:new-location:${event.locationId}`, 'DISCOVERY');
     }
     if (event.type === 'PLAYER_LEARNED_FACT') {
+      // Milestone facts grant EXP once via progression-rules (exp:milestone:...).
+      if (MILESTONE_FACT_EXP[event.factId]) {
+        continue;
+      }
       const fact = state.world.facts.find((item) => item.id === event.factId);
       const rumor = fact?.tags.includes('rumor') === true || event.factId.includes('rumor');
       if (!rumor) {

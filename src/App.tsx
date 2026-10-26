@@ -5,6 +5,7 @@ import { TitleScreen } from '@/components/title/TitleScreen';
 import { CharacterCreation } from '@/components/character-creation/CharacterCreation';
 import { GameToast } from '@/components/feedback/GameToast';
 import { useGameToasts } from '@/components/feedback/useGameToasts';
+import { ActionTransitionOverlay } from '@/components/feel/ActionTransitionOverlay';
 import { buildCombatConfig } from '@/game/combat/CombatBridge';
 import type { CombatResult } from '@/game/combat/types/combat-result';
 import type { Command } from '@/game/core/command';
@@ -13,23 +14,22 @@ import { createInitialGameState } from '@/game/core/initial-state';
 import type { GameState } from '@/game/core/game-state';
 import { TEST_GOBLIN_COMBAT_ID } from '@/game/story/test-scenes';
 import { ENCOUNTER_ID } from '@/game/combat/encounters/encounter-definitions';
+import {
+  resolveActionTransition,
+  shouldStageCommand,
+  type ActionTransitionSpec,
+} from '@/game/feel/action-transition';
 import { toStoryScreenView } from '@/game/story/story-view';
-import { getTalkPrompt } from '@/game/npc/talk-choices';
-import { createNpcDialogueService } from '@/ai/service';
-import type { NpcDialogueResponse, NpcDialogueService } from '@/ai/types';
-import { createStoryDirector, generateStoryChoices, getLastDirectorDebug } from '@/ai/director';
-import { choiceRefreshKey } from '@/game/story/choices';
-import type { Choice } from '@/game/story/choice';
-import type { DynamicChoice } from '@/game/story/choices/choice-types';
-import { resolvePlayerFacingChoiceLabel } from '@/game/story/choices/choice-label';
+import { getAvailableChoices } from '@/game/story/story-choice-service';
 import { KnowledgeDebugPanel } from '@/components/debug/KnowledgeDebugPanel';
 import { createLocalSaveService } from '@/game/save/save-service';
 import type { SaveService } from '@/game/save/save-types';
-import { readPublicAiMode } from '@/ai/config/ai-config';
-import { getLastAiDebug, recordAiDebug, type AiDebugSnapshot } from '@/ai/debug/ai-debug';
-import { audioManager, bgmContextForLocation } from '@/game/audio';
+import { getLastAiDebug, type AiDebugSnapshot } from '@/ai/debug/ai-debug';
+import { audioManager, BGM_CONTEXT, bgmContextForLocation } from '@/game/audio';
 import { selectInteractionState, interactionStatusMessage } from '@/game/story/interaction-state';
-import { isDevelopmentBuild, isGameDebugEnabled, setGameDebugEnabled } from '@/game/debug/debug-flags';
+import { isGameDebugEnabled } from '@/game/debug/debug-flags';
+import { isTrainingCombatId } from '@/game/combat/training/training-combat';
+import { LOCATION_ID } from '@/game/world/locations/location-definitions';
 import { type PlayerClassId } from '@/game/player/classes';
 import { APP_PHASE, type AppPhase } from '@/game/app-flow';
 import styles from './App.module.css';
@@ -44,32 +44,30 @@ function App() {
   const [appPhase, setAppPhase] = useState<AppPhase>(APP_PHASE.TITLE);
   const [titleSettings, setTitleSettings] = useState(false);
   const [debugOn, setDebugOn] = useState(false);
-  const [talking, setTalking] = useState(false);
-  const [directorLoading, setDirectorLoading] = useState(false);
-  const [lastDialogue, setLastDialogue] = useState<NpcDialogueResponse | null>(null);
-  const [directorChoices, setDirectorChoices] = useState<Choice[]>([]);
   const [interactionTick, setInteractionTick] = useState(0);
   const [aiDebug, setAiDebug] = useState<AiDebugSnapshot>(getLastAiDebug);
-  const [fallbackNotice, setFallbackNotice] = useState<string | null>(null);
+  const [openingLesson, setOpeningLesson] = useState(false);
+  const [lessonHandoff, setLessonHandoff] = useState(false);
+  const combatHoldRef = useRef<ReturnType<typeof buildCombatConfig> | null>(null);
+  const lessonLeavingRef = useRef(false);
+  const [transitionSpec, setTransitionSpec] = useState<ActionTransitionSpec | null>(null);
+  const transitionLockRef = useRef(false);
+  const transitionTimerRef = useRef<number | null>(null);
   const orchestratorRef = useRef<GameOrchestrator | null>(null);
-  const dialogueServiceRef = useRef<NpcDialogueService | null>(null);
   const saveServiceRef = useRef<SaveService | null>(null);
-  const directorRef = useRef(createStoryDirector());
   const toasts = useGameToasts(state);
   const inGame = appPhase === APP_PHASE.GAME;
+  const isTransitioning = transitionSpec !== null;
 
   if (saveServiceRef.current === null) {
     saveServiceRef.current = createLocalSaveService();
   }
   if (orchestratorRef.current === null) {
-    orchestratorRef.current = createGameOrchestrator(state, setState, { saveService: saveServiceRef.current });
+    orchestratorRef.current = createGameOrchestrator(state, setState, {
+      saveService: saveServiceRef.current,
+      autosaveEnabled: false,
+    });
   }
-  if (dialogueServiceRef.current === null) {
-    dialogueServiceRef.current = createNpcDialogueService(() => orchestratorRef.current!.getState());
-  }
-
-  const slots = saveServiceRef.current.listSlots();
-  const canContinue = slots.some((slot) => !slot.empty);
 
   const refreshDebug = useCallback(() => {
     setAiDebug(getLastAiDebug());
@@ -91,88 +89,72 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!inGame || state.mode === 'COMBAT') {
+    if (inGame && state.mode === 'COMBAT') {
       return;
     }
-    audioManager.playBgmContext(bgmContextForLocation(state.world.currentLocationId));
+    const context = inGame ? bgmContextForLocation(state.world.currentLocationId) : BGM_CONTEXT.STORY_SAFE;
+    audioManager.playBgmContext(context);
   }, [inGame, state.mode, state.world.currentLocationId]);
 
   useEffect(() => {
-    recordAiDebug({ mode: readPublicAiMode(), provider: 'openai-compatible' });
-    refreshDebug();
-    void fetch('/api/ai')
-      .then((response) => response.json())
-      .then((status: { mode?: string; provider?: string; model?: string; configured?: boolean }) => {
-        recordAiDebug({
-          mode: status.configured ? 'real' : 'mock',
-          provider: status.provider ?? 'openai-compatible',
-          model: status.model ?? 'unknown',
-        });
-        refreshDebug();
-      })
-      .catch(() => {
-        recordAiDebug({ mode: readPublicAiMode(), fallbackUsed: readPublicAiMode() === 'real', error: 'api_unavailable' });
-        refreshDebug();
-      });
-  }, [refreshDebug]);
-
-  useEffect(() => {
-    if (!aiDebug.fallbackUsed || !aiDebug.requestId) {
+    if (!debugOn) {
       return;
     }
-    setFallbackNotice(isGameDebugEnabled() ? 'GROQ FALLBACK' : '응답이 잠시 불안정합니다.');
-    const hide = window.setTimeout(() => setFallbackNotice(null), 2400);
-    return () => window.clearTimeout(hide);
-  }, [aiDebug.fallbackUsed, aiDebug.requestId]);
+    refreshDebug();
+  }, [debugOn, refreshDebug, state.world.turn, state.story.currentSceneId]);
 
-  const dispatch = useCallback((command: Command) => {
+  const dispatchImmediate = useCallback((command: Command) => {
     void orchestratorRef.current?.dispatch(command).then(() => {
       setInteractionTick((tick) => tick + 1);
     });
   }, []);
 
-  const runNpcDialogue = useCallback(async (playerText: string) => {
-    const orchestrator = orchestratorRef.current;
-    const service = dialogueServiceRef.current;
-    if (!orchestrator || !service) {
-      return;
-    }
-
-    const npcId = orchestrator.getState().story.currentNpcId ?? 'seria';
-    const turnId = orchestrator.getState().world.turn;
-    setTalking(true);
-    try {
-      const response = await service.respond(npcId, playerText);
-      if (orchestrator.getState().world.turn !== turnId) {
+  const dispatch = useCallback(
+    (command: Command) => {
+      if (transitionLockRef.current) {
         return;
       }
-      setLastDialogue(response);
-      await orchestrator.dispatch({
-        type: 'RECORD_DIALOGUE',
-        npcId: response.npcId,
-        playerText,
-        npcText: response.dialogue,
-        usedMemoryIds: response.usedMemoryIds,
-      });
-    } finally {
-      setTalking(false);
-      refreshDebug();
-    }
-  }, [refreshDebug]);
-
-  const handleStoryCommand = useCallback(
-    (command: Command) => {
-      if (command.type === 'SELECT_CHOICE') {
-        const prompt = getTalkPrompt(command.choiceId);
-        if (prompt) {
-          void runNpcDialogue(prompt);
-          return;
-        }
+      const orchestrator = orchestratorRef.current;
+      if (!orchestrator) {
+        return;
       }
-      dispatch(command);
+
+      const stage = shouldStageCommand(command);
+      const spec = stage ? resolveActionTransition(state, command) : null;
+      if (!spec || spec.kind === 'none' || spec.durationMs <= 0) {
+        void orchestrator.dispatch(command).then(() => {
+          setInteractionTick((tick) => tick + 1);
+        });
+        return;
+      }
+
+      transitionLockRef.current = true;
+      setTransitionSpec(spec);
+      if (transitionTimerRef.current !== null) {
+        window.clearTimeout(transitionTimerRef.current);
+      }
+      transitionTimerRef.current = window.setTimeout(() => {
+        void orchestrator
+          .dispatch(command)
+          .catch(() => undefined)
+          .finally(() => {
+            transitionLockRef.current = false;
+            setTransitionSpec(null);
+            transitionTimerRef.current = null;
+            setInteractionTick((tick) => tick + 1);
+          });
+      }, spec.durationMs);
     },
-    [dispatch, runNpcDialogue]
+    [state]
   );
+
+  useEffect(() => {
+    return () => {
+      if (transitionTimerRef.current !== null) {
+        window.clearTimeout(transitionTimerRef.current);
+      }
+    };
+  }, []);
 
   const startClassCombat = useCallback(
     async (classId: PlayerClassId, combatId: string = ENCOUNTER_ID.RUINS_MIXED_01) => {
@@ -188,9 +170,9 @@ function App() {
 
   const handleCombatResult = useCallback(
     (result: CombatResult) => {
-      dispatch({ type: 'RESOLVE_COMBAT', result });
+      dispatchImmediate({ type: 'RESOLVE_COMBAT', result });
     },
-    [dispatch]
+    [dispatchImmediate]
   );
 
   const combatConfig = useMemo(() => {
@@ -199,122 +181,114 @@ function App() {
     }
     return buildCombatConfig(state, state.activeCombatId);
   }, [state]);
+  if (combatConfig) {
+    combatHoldRef.current = combatConfig;
+  }
+  const shownCombat =
+    state.mode === 'COMBAT' && combatConfig ? combatConfig : lessonHandoff ? combatHoldRef.current : null;
 
-  const refreshKey = choiceRefreshKey(state);
-
-  useEffect(() => {
-    const current = orchestratorRef.current?.getState();
-    if (
-      !inGame ||
-      !current ||
-      talking ||
-      current.mode === 'COMBAT' ||
-      current.mode === 'RESOLVING'
-    ) {
-      return;
-    }
-    const turnId = current.world.turn;
-    let cancelled = false;
-    setDirectorLoading(true);
-    void generateStoryChoices(current, directorRef.current)
-      .then((response) => {
-        if (cancelled) {
-          return;
-        }
-        const latest = orchestratorRef.current?.getState();
-        if (!latest || response.turnId !== latest.world.turn || response.turnId !== turnId) {
-          return;
-        }
-        if (response.choices.length === 0) {
-          return;
-        }
-        setDirectorChoices(toViewChoices(response.choices));
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setDirectorLoading(false);
-          refreshDebug();
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshKey, talking, refreshDebug, inGame]);
-
-  const latestSaveSlot = slots
-    .filter((slot) => !slot.empty)
-    .slice()
-    .sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))[0]?.slotId;
+  const authoredChoices = useMemo(() => [...getAvailableChoices(state)], [state]);
+  const refreshKey = `${state.world.turn}:${state.story.currentSceneId}:${state.story.flowMode ?? ''}`;
 
   const handleNewGame = () => {
-    if (canContinue && typeof window !== 'undefined') {
-      const ok = window.confirm('새 게임을 시작하면 현재 Autosave가 교체될 수 있습니다.');
-      if (!ok) {
-        return;
-      }
-    }
+    lessonLeavingRef.current = false;
+    setOpeningLesson(false);
+    setLessonHandoff(false);
     setTitleSettings(false);
     setAppPhase(APP_PHASE.CHARACTER_CREATION);
   };
 
-  const handleContinue = () => {
-    if (!latestSaveSlot) {
+  const handleCreateCharacter = (name: string) => {
+    const orchestrator = orchestratorRef.current;
+    if (!orchestrator) {
       return;
     }
-    dispatch({ type: 'LOAD_GAME', slotId: latestSaveSlot });
-    setDirectorChoices([]);
-    setLastDialogue(null);
-    setAppPhase(APP_PHASE.GAME);
+    lessonLeavingRef.current = false;
+    void (async () => {
+      await orchestrator.dispatch({ type: 'NEW_GAME', name });
+      await orchestrator.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.LUEN_TRAINING_GROUND });
+      await orchestrator.dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.TRAINING_GROUNDS });
+      const started = orchestrator.getState();
+      setOpeningLesson(started.mode === 'COMBAT' && isTrainingCombatId(started.activeCombatId));
+      setAppPhase(APP_PHASE.GAME);
+    })();
   };
 
-  const handleCreateCharacter = (name: string) => {
-    dispatch({ type: 'NEW_GAME', name });
-    setDirectorChoices([]);
-    setLastDialogue(null);
-    setAppPhase(APP_PHASE.GAME);
+  const finishOpeningLesson = () => {
+    const orchestrator = orchestratorRef.current;
+    if (!orchestrator || lessonLeavingRef.current) {
+      return;
+    }
+    lessonLeavingRef.current = true;
+    setLessonHandoff(true);
+    const current = orchestrator.getState();
+    void (async () => {
+      if (current.mode === 'COMBAT' && current.activeCombatId) {
+        await orchestrator.dispatch({
+          type: 'RESOLVE_COMBAT',
+          result: {
+            combatId: current.activeCombatId,
+            outcome: 'DEFEAT',
+            player: {
+              remainingHp: current.player.currentHp,
+              remainingMp: current.player.currentMp,
+            },
+            defeatedEnemyIds: [],
+            defeatedEnemyTypes: [],
+            consumedItemIds: [],
+          },
+        });
+      }
+      await orchestrator.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.LUEN_VILLAGE });
+      setOpeningLesson(false);
+      setLessonHandoff(false);
+      setInteractionTick((tick) => tick + 1);
+    })();
   };
 
   const interaction = selectInteractionState(state, {
     inGame,
-    talking,
-    directorLoading,
-    candidateCount: directorChoices.length > 0 ? directorChoices.length : 1,
+    talking: false,
+    directorLoading: false,
+    candidateCount: authoredChoices.length,
   });
-  const storyInputEnabled = interaction.canInteract;
-  const storyView = toStoryScreenView(state, directorChoices.length > 0 ? directorChoices : undefined, {
-    npcEmotion: lastDialogue?.emotion ?? 'neutral',
-  });
+  const storyInputEnabled = interaction.canInteract && !isTransitioning;
+  const storyView = toStoryScreenView(state, authoredChoices);
   const npcName = state.npcs[state.story.currentNpcId ?? 'seria']?.name ?? 'NPC';
-  const statusMessage = interactionStatusMessage(state, { talking, directorLoading, npcName });
+  const statusMessage = interactionStatusMessage(state, { talking: false, directorLoading: false, npcName });
 
   return (
     <div id="app">
+      {transitionSpec ? <ActionTransitionOverlay spec={transitionSpec} /> : null}
       {appPhase === APP_PHASE.TITLE ? (
         <TitleScreen
-          canContinue={canContinue}
           settingsOpen={titleSettings}
           onNewGame={handleNewGame}
-          onContinue={handleContinue}
           onOpenSettings={() => setTitleSettings(true)}
           onCloseSettings={() => setTitleSettings(false)}
         />
       ) : appPhase === APP_PHASE.CHARACTER_CREATION ? (
         <CharacterCreation onBack={() => setAppPhase(APP_PHASE.TITLE)} onConfirm={handleCreateCharacter} />
-      ) : state.mode === 'COMBAT' && combatConfig ? (
-        <CombatView config={combatConfig} onResult={handleCombatResult} />
+      ) : shownCombat ? (
+        <CombatView
+          config={shownCombat}
+          onResult={handleCombatResult}
+          onGameOver={handleNewGame}
+          openingLesson={openingLesson}
+          onOpeningStart={finishOpeningLesson}
+        />
       ) : (
         <>
           <StoryScreen
             view={storyView}
-            dispatch={handleStoryCommand}
+            dispatch={dispatch}
             inputEnabled={storyInputEnabled}
             statusMessage={statusMessage}
-            fallbackNotice={fallbackNotice}
+            fallbackNotice={null}
             lockToken={`${interactionTick}:${refreshKey}`}
-            debugReason={isDevelopmentBuild() ? interaction.reason : null}
+            debugReason={isGameDebugEnabled() ? interaction.reason : null}
             activeMenu={state.activeMenu}
             saveNotice={state.saveNotice}
-            slots={slots}
             gameState={state}
           />
           <GameToast items={toasts} />
@@ -323,89 +297,90 @@ function App() {
               <KnowledgeDebugPanel
                 state={state}
                 dispatch={dispatch}
-                lastDialogue={lastDialogue}
-                directorDebug={getLastDirectorDebug()}
+                lastDialogue={null}
+                directorDebug={null}
                 aiDebug={aiDebug}
               />
               <div className={styles.testRow}>
                 <button className={styles.testButton} type="button" onClick={() => void startClassCombat('warrior')}>
-                  검사 전투
+                  검사
                 </button>
                 <button className={styles.testButton} type="button" onClick={() => void startClassCombat('mage')}>
-                  마법사 전투
+                  마법사
                 </button>
                 <button className={styles.testButton} type="button" onClick={() => void startClassCombat('rogue')}>
-                  도적 전투
+                  도적
                 </button>
                 <button
                   className={styles.testButton}
                   type="button"
                   onClick={() => dispatch({ type: 'START_COMBAT', combatId: TEST_GOBLIN_COMBAT_ID })}
                 >
-                  고블린 전투
+                  고블린
                 </button>
                 <button
                   className={styles.testButton}
                   type="button"
-                  onClick={() => dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.RUINS_ARCHER_01 })}
+                  onClick={() => void startClassCombat('warrior', ENCOUNTER_ID.RUINS_ARCHER_01)}
                 >
-                  궁수 전투
+                  궁수
                 </button>
                 <button
                   className={styles.testButton}
                   type="button"
-                  onClick={() => dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.RUINS_BRUTE_01 })}
+                  onClick={() => void startClassCombat('warrior', ENCOUNTER_ID.RUINS_MAGE_01)}
                 >
-                  브루트 전투
+                  고블린 메이지
                 </button>
                 <button
                   className={styles.testButton}
                   type="button"
-                  onClick={() => dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.RUINS_HEAVY_01 })}
+                  onClick={() => void startClassCombat('warrior', ENCOUNTER_ID.RUINS_BRUTE_01)}
                 >
-                  중혼합 전투
+                  스톤 골렘
+                </button>
+                <button
+                  className={styles.testButton}
+                  type="button"
+                  onClick={() => void startClassCombat('warrior', ENCOUNTER_ID.CH1_FOREST_SCOUTS)}
+                >
+                  숲 정찰
+                </button>
+                <button
+                  className={styles.testButton}
+                  type="button"
+                  onClick={() => void startClassCombat('warrior', ENCOUNTER_ID.CH1_GOBLIN_CAMP)}
+                >
+                  야영지
+                </button>
+                <button
+                  className={styles.testButton}
+                  type="button"
+                  onClick={() => void startClassCombat('warrior', ENCOUNTER_ID.FOREST_WOLF_01)}
+                >
+                  다이어 울프
+                </button>
+                <button
+                  className={styles.testButton}
+                  type="button"
+                  onClick={() => void startClassCombat('warrior', ENCOUNTER_ID.RUINS_MIXED_01)}
+                >
+                  혼합
                 </button>
                 <button
                   className={styles.testButton}
                   type="button"
                   onClick={() => void startClassCombat('warrior', ENCOUNTER_ID.RUINS_BOSS_01)}
                 >
-                  보스 전투
+                  유적 수호자
                 </button>
               </div>
             </>
           ) : null}
         </>
       )}
-      {isDevelopmentBuild() ? (
-        <button
-          className={styles.debugToggle}
-          type="button"
-          onClick={() => {
-            const next = !debugOn;
-            setGameDebugEnabled(next);
-            setDebugOn(next);
-          }}
-        >
-          DEBUG
-        </button>
-      ) : null}
     </div>
   );
-}
-
-function toViewChoices(choices: readonly DynamicChoice[]): Choice[] {
-  return choices.map((choice) => ({
-    id: choice.id,
-    label: resolvePlayerFacingChoiceLabel({
-      text: choice.text,
-      actionType: choice.actionType,
-      intent: choice.intent,
-      candidateId: choice.candidateId,
-    }),
-    source: choice.source,
-    candidateId: choice.candidateId,
-  }));
 }
 
 export default App;

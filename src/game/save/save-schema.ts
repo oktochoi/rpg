@@ -5,6 +5,7 @@ import type { KnowledgeSourceType, NpcKnowledgeEntry } from '../npc/npc-knowledg
 import type { NpcState } from '../npc/npc-state';
 import type { RelationshipState } from '../npc/relationship';
 import type { InventoryItem, PlayerSkill, PlayerState, SkillUseContext } from '../player/player-state';
+import { emptyPermanentMods } from '../player/player-state';
 import { getPlayerClass, isPlayerClassId, PLAYER_CLASS_ID, baseRankIdForClass } from '../player/classes';
 import { migrateQuestStatus } from '../quests/quest-types';
 import { allQuestDefinitions, getQuestDefinition } from '../quests/quest-definitions';
@@ -237,6 +238,19 @@ function parsePlayer(value: unknown): PlayerState | null {
       int: numberStat(value.allocatedStats, 'int'),
       agi: numberStat(value.allocatedStats, 'agi'),
     },
+    permanentMods: parsePermanentMods(value.permanentMods),
+    purchasedUpgradeIds: isStringArray(value.purchasedUpgradeIds) ? value.purchasedUpgradeIds : [],
+  };
+}
+
+function parsePermanentMods(value: unknown): PlayerState['permanentMods'] {
+  if (!isRecord(value)) {
+    return emptyPermanentMods();
+  }
+  return {
+    attackPercent: typeof value.attackPercent === 'number' && Number.isFinite(value.attackPercent) ? value.attackPercent : 0,
+    rangePercent: typeof value.rangePercent === 'number' && Number.isFinite(value.rangePercent) ? value.rangePercent : 0,
+    maxHpFlat: typeof value.maxHpFlat === 'number' && Number.isFinite(value.maxHpFlat) ? value.maxHpFlat : 0,
   };
 }
 
@@ -280,6 +294,10 @@ function parseWorld(value: unknown): WorldState | null {
     flags,
     exploredPointIds,
     clearedEncounterIds: isStringArray(value.clearedEncounterIds) ? value.clearedEncounterIds : [],
+    ruinsKeyFailedAttempts:
+      typeof value.ruinsKeyFailedAttempts === 'number' && Number.isFinite(value.ruinsKeyFailedAttempts)
+        ? Math.max(0, Math.floor(value.ruinsKeyFailedAttempts))
+        : 0,
   };
 }
 
@@ -583,7 +601,39 @@ function parseStory(value: unknown): StoryState | null {
     consumedTopicIds: isStringArray(value.consumedTopicIds) ? value.consumedTopicIds : [],
     recentSemanticKeys: isStringArray(value.recentSemanticKeys) ? value.recentSemanticKeys : [],
     lastActionStateHash: typeof value.lastActionStateHash === 'string' ? value.lastActionStateHash : undefined,
+    flowMode: value.flowMode === 'STORY_LOCKED' ? 'STORY_LOCKED' : 'FREE_ROAM',
+    currentSequenceId: typeof value.currentSequenceId === 'string' ? value.currentSequenceId : null,
+    completedSequenceIds: isStringArray(value.completedSequenceIds) ? value.completedSequenceIds : [],
+    storyLog: parseStoryLog(value.storyLog),
   };
+}
+
+function parseStoryLog(value: unknown): import('../story/sequences').StoryLogEntry[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const entries: import('../story/sequences').StoryLogEntry[] = [];
+  for (const item of value) {
+    if (!isRecord(item) || typeof item.type !== 'string' || typeof item.text !== 'string') {
+      continue;
+    }
+    const id = typeof item.id === 'string' ? item.id : `log_${entries.length}`;
+    if (item.type === 'narration') {
+      entries.push({
+        type: 'narration',
+        text: item.text,
+        id,
+        sceneId: typeof item.sceneId === 'string' ? item.sceneId : undefined,
+      });
+    } else if (item.type === 'dialogue' && typeof item.speaker === 'string') {
+      entries.push({ type: 'dialogue', speaker: item.speaker, text: item.text, id });
+    } else if (item.type === 'choice') {
+      entries.push({ type: 'choice', text: item.text, id });
+    } else if (item.type === 'system') {
+      entries.push({ type: 'system', text: item.text, id });
+    }
+  }
+  return entries;
 }
 
 function parseHistory(value: unknown): HistoryEntry[] {

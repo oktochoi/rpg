@@ -2,11 +2,14 @@ import type { GameEvent } from '../core/event';
 import type { GameState } from '../core/game-state';
 import { applyEvents } from '../core/reducer';
 import { eventsForPlayerDiscoveredFact } from '../knowledge/knowledge-service';
+import { eventsForMemoryRequests } from '../npc/memory/memory-service';
+import { eventsForRelationshipRequests } from '../relationships/relationship-service';
+import type { RelationshipChangeReason } from '../relationships/relationship-types';
 import { getStorySceneDefinition } from './story-scene-definitions';
 import { resolveNextScene, shouldResolveStory } from './story-scene-resolver';
 import type { StorySceneEffect } from './story-scene-types';
 
-function eventsForSceneEffects(state: Readonly<GameState>, effects: readonly StorySceneEffect[] | undefined): GameEvent[] {
+export function eventsForSceneEffects(state: Readonly<GameState>, effects: readonly StorySceneEffect[] | undefined): GameEvent[] {
   if (!effects || effects.length === 0) {
     return [];
   }
@@ -34,6 +37,15 @@ function eventsForSceneEffects(state: Readonly<GameState>, effects: readonly Sto
         learned.add(effect.factId);
       }
     }
+    if (effect.type === 'RELATIONSHIP_CHANGE') {
+      const request = {
+        npcId: effect.npcId,
+        reason: effect.reason as RelationshipChangeReason,
+        sourceEventId: effect.sourceEventId,
+      };
+      events.push(...eventsForRelationshipRequests(state, [request]));
+      events.push(...eventsForMemoryRequests(state, [request]));
+    }
   }
   return events;
 }
@@ -46,8 +58,25 @@ function firstEnterEffects(state: Readonly<GameState>, sceneId: string): GameEve
   return eventsForSceneEffects(state, definition?.onEnter);
 }
 
+function holdsDiscoveryBeat(incoming: readonly GameEvent[]): boolean {
+  const talked = incoming.some((event) => {
+    if (event.type !== 'ACTION_RESOLVED' || !event.resolution.success) {
+      return false;
+    }
+    const kind = event.resolution.actionType;
+    return (kind === 'TALK' || kind === 'ASK') && Boolean(event.resolution.narrative);
+  });
+  const foundPoint = incoming.some(
+    (event) => event.type === 'EXPLORATION_POINT_COMPLETED' && event.pointId !== 'royal_magic_stone'
+  );
+  if (!talked && !foundPoint) {
+    return false;
+  }
+  return !incoming.some((event) => event.type === 'STORY_SCENE_ENTERED');
+}
+
 export function eventsForStoryProgress(state: Readonly<GameState>, incoming: readonly GameEvent[]): GameEvent[] {
-  if (incoming.length === 0) {
+  if (incoming.length === 0 || holdsDiscoveryBeat(incoming)) {
     return [];
   }
 

@@ -1,4 +1,5 @@
 import { ENCOUNTER_ID } from '../combat/encounters/encounter-definitions';
+import { ITEM_ID } from '../inventory/item-definitions';
 import { PLAYER_CLASS_ID } from '../player/classes';
 import { CHAPTER_FACT_ID } from '../knowledge/chapter-1-facts';
 import { QUEST_ID, RUINS_SEAL_FACT_ID } from '../quests/quest-definitions';
@@ -15,10 +16,12 @@ import {
   CHOICE_MOVE_INN,
   CHOICE_MOVE_RUINS,
   CHOICE_MOVE_SHOP,
+  CHOICE_MOVE_TRAINING,
   CHOICE_MOVE_VILLAGE,
   CHOICE_OPEN_SHOP,
   CHOICE_FIGHT_FOREST_GOBLIN,
   CHOICE_PASS_GATE,
+  CHOICE_START_TRAINING,
   CHOICE_TALK_LEON,
   CHOICE_TALK_MARTA,
   CHOICE_TALK_SERIA,
@@ -42,6 +45,7 @@ const CHOICE_GUARDIAN_ROGUE = 'guardian_victory_rogue';
 export const STORY_SCENE_ID = {
   LUEN_VILLAGE_INTRO: 'luen_village_intro',
   LUEN_VILLAGE_HUB: 'luen_village_hub',
+  LUEN_VILLAGE_AFTER_SCOUTS: 'luen_village_after_scouts',
   LUEN_SQUARE_LOOK: 'luen_square_look',
   LUEN_ASK_DIRECTIONS: 'luen_ask_directions',
   LUEN_GUILD: 'luen_guild_default',
@@ -49,6 +53,7 @@ export const STORY_SCENE_ID = {
   LUEN_GUILD_ADVANCEMENT: 'luen_guild_first_advancement',
   LUEN_GUILD_ADVANCEMENT_WAIT: 'luen_guild_advancement_wait',
   LUEN_GUILD_FIRST_JOB: 'luen_guild_first_job',
+  LUEN_GUILD_KNOWN: 'luen_guild_known',
   LUEN_GUILD_SCOUT_REPORT: 'luen_guild_scout_report',
   LUEN_SHOP_INTRO: 'luen_shop_intro',
   FOREST_AMBUSH: 'forest_ambush_optional',
@@ -59,6 +64,8 @@ export const STORY_SCENE_ID = {
   FOREST_SCOUTS_AFTER: 'forest_scouts_after',
   FOREST_DEEPER: 'forest_road_deeper',
   LUEN_SHOP: 'luen_shop_default',
+  LUEN_TRAINING_GROUND: 'luen_training_ground_default',
+  LUEN_CLASS_CHOSEN: 'luen_class_chosen',
   MARTA_FIRST_MEETING: 'marta_first_meeting',
   MARTA_PARCEL_RETURN: 'marta_parcel_return',
   LEON_FIRST_MEETING: 'leon_first_meeting',
@@ -168,8 +175,8 @@ function move(id: string, text: string, locationId: string): StoryChoiceDefiniti
   return { id, text, action: { type: 'MOVE_TO_LOCATION', locationId } };
 }
 
-function talk(id: string, text: string): StoryChoiceDefinition {
-  return { id, text, action: { type: 'TALK', promptId: id } };
+function talk(id: string, text: string, extra?: StoryCondition): StoryChoiceDefinition {
+  return { id, text, conditions: extra, action: { type: 'TALK', promptId: id } };
 }
 
 function look(): StoryChoiceDefinition {
@@ -191,7 +198,20 @@ function investigatePoint(id: string, text: string, pointId: string, extra?: Sto
     text,
     conditions: extra,
     action: { type: 'INVESTIGATE', targetId: pointId },
+    choicePurpose: 'ROLEPLAY',
   };
+}
+
+function investigateForestHerbs(): StoryChoiceDefinition {
+  return investigatePoint(
+    'investigate_forest_herbs',
+    '길가의 약초를 확인한다',
+    EXPLORATION_POINT_ID.FOREST_HERBS,
+    allOf(
+      { type: 'QUEST_STATUS', questId: QUEST_ID.FOREST_HERB_GATHER, status: QUEST_STATUS.ACTIVE },
+      noneOf({ type: 'PLAYER_KNOWS_FACT', factId: CHAPTER_FACT_ID.FOREST_HERBS })
+    )
+  );
 }
 
 function investigateAltar(id: string, text: string, extra?: StoryCondition): StoryChoiceDefinition {
@@ -200,6 +220,7 @@ function investigateAltar(id: string, text: string, extra?: StoryCondition): Sto
     text,
     conditions: extra,
     action: { type: 'INVESTIGATE', targetId: EXPLORATION_POINT_ID.ROYAL_MAGIC_STONE },
+    choicePurpose: 'PROGRESSION',
   };
 }
 
@@ -207,6 +228,7 @@ export const LOCATION_FALLBACK_SCENE_ID: Readonly<Record<string, string>> = {
   [LOCATION_ID.LUEN_VILLAGE]: STORY_SCENE_ID.LUEN_VILLAGE_HUB,
   [LOCATION_ID.LUEN_ADVENTURERS_GUILD]: STORY_SCENE_ID.LUEN_GUILD,
   [LOCATION_ID.LUEN_GENERAL_STORE]: STORY_SCENE_ID.LUEN_SHOP,
+  [LOCATION_ID.LUEN_TRAINING_GROUND]: STORY_SCENE_ID.LUEN_TRAINING_GROUND,
   [LOCATION_ID.FOREST_ROAD]: STORY_SCENE_ID.FOREST_ROAD_DEFAULT,
   [LOCATION_ID.ANCIENT_RUINS]: STORY_SCENE_ID.ANCIENT_RUINS_DEFAULT,
   [LOCATION_ID.BLUE_MOON_INN]: STORY_SCENE_ID.BLUE_MOON_INN,
@@ -219,7 +241,7 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     locationId: village,
     title: '루엔 마을',
     narrative:
-      '왕국 북부 변방의 작은 마을, 루엔.\n여행의 먼지가 옷에 남아 있다. 광장에는 행상인과 용병이 섞여 있고, 북쪽으로 이어진 돌문 너머는 조용하다.\n여관 간판과 작은 모험가 길드가 흙길 너머로 보인다.',
+      '광장에 들어선다. 우물가에 행상인이 천을 펼쳐 두었고, 용병 둘이 그늘에 앉아 있다. 북문으로 난 돌문은 열려 있지만, 오가는 사람은 적다.',
     entryConditions: allOf(
       loc(village),
       noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.GUILD_REGISTERED }),
@@ -238,11 +260,12 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
       { type: 'DISCOVER_LOCATION', locationId: LOCATION_ID.BLUE_MOON_INN },
       { type: 'DISCOVER_LOCATION', locationId: LOCATION_ID.LUEN_ADVENTURERS_GUILD },
       { type: 'DISCOVER_LOCATION', locationId: LOCATION_ID.LUEN_GENERAL_STORE },
+      { type: 'DISCOVER_LOCATION', locationId: LOCATION_ID.NORTHERN_GATE },
     ],
     choices: [
       {
         id: 'intro_continue',
-        text: '계속',
+        text: '광장으로 나선다',
         action: { type: 'CONTINUE', nextSceneId: STORY_SCENE_ID.LUEN_VILLAGE_HUB },
         choicePurpose: 'PROGRESSION',
       },
@@ -253,12 +276,9 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     locationId: village,
     title: '루엔 광장',
     narrative:
-      '우물 옆에 행상인이 천을 펼쳐 놓았다. 아이들이 북문 쪽을 가리키며 수군거린다.\n잡화점 간판과 여관, 길드가 한눈에 들어온다.',
-    entryConditions: allOf(
-      loc(village),
-      { type: 'SCENE_VISITED', sceneId: STORY_SCENE_ID.LUEN_SQUARE_LOOK },
-      { type: 'SCENE_NOT_VISITED', sceneId: STORY_SCENE_ID.LUEN_SQUARE_LOOK }
-    ),
+      '우물 옆에 행상인이 천을 펼쳐 놓았다. 북쪽 상단이 늦는다는 말, 숲에서 고블린이 도로 쪽으로 나온다는 말, 아이들이 북문 쪽 푸른 빛을 봤다는 말이 한 방향으로 모인다.\n잡화점 간판과 여관, 길드가 한눈에 들어온다.',
+    activation: 'on_talk',
+    entryConditions: allOf(loc(village), { type: 'SCENE_NOT_VISITED', sceneId: STORY_SCENE_ID.LUEN_SQUARE_LOOK }),
     priority: SCENE_PRIORITY.LOCATION_SPECIAL,
     onEnter: [
       { type: 'DISCOVER_LOCATION', locationId: LOCATION_ID.LUEN_GENERAL_STORE },
@@ -267,10 +287,9 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
       { type: 'LEARN_FACT', factId: CHAPTER_FACT_ID.RUMOR_NORTHERN_TRADE },
     ],
     choices: [
-      learn('square_merchant', '행상인에게 길을 묻는다', CHAPTER_FACT_ID.RUMOR_GOBLINS_INCREASING),
-      learn('square_children', '아이들의 수다를 듣는다', CHAPTER_FACT_ID.RUMOR_SERIA_RUINS),
+      learn('square_merchant', '행상인에게 북쪽 교역을 묻는다', CHAPTER_FACT_ID.RUMOR_GOBLINS_INCREASING),
       move(CHOICE_MOVE_GUILD, '모험가 길드로 간다', LOCATION_ID.LUEN_ADVENTURERS_GUILD),
-      move(CHOICE_MOVE_INN, '여관으로 간다', LOCATION_ID.BLUE_MOON_INN),
+      look(),
     ],
   },
   [STORY_SCENE_ID.LUEN_ASK_DIRECTIONS]: {
@@ -278,12 +297,9 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     locationId: village,
     title: '길 묻기',
     narrative:
-      '경비병이 턱짓으로 길드 간판을 가리킨다.\n“저쪽이다. 요즘은 숲길에 고블린이 늘어서, 신입도 받아 적는다고 하더군.”',
-    entryConditions: allOf(
-      loc(village),
-      { type: 'SCENE_VISITED', sceneId: STORY_SCENE_ID.LUEN_ASK_DIRECTIONS },
-      { type: 'SCENE_NOT_VISITED', sceneId: STORY_SCENE_ID.LUEN_ASK_DIRECTIONS }
-    ),
+      '경비병이 턱짓으로 길드 간판을 가리킨다.\n“저쪽이다. 요즘은 숲길에 고블린이 늘어서, 신입도 받아 적는다고 하더군. 세리아와 레온은 그 수를 두고 말이 다르다.”',
+    activation: 'on_talk',
+    entryConditions: allOf(loc(village), { type: 'SCENE_NOT_VISITED', sceneId: STORY_SCENE_ID.LUEN_ASK_DIRECTIONS }),
     priority: SCENE_PRIORITY.LOCATION_SPECIAL,
     onEnter: [
       { type: 'DISCOVER_LOCATION', locationId: LOCATION_ID.LUEN_ADVENTURERS_GUILD },
@@ -300,19 +316,63 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     id: STORY_SCENE_ID.LUEN_VILLAGE_HUB,
     locationId: village,
     title: '루엔 마을',
-    narrative: '루엔의 하루가 천천히 흐른다. 여관, 길드, 숲길로 이어지는 흙길이 익숙해지기 시작한다.',
+    narrative:
+      '광장 끝, 숲으로 난 흙길에 발자국이 겹쳐 있다. 경비 하나가 그 길을 보고 서 있다. 수풀이 한 번 흔들리고, 여관과 길드가 옆에 있다.',
     npcId: 'seria',
     entryConditions: loc(village),
     priority: SCENE_PRIORITY.DEFAULT,
     fallbackSceneId: STORY_SCENE_ID.LUEN_VILLAGE_HUB,
     choices: [
       {
+        id: CHOICE_MOVE_GUILD,
+        text: '모험가 길드로 간다',
+        conditions: noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.GUILD_REGISTERED }),
+        action: { type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.LUEN_ADVENTURERS_GUILD },
+        choicePurpose: 'PROGRESSION',
+      },
+      {
+        id: 'hub_ask_seria',
+        text: '세리아에게 숲의 푸른 기운을 묻는다',
+        conditions: noneOf({ type: 'SCENE_VISITED', sceneId: STORY_SCENE_ID.SERIA_FIRST_MEETING }),
+        action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.SERIA_FIRST_MEETING },
+        choicePurpose: 'DECISION',
+      },
+      {
         id: 'hub_square_again',
-        text: '광장을 둘러본다',
+        text: '광장을 잠깐 둘러본다',
         conditions: noneOf({ type: 'PLAYER_KNOWS_FACT', factId: CHAPTER_FACT_ID.LUEN_VILLAGE_LAYOUT }),
         action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.LUEN_SQUARE_LOOK },
         choicePurpose: 'DECISION',
       },
+      look(),
+    ],
+  },
+  [STORY_SCENE_ID.LUEN_VILLAGE_AFTER_SCOUTS]: {
+    id: STORY_SCENE_ID.LUEN_VILLAGE_AFTER_SCOUTS,
+    locationId: village,
+    title: '루엔 마을',
+    narrative:
+      '숲길을 다녀온 신참 이야기가 광장에 돈다. 경비는 아직 그 길을 보지만, 낮의 루엔은 다시 장사를 시작한다.',
+    npcId: 'seria',
+    entryConditions: allOf(loc(village), { type: 'WORLD_FLAG', flagId: WORLD_FLAG.FOREST_GOBLIN_DEFEATED }),
+    priority: SCENE_PRIORITY.GENERAL_INTERACTION,
+    fallbackSceneId: STORY_SCENE_ID.LUEN_VILLAGE_HUB,
+    choices: [
+      {
+        id: 'hub_ask_seria_after_scouts',
+        text: '세리아에게 숲의 푸른 기운을 묻는다',
+        conditions: noneOf({ type: 'SCENE_VISITED', sceneId: STORY_SCENE_ID.SERIA_FIRST_MEETING }),
+        action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.SERIA_FIRST_MEETING },
+        choicePurpose: 'DECISION',
+      },
+      {
+        id: 'hub_square_after_scouts',
+        text: '광장을 잠깐 둘러본다',
+        conditions: noneOf({ type: 'PLAYER_KNOWS_FACT', factId: CHAPTER_FACT_ID.LUEN_VILLAGE_LAYOUT }),
+        action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.LUEN_SQUARE_LOOK },
+        choicePurpose: 'DECISION',
+      },
+      look(),
     ],
   },
   [STORY_SCENE_ID.LUEN_GUILD]: {
@@ -322,24 +382,37 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     narrative:
       '나무 바닥이 삐걱거린다. 칠판에 의뢰 쪽지가 몇 장 붙어 있고, 구석에서는 모험가들이 장비를 점검한다.\n카운터 너머로 도란이 장부를 펼친 채 신입을 평가하듯 올려다본다.',
     npcId: 'guildmaster_doran',
-    npcDialogue: '여기는 길드다. 구경할 거면 실컷 하고, 등록할 거면 이름을 대.',
+    npcDialogue: '장부에 없는 얼굴이군. 이름을 댈 거면 대고, 이미 올렸으면 칠판을 봐.',
     entryConditions: loc(LOCATION_ID.LUEN_ADVENTURERS_GUILD),
     priority: SCENE_PRIORITY.DEFAULT,
     fallbackSceneId: STORY_SCENE_ID.LUEN_GUILD,
     choices: [
       {
+        id: CHOICE_REGISTER_GUILD,
+        text: '이름을 대고 모험가로 등록한다',
+        conditions: noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.GUILD_REGISTERED }),
+        action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.LUEN_GUILD_REGISTER },
+        choicePurpose: 'PROGRESSION',
+      },
+      {
+        id: 'guild_to_seria_after_scout',
+        text: '마을로 가 세리아를 찾는다',
+        conditions: { type: 'QUEST_STATUS', questId: QUEST_ID.RUINS_MYSTERY, status: QUEST_STATUS.AVAILABLE },
+        action: { type: 'MOVE_TO_LOCATION', locationId: village },
+        choicePurpose: 'PROGRESSION',
+      },
+      {
         id: 'accept_forest_scouts',
         text: '칠판의 고블린 의뢰를 맡는다',
         conditions: { type: 'QUEST_STATUS', questId: QUEST_ID.FOREST_GOBLIN_SCOUR, status: QUEST_STATUS.AVAILABLE },
         action: { type: 'ACCEPT_QUEST', questId: QUEST_ID.FOREST_GOBLIN_SCOUR },
-        choicePurpose: 'DECISION',
+        choicePurpose: 'PROGRESSION',
       },
       {
         id: 'accept_forest_herbs',
         text: '칠판의 약초 채집을 맡는다',
         conditions: { type: 'QUEST_STATUS', questId: QUEST_ID.FOREST_HERB_GATHER, status: QUEST_STATUS.AVAILABLE },
         action: { type: 'ACCEPT_QUEST', questId: QUEST_ID.FOREST_HERB_GATHER },
-        choicePurpose: 'DECISION',
       },
       talk(CHOICE_TALK_DORAN, '도란에게 말을 건다'),
     ],
@@ -349,9 +422,9 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     locationId: LOCATION_ID.LUEN_ADVENTURERS_GUILD,
     title: '모험가 등록',
     narrative:
-      '도란이 장부에 당신의 이름을 적는다.\n“전투 경험은? 허세는 필요 없다. 살아남을 정도만 말하면 된다.”',
+      '도란이 장부를 펼치고 펜을 멈춘다.\n“이름은? 허세는 필요 없다. 살아남을 정도만 말하면 된다.”',
     npcId: 'guildmaster_doran',
-    npcDialogue: '지금은 모험가다. 칼이든 마법이든, 아직 네 길이 아니다.',
+    npcDialogue: '이름을 대. 전투 경험은 솔직하게만.',
     activation: 'auto',
     isDecisionPoint: true,
     entryConditions: allOf(
@@ -362,13 +435,33 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     priority: SCENE_PRIORITY.QUEST_CRITICAL,
     onEnter: [
       { type: 'SET_WORLD_FLAG', flagId: WORLD_FLAG.GUILD_REGISTERED, value: true },
+      { type: 'SET_WORLD_FLAG', flagId: WORLD_FLAG.SHOP_UNLOCKED, value: true },
+      { type: 'SET_WORLD_FLAG', flagId: WORLD_FLAG.ENHANCEMENT_UNLOCKED, value: true },
       { type: 'LEARN_FACT', factId: CHAPTER_FACT_ID.GUILD_BASIC_RULES },
       { type: 'DISCOVER_LOCATION', locationId: LOCATION_ID.FOREST_ROAD },
     ],
     choices: [
-      { ...learn('register_exp_none', '거의 없다고 말한다', CHAPTER_FACT_ID.GUILD_COMBAT_NONE), choicePurpose: 'ROLEPLAY' },
-      { ...learn('register_exp_some', '조금 있다고 말한다', CHAPTER_FACT_ID.GUILD_COMBAT_SOME), choicePurpose: 'ROLEPLAY' },
-      { ...learn('register_exp_confident', '자신 있다고 말한다', CHAPTER_FACT_ID.GUILD_COMBAT_CONFIDENT), choicePurpose: 'ROLEPLAY' },
+      {
+        id: 'register_give_name',
+        text: '이름을 댄다',
+        action: { type: 'CONTINUE', nextSceneId: STORY_SCENE_ID.LUEN_GUILD_FIRST_JOB },
+        choicePurpose: 'PROGRESSION',
+      },
+      {
+        ...learn('register_exp_none', '거의 없다고 말한다', CHAPTER_FACT_ID.GUILD_COMBAT_NONE),
+        nextSceneId: STORY_SCENE_ID.LUEN_GUILD_FIRST_JOB,
+        choicePurpose: 'ROLEPLAY',
+      },
+      {
+        ...learn('register_exp_some', '조금 있다고 말한다', CHAPTER_FACT_ID.GUILD_COMBAT_SOME),
+        nextSceneId: STORY_SCENE_ID.LUEN_GUILD_FIRST_JOB,
+        choicePurpose: 'ROLEPLAY',
+      },
+      {
+        ...learn('register_exp_confident', '자신 있다고 말한다', CHAPTER_FACT_ID.GUILD_COMBAT_CONFIDENT),
+        nextSceneId: STORY_SCENE_ID.LUEN_GUILD_FIRST_JOB,
+        choicePurpose: 'ROLEPLAY',
+      },
     ],
   },
   [STORY_SCENE_ID.LUEN_GUILD_FIRST_JOB]: {
@@ -378,7 +471,7 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     narrative:
       '칠판에는 신입용 쪽지가 붙어 있다.\n숲길의 고블린. 마르타의 부탁은 여관에서. 약초 채집은 급하지 않다.',
     npcId: 'guildmaster_doran',
-    npcDialogue: '신입용이다. 숲길을 조사하고, 고블린을 처리한 뒤 보고하면 된다. 보상은 30골드.',
+    npcDialogue: '이름은 장부에 올렸다. 신입은 숲길 고블린부터다. 푸른 빛은 마을에서 세리아에게 물어라.',
     entryConditions: allOf(
       loc(LOCATION_ID.LUEN_ADVENTURERS_GUILD),
       { type: 'QUEST_STATUS', questId: QUEST_ID.FOREST_GOBLIN_SCOUR, status: QUEST_STATUS.AVAILABLE }
@@ -387,32 +480,57 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     choices: [
       {
         id: 'accept_forest_scouts_scene',
-        text: '고블린 의뢰를 맡는다',
+        text: '고블린 정찰 의뢰를 맡는다',
         action: { type: 'ACCEPT_QUEST', questId: QUEST_ID.FOREST_GOBLIN_SCOUR },
-        choicePurpose: 'DECISION',
-      },
-      {
-        id: 'ask_goblin_count',
-        text: '몇 마리나 있는지 묻는다',
-        action: { type: 'TALK', promptId: 'ask_quest_goblin_count' },
+        choicePurpose: 'PROGRESSION',
       },
       {
         id: 'ask_goblin_danger',
-        text: '위험한지 묻는다',
+        text: '위험한지 짧게 묻는다',
+        conditions: noneOf({ type: 'PLAYER_KNOWS_FACT', factId: CHAPTER_FACT_ID.ASKED_GOBLIN_DANGER }),
         action: { type: 'TALK', promptId: 'ask_quest_goblin_danger' },
       },
-      learn('ask_goblin_why', '왜 갑자기 늘었는지 묻는다', CHAPTER_FACT_ID.GOBLIN_ARCHER_HINT),
-      talk(CHOICE_TALK_DORAN, '보상부터 확인한다'),
       move(CHOICE_MOVE_VILLAGE, '마을을 더 둘러본다', village),
+    ],
+  },
+  [STORY_SCENE_ID.LUEN_GUILD_KNOWN]: {
+    id: STORY_SCENE_ID.LUEN_GUILD_KNOWN,
+    locationId: LOCATION_ID.LUEN_ADVENTURERS_GUILD,
+    title: '루엔 모험가 길드',
+    narrative: '도란이 장부를 덮는다. 신입의 자리는 이미 정해져 있다.',
+    npcId: 'guildmaster_doran',
+    npcDialogue: '맡은 일이 남았으면 그걸 끝내라. 없으면 칠판을 봐라.',
+    entryConditions: allOf(loc(LOCATION_ID.LUEN_ADVENTURERS_GUILD), {
+      type: 'WORLD_FLAG',
+      flagId: WORLD_FLAG.GUILD_REGISTERED,
+    }),
+    priority: 30,
+    fallbackSceneId: STORY_SCENE_ID.LUEN_GUILD,
+    choices: [
+      {
+        id: 'accept_forest_scouts_known',
+        text: '칠판의 고블린 의뢰를 맡는다',
+        conditions: { type: 'QUEST_STATUS', questId: QUEST_ID.FOREST_GOBLIN_SCOUR, status: QUEST_STATUS.AVAILABLE },
+        action: { type: 'ACCEPT_QUEST', questId: QUEST_ID.FOREST_GOBLIN_SCOUR },
+        choicePurpose: 'PROGRESSION',
+      },
+      {
+        id: 'accept_forest_herbs_known',
+        text: '칠판의 약초 채집을 맡는다',
+        conditions: { type: 'QUEST_STATUS', questId: QUEST_ID.FOREST_HERB_GATHER, status: QUEST_STATUS.AVAILABLE },
+        action: { type: 'ACCEPT_QUEST', questId: QUEST_ID.FOREST_HERB_GATHER },
+      },
+      talk(CHOICE_TALK_DORAN, '도란에게 말을 건다'),
     ],
   },
   [STORY_SCENE_ID.LUEN_GUILD_SCOUT_REPORT]: {
     id: STORY_SCENE_ID.LUEN_GUILD_SCOUT_REPORT,
     locationId: LOCATION_ID.LUEN_ADVENTURERS_GUILD,
     title: '정찰 보고',
-    narrative: '도란이 장부를 펼친다.\n“살아 돌아왔군. 뭐가 보였지?”',
+    narrative:
+      '도란이 장부를 펼친다.\n“살아 돌아왔군. 이상한 점이 있으면 그것부터 말해.”\n보고가 끝나면 세리아가 폐허를 물을 것이다.',
     npcId: 'guildmaster_doran',
-    npcDialogue: '처리만 했다고 해도 되고, 흔적까지 말해도 된다. 네가 말한 것만 적겠다.',
+    npcDialogue: '확인한 것만 적겠다. 끝나면 길의 선택부터 하고, 마을에서 세리아를 찾아봐.',
     entryConditions: allOf(
       loc(LOCATION_ID.LUEN_ADVENTURERS_GUILD),
       { type: 'QUEST_STATUS', questId: QUEST_ID.FOREST_GOBLIN_SCOUR, status: QUEST_STATUS.ACTIVE },
@@ -421,15 +539,23 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     ),
     priority: SCENE_PRIORITY.QUEST_REPORT,
     choices: [
-      talk(CHOICE_TALK_DORAN, '고블린만 처리했다고 보고한다'),
+      {
+        id: 'report_blue_glow',
+        text: '푸른 잔광과 고블린 이동을 보고한다',
+        conditions: allOf(
+          { type: 'PLAYER_KNOWS_FACT', factId: CHAPTER_FACT_ID.CAMP_BLUE_GLOW },
+          noneOf({ type: 'NPC_KNOWS_FACT', npcId: 'guildmaster_doran', factId: CHAPTER_FACT_ID.CAMP_BLUE_GLOW })
+        ),
+        action: { type: 'SHARE_FACT', factId: CHAPTER_FACT_ID.CAMP_BLUE_GLOW, toId: 'guildmaster_doran' },
+        choicePurpose: 'PROGRESSION',
+      },
+      talk(CHOICE_TALK_DORAN, '정찰 결과를 보고한다'),
       {
         id: 'report_tracks',
-        text: '이동 흔적까지 보고한다',
+        text: '이동 흔적만 짧게 전한다',
         conditions: { type: 'PLAYER_KNOWS_FACT', factId: CHAPTER_FACT_ID.FOREST_TRACKS },
         action: { type: 'SHARE_FACT', factId: CHAPTER_FACT_ID.FOREST_TRACKS, toId: 'guildmaster_doran' },
       },
-      talk(CHOICE_TALK_DORAN, '증거를 보여 주며 보고한다'),
-      move(CHOICE_MOVE_VILLAGE, '마을로 나간다', village),
     ],
   },
   [STORY_SCENE_ID.LUEN_SHOP_INTRO]: {
@@ -439,7 +565,7 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     narrative:
       '엘린이 진열장을 닦으며 고개를 든다.\n“신참인가? 숲으로 갈 거면 무기는 제대로 챙겨. 물약이든 검이든, 한 번에 다 살 생각은 말고.”',
     npcId: 'shopkeeper_elin',
-    npcDialogue: '필요한 걸 말해. 강화는 한 번만 설명해 줄게. 장비는 +3까지다.',
+    npcDialogue: '신참인가. 숲으로 갈 거면 무기는 제대로 챙겨. 한 번에 다 살 생각은 말고.',
     entryConditions: allOf(
       loc(LOCATION_ID.LUEN_GENERAL_STORE),
       { type: 'WORLD_FLAG', flagId: WORLD_FLAG.SHOP_UNLOCKED },
@@ -448,7 +574,11 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     priority: SCENE_PRIORITY.LOCATION_SPECIAL,
     choices: [
       { id: CHOICE_OPEN_SHOP, text: '물건을 살펴본다', action: { type: 'OPEN_SHOP' } },
-      talk('talk_elin_here', '값을 묻는다'),
+      talk(
+        'ask_elin_prices',
+        '값을 묻는다',
+        noneOf({ type: 'PLAYER_KNOWS_FACT', factId: CHAPTER_FACT_ID.ASKED_ELIN_PRICES })
+      ),
       move(CHOICE_MOVE_VILLAGE, '마을로 돌아간다', village),
     ],
   },
@@ -457,43 +587,77 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     locationId: LOCATION_ID.LUEN_ADVENTURERS_GUILD,
     title: '길의 선택',
     narrative:
-      '도란이 장부를 덮는다.\n“이제 단순한 모험가라고 부르기엔 충분히 경험을 쌓았군. 앞으로 어떤 길을 걷고 싶은지 결정해야 할 때다.”',
+      '도란이 제1장의 장부를 덮고 빈 칸을 연다.\n“여기까지 왔으니, 이제 길을 정할 때다. 검사·마법사·도적 — 한 번 고르면 쉽게 바꾸지 못한다.”',
     npcId: 'guildmaster_doran',
     npcDialogue: '검사는 정면, 마법사는 거리, 도적은 틈. 한 번 정하면 쉽게 바꾸지 못한다.',
     entryConditions: allOf(
       loc(LOCATION_ID.LUEN_ADVENTURERS_GUILD),
-      { type: 'WORLD_FLAG', flagId: WORLD_FLAG.GUILD_RECOGNITION_DONE },
-      { type: 'WORLD_FLAG', flagId: WORLD_FLAG.RUINS_GUARDIAN_DEFEATED },
-      { type: 'QUEST_STATUS', questId, status: QUEST_STATUS.COMPLETED },
+      { type: 'WORLD_FLAG', flagId: WORLD_FLAG.CHAPTER_1_COMPLETE },
+      { type: 'WORLD_FLAG', flagId: WORLD_FLAG.GUILD_REGISTERED },
       { type: 'PLAYER_CLASS', classId: PLAYER_CLASS_ID.ADVENTURER },
-      { type: 'PLAYER_LEVEL_MIN', level: 5 },
       noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.FIRST_ADVANCEMENT_DONE })
     ),
-    priority: SCENE_PRIORITY.FIRST_ADVANCEMENT_REQUIRED,
+    priority: SCENE_PRIORITY.QUEST_CRITICAL,
     choices: [
-      talk('ask_path_warrior', '검사는 어떤 길입니까?'),
-      talk('ask_path_mage', '마법사는 어떤 길입니까?'),
-      talk('ask_path_rogue', '도적은 어떤 길입니까?'),
       {
         id: 'choose_path_warrior',
         text: '검사의 길을 택한다',
         action: { type: 'CHOOSE_CLASS_PATH', classId: PLAYER_CLASS_ID.WARRIOR },
+        choicePurpose: 'DECISION',
       },
       {
         id: 'choose_path_mage',
         text: '마법사의 길을 택한다',
         action: { type: 'CHOOSE_CLASS_PATH', classId: PLAYER_CLASS_ID.MAGE },
+        choicePurpose: 'DECISION',
       },
       {
         id: 'choose_path_rogue',
         text: '도적의 길을 택한다',
         action: { type: 'CHOOSE_CLASS_PATH', classId: PLAYER_CLASS_ID.ROGUE },
+        choicePurpose: 'DECISION',
       },
+    ],
+  },
+  [STORY_SCENE_ID.LUEN_CLASS_CHOSEN]: {
+    id: STORY_SCENE_ID.LUEN_CLASS_CHOSEN,
+    locationId: LOCATION_ID.LUEN_ADVENTURERS_GUILD,
+    title: '길이 정해졌다',
+    narrative:
+      '도란이 장부에 새 길을 적는다.\n모험가였던 칸은 닫히고, 고른 이름이 그 자리를 대신한다.\n폐허의 봉인과 북문의 소문은 남았지만, 이번 이야기는 여기서 끝난다.',
+    npcId: 'guildmaster_doran',
+    npcDialogue: '길은 정했다. 루엔에서의 첫 장은 여기까지다.',
+    entryConditions: allOf(
+      loc(LOCATION_ID.LUEN_ADVENTURERS_GUILD),
+      { type: 'WORLD_FLAG', flagId: WORLD_FLAG.FIRST_ADVANCEMENT_DONE }
+    ),
+    priority: SCENE_PRIORITY.QUEST_CRITICAL,
+    choices: [
       {
-        id: 'delay_advancement',
-        text: '결정을 조금 미룬다',
-        action: { type: 'LOOK_AROUND' },
+        id: 'contest_story_end',
+        text: '여기까지다',
+        action: { type: 'TALK', promptId: 'contest_story_end' },
       },
+    ],
+  },
+  [STORY_SCENE_ID.LUEN_TRAINING_GROUND]: {
+    id: STORY_SCENE_ID.LUEN_TRAINING_GROUND,
+    locationId: LOCATION_ID.LUEN_TRAINING_GROUND,
+    title: '루엔 훈련장',
+    narrative:
+      '말뚝과 허수아비가 줄지어 서 있다.\n여기서는 경험치도 골드도 없다. 체력은 줄지 않고 마나는 마르지 않는다.',
+    entryConditions: loc(LOCATION_ID.LUEN_TRAINING_GROUND),
+    priority: SCENE_PRIORITY.LOCATION_SPECIAL,
+    fallbackSceneId: STORY_SCENE_ID.LUEN_TRAINING_GROUND,
+    choices: [
+      {
+        id: CHOICE_START_TRAINING,
+        text: '허수아비를 상대로 훈련한다',
+        action: { type: 'START_COMBAT', combatId: ENCOUNTER_ID.TRAINING_GROUNDS },
+        choicePurpose: 'PROGRESSION',
+      },
+      move(CHOICE_MOVE_VILLAGE, '마을로 돌아간다', village),
+      look(),
     ],
   },
   [STORY_SCENE_ID.LUEN_GUILD_ADVANCEMENT_WAIT]: {
@@ -501,21 +665,20 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     locationId: LOCATION_ID.LUEN_ADVENTURERS_GUILD,
     title: '아직 이른 전직',
     narrative:
-      '도란이 당신의 손을 잠시 보더니 고개를 젓는다.\n“폐허를 다녀온 건 인정한다. 하지만 아직은 모험가다. 조금 더 경험을 쌓은 뒤 다시 오라.”',
+      '도란이 장부를 덮는다.\n“전직은 제1장을 마치고 난 뒤에 열어 주겠다. 폐허와 북문까지 보고 돌아와라. 지금은 모험가로 충분하다.”',
     npcId: 'guildmaster_doran',
-    npcDialogue: '칼이든 마법이든, 몸이 먼저 기억해야 길이 생긴다.',
+    npcDialogue: '제1장을 마치고 돌아와라. 그때 길을 고르게 해 주겠다.',
     entryConditions: allOf(
       loc(LOCATION_ID.LUEN_ADVENTURERS_GUILD),
-      { type: 'WORLD_FLAG', flagId: WORLD_FLAG.GUILD_RECOGNITION_DONE },
       { type: 'PLAYER_CLASS', classId: PLAYER_CLASS_ID.ADVENTURER },
-      noneOf({ type: 'PLAYER_LEVEL_MIN', level: 5 }),
+      { type: 'WORLD_FLAG', flagId: WORLD_FLAG.GUILD_REGISTERED },
+      noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.RUINS_GUARDIAN_DEFEATED }),
       noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.FIRST_ADVANCEMENT_DONE })
     ),
-    priority: SCENE_PRIORITY.QUEST_CRITICAL,
+    priority: 5,
     choices: [
-      talk(CHOICE_TALK_DORAN, '얼마나 더 필요한지 묻는다'),
+      talk(CHOICE_TALK_DORAN, '알겠다'),
       move(CHOICE_MOVE_VILLAGE, '마을로 나간다', village),
-      look(),
     ],
   },
   [STORY_SCENE_ID.MARTA_FIRST_MEETING]: {
@@ -523,7 +686,7 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     locationId: LOCATION_ID.BLUE_MOON_INN,
     title: '푸른 달 여관',
     narrative:
-      '마르타가 잔을 닦으며 당신을 훑어본다.\n“루엔에는 처음이지? 여행 티가 난다. 어디서 왔고, 여긴 왜 온 거야?”',
+      '마르타가 잔을 닦으며 당신을 훑어본다.\n“루엔에는 처음이지? 여행 티가 난다. 북문 상단이 늦고, 숲 소문이 끊이질 않아. 길드는 광장 옆이야.”',
     npcId: 'innkeeper',
     npcDialogue: '방은 있으니 몸만 성하면 돼. 길드는 광장 옆이고, 요즘은 숲 소문이 끊이질 않아.',
     entryConditions: allOf(
@@ -538,10 +701,8 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     ],
     choices: [
       learn('marta_reason_adventure', '모험가가 되고 싶어서 왔다', CHAPTER_FACT_ID.PLAYER_CAME_TO_ADVENTURE),
-      learn('marta_reason_gold', '돈을 벌러 왔다', CHAPTER_FACT_ID.PLAYER_CAME_FOR_GOLD),
-      learn('marta_reason_travel', '그냥 여행 중이다', CHAPTER_FACT_ID.PLAYER_JUST_TRAVELING),
-      talk(CHOICE_TALK_MARTA, '길드 위치를 묻는다'),
-      { id: 'marta_end_talk', text: '대화를 마친다', action: { type: 'LOOK_AROUND' } },
+      { id: CHOICE_REST_INN, text: '여관에서 쉰다', action: { type: 'REST' }, choicePurpose: 'DECISION' },
+      move(CHOICE_MOVE_VILLAGE, '마을로 나간다', village),
     ],
   },
   [STORY_SCENE_ID.MARTA_PARCEL_RETURN]: {
@@ -550,7 +711,7 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     title: '잃어버린 짐',
     narrative: '마르타가 자루를 받아 들고 한숨 쉰다.\n“찾았구나. 상태는 어떤데?”',
     npcId: 'innkeeper',
-    npcDialogue: '숲길에서 떨어진 거겠지. 고마워.',
+    npcDialogue: '찾았구나. 북문 통과 표가 붙어 있었지? 요즘은 북쪽 길이 흔들려서 짐이 숲에 떨어지곤 해. 고마워.',
     entryConditions: allOf(
       loc(LOCATION_ID.BLUE_MOON_INN),
       { type: 'PLAYER_KNOWS_FACT', factId: CHAPTER_FACT_ID.FOREST_ABANDONED_PACK },
@@ -561,7 +722,7 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     choices: [
       talk(CHOICE_TALK_MARTA, '바로 돌려준다'),
       talk(CHOICE_TALK_MARTA, '상태를 확인했다고 말한다'),
-      talk(CHOICE_TALK_MARTA, '어디서 발견했는지 이야기한다'),
+      move(CHOICE_MOVE_VILLAGE, '마을로 나간다', village),
     ],
   },
   [STORY_SCENE_ID.LEON_FIRST_MEETING]: {
@@ -569,9 +730,9 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     locationId: LOCATION_ID.NORTHERN_GATE,
     title: '북문의 기사',
     narrative:
-      '레온이 닫힌 북문 앞에서 당신을 멈춰 세운다.\n“신참인가. 북문 경계는 강화됐다. 이상한 기운이 숲과 폐허 쪽에서 흘러온다는 보고가 있었으니, 함부로 나서지 마라.”',
+      '레온이 닫힌 북문 앞에서 당신을 멈춰 세운다. 그는 숲이 아니라 문턱의 흙을 본다.',
     npcId: 'leon',
-    npcDialogue: '용건이 있으면 짧게. 문은 아직 열리지 않는다. 고블린은 늘고, 북문 너머 상인은 줄었다.',
+    npcDialogue: '북문은 닫혀 있다. 숲에서 밀려 나온 것들이 문턱을 넘기 전에 막아야 한다.',
     entryConditions: allOf(
       loc(LOCATION_ID.NORTHERN_GATE),
       { type: 'NPC_PRESENT', npcId: 'leon' },
@@ -592,6 +753,11 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
       },
       talk(CHOICE_TALK_LEON, '북문 상황을 묻는다'),
       {
+        id: 'leon_seria_view_early',
+        text: '세리아의 조사와 네 보고, 무엇이 먼저입니까',
+        action: { type: 'TALK', promptId: 'leon_seria_view' },
+      },
+      {
         id: 'accept_leon_watch',
         text: '고블린 출몰을 조사하겠다고 한다',
         conditions: { type: 'QUEST_STATUS', questId: QUEST_ID.LEON_GOBLIN_WATCH, status: QUEST_STATUS.AVAILABLE },
@@ -605,28 +771,31 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     locationId: forest,
     title: '숲길의 흔적',
     narrative:
-      '나뭇가지가 꺾이고, 진흙에 작은 발자국이 겹쳐 있다. 버려진 짐과 수풀 너머 기척이 있다.\n바로 싸울 필요는 없다.',
+      '진흙의 발자국은 같은 방향으로 겹친다. 흩어진 도주가 아니다.\n발자국 옆에는 왕실 문양처럼 생긴 돌조각과, 자연스럽게 생긴 것이 아닌 푸른 마력이 남아 있다. 누가 봉인을 건드렸는지는 아직 모른다.',
     entryConditions: allOf(
       loc(forest),
+      { type: 'SCENE_VISITED', sceneId: STORY_SCENE_ID.FOREST_ROAD_FIRST },
       noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.FOREST_TRACES_FOUND }),
       noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.RUINS_GOBLINS_DEFEATED })
     ),
-    priority: SCENE_PRIORITY.LOCATION_SPECIAL,
+    // Below FIRST_VISIT so follow-up resolve cannot steal the opening forest beat.
+    priority: SCENE_PRIORITY.GENERAL_INTERACTION,
     onEnter: [
       { type: 'SET_WORLD_FLAG', flagId: WORLD_FLAG.FOREST_TRACES_FOUND, value: true },
       { type: 'GRANT_ITEM', itemId: 'old_coin', quantity: 1, sourceEventId: 'story:forest_traces:old_coin' },
       { type: 'DISCOVER_LOCATION', locationId: LOCATION_ID.FOREST_ROAD },
     ],
     choices: [
+      {
+        id: CHOICE_FIGHT_FOREST_GOBLIN,
+        text: '수풀에서 뛰쳐나온 고블린을 맞는다',
+        conditions: noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.FOREST_GOBLIN_DEFEATED }),
+        action: { type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_FOREST_SCOUTS },
+        choicePurpose: 'PROGRESSION',
+      },
       investigatePoint('investigate_tracks', '발자국을 조사한다', EXPLORATION_POINT_ID.FOREST_TRACKS),
       investigatePoint('investigate_pack', '버려진 짐을 조사한다', EXPLORATION_POINT_ID.FOREST_ABANDONED_PACK),
       investigatePoint('investigate_sounds', '주변 소리를 살핀다', EXPLORATION_POINT_ID.FOREST_SOUNDS),
-      {
-        id: CHOICE_FIGHT_FOREST_GOBLIN,
-        text: '수풀 쪽 기척에 다가간다',
-        conditions: noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.FOREST_GOBLIN_DEFEATED }),
-        action: { type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_FOREST_SCOUTS },
-      },
       move(CHOICE_MOVE_VILLAGE, '마을로 돌아간다', village),
     ],
   },
@@ -634,9 +803,9 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     id: STORY_SCENE_ID.SERIA_FIRST_MEETING,
     locationId: village,
     title: '세리아와의 첫 만남',
-    narrative: '세리아가 광장 가장자리에서 당신을 처음 제대로 바라본다.\n여행자의 먼지와 아직 정해지지 않은 눈빛을 읽은 듯, 경계는 있지만 말은 들어줄 기색이다.\n“루엔은 조용한 마을이었어. 요즘은 숲과 폐허 쪽에서 이상한 기운이 새어 나와.”',
+    narrative: '세리아가 숲 쪽 하늘을 본다. 푸른 빛은 지붕 너머로 가늘게 남아 있다.',
     npcId: 'seria',
-    npcDialogue: '처음 보는 얼굴이군. 용건이 있으면 말해.',
+    npcDialogue: '어젯밤부터 숲 쪽에서 푸른 빛이 보여. 고블린이 내려온 것도 그때부터고. 이상한 건… 놈들이 도망치는 것처럼 보인다는 거야.',
     activation: 'on_talk',
     entryConditions: allOf(
       loc(village),
@@ -646,10 +815,12 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     ),
     priority: SCENE_PRIORITY.TALK,
     choices: [
-      talk(CHOICE_ASK_IDENTITY, '당신에 대해 묻는다'),
-      talk(CHOICE_ASK_EVENT, '루엔에 온 이유를 묻는다'),
-      talk('ask_seria_research', '무엇을 연구하는지 묻는다'),
-      { id: 'seria_end_first', text: '대화를 마친다', action: { type: 'LOOK_AROUND' } },
+      talk(
+        CHOICE_ASK_EVENT,
+        '푸른 빛에 대해 묻는다',
+        noneOf({ type: 'PLAYER_KNOWS_FACT', factId: CHAPTER_FACT_ID.SERIA_BLUE_PULSE })
+      ),
+      { id: 'seria_end_first', text: '나중에 다시 말한다', action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.LUEN_VILLAGE_HUB } },
     ],
   },
   [STORY_SCENE_ID.SERIA_ANOMALY]: {
@@ -657,72 +828,61 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     locationId: village,
     title: '이상한 기운',
     narrative:
-      '세리아가 숲 쪽을 보며 말한다.\n“루엔은 조용한 마을이었어. 요즘은 숲과 폐허에서 마력이 샌다. 원인은 아직 모른다.”',
+      '세리아가 숲 쪽을 본다. 지붕 너머의 빛이 한 박자 늦게 흔들린다.',
     npcId: 'seria',
-    npcDialogue: '이상한 기운이 느껴져. 그게 전부야.',
-    activation: 'on_talk',
+    npcDialogue: '마력 자체가 비정상적이야. 이 흔적은 폐허 안쪽에서 새어 나온 것 같아.',
+    activation: 'auto',
     entryConditions: allOf(
       loc(village),
       { type: 'NPC_PRESENT', npcId: 'seria' },
       { type: 'SCENE_VISITED', sceneId: STORY_SCENE_ID.SERIA_FIRST_MEETING },
       { type: 'SCENE_NOT_VISITED', sceneId: STORY_SCENE_ID.SERIA_ANOMALY },
       noneOf({ type: 'QUEST_STATUS', questId, status: QUEST_STATUS.ACTIVE }),
-      noneOf({ type: 'QUEST_STATUS', questId, status: QUEST_STATUS.COMPLETED })
+      noneOf({ type: 'QUEST_STATUS', questId, status: QUEST_STATUS.COMPLETED }),
+      noneOf({ type: 'QUEST_STATUS', questId, status: QUEST_STATUS.AVAILABLE })
     ),
     priority: SCENE_PRIORITY.TALK,
-    onEnter: [{ type: 'LEARN_FACT', factId: CHAPTER_FACT_ID.RUMOR_SERIA_RUINS }],
+    onEnter: [
+      { type: 'LEARN_FACT', factId: CHAPTER_FACT_ID.RUMOR_SERIA_RUINS },
+      { type: 'LEARN_FACT', factId: CHAPTER_FACT_ID.SERIA_BLUE_PULSE },
+    ],
     choices: [
-      talk('ask_seria_ruins_history', '폐허는 원래 어떤 곳입니까?'),
       talk('ask_seria_danger', '마력 이상이 위험한 겁니까?'),
-      talk('ask_seria_why_not_go', '왜 직접 가지 않습니까?'),
-      { id: 'seria_end_anomaly', text: '대화를 마친다', action: { type: 'LOOK_AROUND' } },
+      { id: 'seria_end_anomaly', text: '알겠다', action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.LUEN_VILLAGE_HUB } },
     ],
   },
   [STORY_SCENE_ID.SERIA_RUINS_OFFER]: {
     id: STORY_SCENE_ID.SERIA_RUINS_OFFER,
     locationId: village,
     title: '폐허 조사 의뢰',
-    narrative: '세리아가 폐허의 이상한 기운을 이야기한다. 조사를 맡아 줄 사람을 찾고 있지만, 서두르지는 않는다.',
+    narrative:
+      '세리아가 숲 쪽을 가리킨다. 말은 짧고, 시선은 빛에 가 있다.',
     npcId: 'seria',
-    npcDialogue: '폐허에서 이상한 마력이 느껴지고 있어. 조사해줄 수 있겠어? 준비되면 가도 돼.',
+    npcDialogue: '빛은 이미 말했어. 지금은 폐허까지 그 결을 따라가 주면 돼.',
     entryConditions: allOf(
       loc(village),
       { type: 'NPC_PRESENT', npcId: 'seria' },
       { type: 'QUEST_STATUS', questId, status: QUEST_STATUS.AVAILABLE }
     ),
-    priority: SCENE_PRIORITY.QUEST,
+    priority: SCENE_PRIORITY.QUEST_CRITICAL,
     choices: [
       {
         id: CHOICE_ACCEPT_RUINS_MYSTERY,
-        text: '폐허 조사를 맡겠다고 한다',
+        text: '폐허 조사를 맡는다',
         action: { type: 'ACCEPT_QUEST', questId },
+        choicePurpose: 'PROGRESSION',
       },
-      {
-        id: 'ruins_ask_reward',
-        text: '보상과 의뢰 조건을 확인한다',
-        action: { type: 'TALK', promptId: 'ask_seria_reward' },
-      },
-      {
-        id: 'ruins_prep_later',
-        text: '조금 더 준비하고 가겠다고 한다',
-        action: { type: 'LOOK_AROUND' },
-      },
-      {
-        id: 'seria_goblin_to_ruins',
-        text: '고블린들이 폐허 쪽으로 이동하는 것을 봤습니다',
-        conditions: { type: 'PLAYER_KNOWS_FACT', factId: CHAPTER_FACT_ID.GOBLINS_MOVING_NEAR_RUINS },
-        action: { type: 'SHARE_FACT', factId: CHAPTER_FACT_ID.GOBLINS_MOVING_NEAR_RUINS, toId: 'seria' },
-      },
-      move(CHOICE_MOVE_INN, '여관으로 간다', LOCATION_ID.BLUE_MOON_INN),
+      move(CHOICE_MOVE_FOREST, '바로 숲길로 나간다', forest),
+      move(CHOICE_MOVE_INN, '여관에 들른다', LOCATION_ID.BLUE_MOON_INN),
     ],
   },
   [STORY_SCENE_ID.SERIA_RUINS_ACTIVE]: {
     id: STORY_SCENE_ID.SERIA_RUINS_ACTIVE,
     locationId: village,
     title: '조사 진행',
-    narrative: '세리아는 당신이 폐허 조사를 맡은 것을 알고 있다. 아직 결정적인 보고는 오지 않았다.',
+    narrative: '세리아가 짧게 고개를 끄덕인다.\n“폐허로 이어가면 돼. 제단 앞에서 결을 적어.”',
     npcId: 'seria',
-    npcDialogue: '아직 조사 중이야? 준비가 되면 폐허로 향하세요. 서두를 필요는 없어.',
+    npcDialogue: '숲을 지나 폐허. 그다음 제단이다.',
     entryConditions: allOf(
       loc(village),
       { type: 'NPC_PRESENT', npcId: 'seria' },
@@ -731,24 +891,14 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     ),
     priority: SCENE_PRIORITY.QUEST,
     choices: [
-      talk(CHOICE_TALK_RUINS_PROGRESS, '폐허 조사 진행 상황을 이야기한다'),
       {
         id: 'ruins_go_now',
-        text: '바로 폐허로 향한다',
+        text: '숲으로 이어간다',
         action: { type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.FOREST_ROAD },
+        choicePurpose: 'PROGRESSION',
       },
-      {
-        id: 'ruins_prep_shop',
-        text: '상점에서 준비한다',
-        conditions: { type: 'WORLD_FLAG', flagId: WORLD_FLAG.SHOP_UNLOCKED },
-        action: { type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.LUEN_GENERAL_STORE },
-      },
-      {
-        id: 'ruins_prep_enhance',
-        text: '길드에서 장비를 강화한다',
-        conditions: { type: 'WORLD_FLAG', flagId: WORLD_FLAG.ENHANCEMENT_UNLOCKED },
-        action: { type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.LUEN_ADVENTURERS_GUILD },
-      },
+      move(CHOICE_MOVE_INN, '여관에서 쉰다', LOCATION_ID.BLUE_MOON_INN),
+      talk(CHOICE_TALK_RUINS_PROGRESS, '짧게 진행을 이야기한다'),
       {
         id: CHOICE_RECALL_SAVED,
         text: '그때 폐허에서 날 구했던 일을 꺼낸다',
@@ -784,21 +934,22 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     entryConditions: allOf(loc(forest), { type: 'SCENE_NOT_VISITED', sceneId: STORY_SCENE_ID.FOREST_ROAD_FIRST }),
     priority: SCENE_PRIORITY.FIRST_VISIT,
     choices: [
-      move(CHOICE_MOVE_VILLAGE, '마을로 돌아간다', village),
       {
         id: CHOICE_FIGHT_FOREST_GOBLIN,
-        text: '숲길의 고블린과 싸운다',
+        text: '수풀에서 뛰쳐나온 고블린을 맞는다',
         conditions: noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.FOREST_GOBLIN_DEFEATED }),
         action: { type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_FOREST_SCOUTS },
+        choicePurpose: 'PROGRESSION',
       },
-      investigatePoint(CHOICE_INVESTIGATE_AREA, '길을 살핀다', EXPLORATION_POINT_ID.FOREST_TRACKS),
-      investigatePoint('pick_forest_herbs', '길가의 약초를 채집한다', EXPLORATION_POINT_ID.FOREST_HERBS),
       {
-        id: 'forest_to_ruins_first',
-        text: '폐허로 간다',
-        conditions: { type: 'LOCATION_DISCOVERED', locationId: LOCATION_ID.ANCIENT_RUINS },
-        action: { type: 'MOVE_TO_LOCATION', locationId: ruins },
+        id: 'forest_scout_traces',
+        text: '흔적을 조사한다',
+        conditions: noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.FOREST_TRACES_FOUND }),
+        action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.FOREST_TRACES },
+        choicePurpose: 'ROLEPLAY',
       },
+      investigateForestHerbs(),
+      move(CHOICE_MOVE_VILLAGE, '마을로 돌아간다', LOCATION_ID.LUEN_VILLAGE),
     ],
   },
   [STORY_SCENE_ID.FOREST_ROAD_DEFAULT]: {
@@ -810,39 +961,89 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     priority: SCENE_PRIORITY.DEFAULT,
     fallbackSceneId: STORY_SCENE_ID.FOREST_ROAD_DEFAULT,
     choices: [
-      move(CHOICE_MOVE_VILLAGE, '마을로 돌아간다', village),
       {
         id: `${CHOICE_FIGHT_FOREST_GOBLIN}_default`,
-        text: '숲길의 고블린과 싸운다',
+        text: '수풀에서 뛰쳐나온 고블린을 맞는다',
         conditions: noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.FOREST_GOBLIN_DEFEATED }),
         action: { type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_FOREST_SCOUTS },
+        choicePurpose: 'PROGRESSION',
       },
-      investigatePoint(CHOICE_INVESTIGATE_AREA, '길을 살핀다', EXPLORATION_POINT_ID.FOREST_TRACKS),
-      investigatePoint('pick_forest_herbs_default', '길가의 약초를 채집한다', EXPLORATION_POINT_ID.FOREST_HERBS),
+      {
+        id: 'fight_forest_ambush_default',
+        text: '수풀의 늑대와 고블린이 길을 막는다',
+        conditions: allOf(
+          { type: 'WORLD_FLAG', flagId: WORLD_FLAG.FOREST_GOBLIN_DEFEATED },
+          noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.FOREST_AMBUSH_CLEARED })
+        ),
+        action: { type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_FOREST_AMBUSH },
+        choicePurpose: 'PROGRESSION',
+      },
+      {
+        id: 'fight_forest_ambush_again',
+        text: '수풀의 늑대와 고블린을 다시 상대한다',
+        conditions: { type: 'WORLD_FLAG', flagId: WORLD_FLAG.FOREST_AMBUSH_CLEARED },
+        action: { type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_FOREST_AMBUSH },
+        choicePurpose: 'ROLEPLAY',
+      },
       {
         id: 'forest_to_ruins_default',
-        text: '폐허로 간다',
-        conditions: { type: 'LOCATION_DISCOVERED', locationId: LOCATION_ID.ANCIENT_RUINS },
+        text: '폐허 입구로 향한다',
+        conditions: {
+          anyOf: [
+            { type: 'WORLD_FLAG', flagId: WORLD_FLAG.RUINS_KEY_ACQUIRED },
+            { type: 'QUEST_STATUS', questId, status: QUEST_STATUS.COMPLETED },
+          ],
+        },
         action: { type: 'MOVE_TO_LOCATION', locationId: ruins },
+        choicePurpose: 'PROGRESSION',
       },
+      investigatePoint(
+        'forest_tracks_default',
+        '진흙의 발자국을 살핀다',
+        EXPLORATION_POINT_ID.FOREST_TRACKS,
+        noneOf({ type: 'PLAYER_KNOWS_FACT', factId: CHAPTER_FACT_ID.FOREST_TRACKS })
+      ),
+      investigatePoint(
+        'forest_pack_default',
+        '버려진 짐을 살핀다',
+        EXPLORATION_POINT_ID.FOREST_ABANDONED_PACK,
+        noneOf({ type: 'PLAYER_KNOWS_FACT', factId: CHAPTER_FACT_ID.FOREST_ABANDONED_PACK })
+      ),
+      investigatePoint(
+        'forest_sounds_default',
+        '수풀의 기척을 듣는다',
+        EXPLORATION_POINT_ID.FOREST_SOUNDS,
+        noneOf({ type: 'PLAYER_KNOWS_FACT', factId: CHAPTER_FACT_ID.FOREST_SOUNDS })
+      ),
+      investigateForestHerbs(),
+      move(CHOICE_MOVE_VILLAGE, '마을로 돌아간다', LOCATION_ID.LUEN_VILLAGE),
     ],
   },
   [STORY_SCENE_ID.FOREST_SCOUTS_AFTER]: {
     id: STORY_SCENE_ID.FOREST_SCOUTS_AFTER,
     locationId: forest,
     title: '정찰대를 물리친 뒤',
-    narrative: '고블린이 쓰러진다. 바로 마을로 돌아갈 필요는 없다. 숲 깊은 쪽에서 온 흔적이 남아 있다.',
+    narrative:
+      '고블린이 쓰러진 자리에 푸른 잔광이 남는다. 발자국은 폐허 쪽으로만 겹친다.\n조직적인 움직임이다. 봉인을 건드린 자가 누구인지는 아직 이 자리만으로는 알 수 없다.',
     entryConditions: allOf(
       loc(forest),
       { type: 'WORLD_FLAG', flagId: WORLD_FLAG.FOREST_GOBLIN_DEFEATED },
       { type: 'SCENE_NOT_VISITED', sceneId: STORY_SCENE_ID.FOREST_SCOUTS_AFTER }
     ),
     priority: 118,
+    onEnter: [
+      { type: 'LEARN_FACT', factId: CHAPTER_FACT_ID.CAMP_BLUE_GLOW },
+      { type: 'LEARN_FACT', factId: CHAPTER_FACT_ID.GOBLIN_MOVEMENT_TRACES },
+    ],
     choices: [
-      investigatePoint('after_tracks', '주변을 더 조사한다', EXPLORATION_POINT_ID.FOREST_TRACKS),
-      learn('after_direction', '고블린이 온 방향을 확인한다', CHAPTER_FACT_ID.GOBLIN_MOVEMENT_TRACES),
-      move(CHOICE_MOVE_VILLAGE, '마을로 돌아간다', village),
-      look(),
+      investigatePoint('scout_after_glow', '쓰러진 자리의 푸른 잔광을 살핀다', EXPLORATION_POINT_ID.CAMP_GLOW),
+      investigatePoint('scout_after_tracks', '발자국이 이어진 방향을 본다', EXPLORATION_POINT_ID.FOREST_TRACKS),
+      {
+        id: CHOICE_MOVE_VILLAGE,
+        text: '확인한 것을 들고 마을로 돌아간다',
+        action: { type: 'MOVE_TO_LOCATION', locationId: village },
+        choicePurpose: 'PROGRESSION',
+      },
     ],
   },
   [STORY_SCENE_ID.FOREST_DEEPER]: {
@@ -850,27 +1051,49 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     locationId: forest,
     title: '깊은 숲길',
     narrative:
-      '폐허로 이어진 길이 좁아진다. 불탄 캠프, 고블린 흔적, 옅은 푸른 잔광이 섞여 있다.\n왕실의 문양은 아직 보이지 않는다.',
+      '길이 좁아지고 푸른 잔광이 발밑까지 내려온다. 안쪽에서 짐승과 활시위 소리가 겹친다.',
     entryConditions: allOf(
       loc(forest),
       { type: 'QUEST_STATUS', questId, status: QUEST_STATUS.ACTIVE },
+      { type: 'WORLD_FLAG', flagId: WORLD_FLAG.FOREST_AMBUSH_CLEARED },
+      noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.FOREST_DEEP_CLEARED }),
       { type: 'SCENE_NOT_VISITED', sceneId: STORY_SCENE_ID.FOREST_DEEPER },
       noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.RUINS_GOBLINS_DEFEATED })
     ),
     priority: 105,
     onEnter: [{ type: 'DISCOVER_LOCATION', locationId: LOCATION_ID.ANCIENT_RUINS }],
     choices: [
-      learn('deeper_camp', '불탄 캠프를 살핀다', CHAPTER_FACT_ID.CAMP_BLUE_GLOW),
-      learn('deeper_glow', '푸른 잔광을 따라간다', CHAPTER_FACT_ID.GOBLIN_MOVEMENT_TRACES),
-      move(CHOICE_MOVE_RUINS, '폐허 입구로 향한다', ruins),
-      move(CHOICE_MOVE_VILLAGE, '마을로 돌아간다', village),
+      investigatePoint(
+        'forest_tracks_deeper',
+        '진흙의 발자국을 살핀다',
+        EXPLORATION_POINT_ID.FOREST_TRACKS,
+        noneOf({ type: 'PLAYER_KNOWS_FACT', factId: CHAPTER_FACT_ID.FOREST_TRACKS })
+      ),
+      investigatePoint(
+        'forest_pack_deeper',
+        '버려진 짐을 살핀다',
+        EXPLORATION_POINT_ID.FOREST_ABANDONED_PACK,
+        noneOf({ type: 'PLAYER_KNOWS_FACT', factId: CHAPTER_FACT_ID.FOREST_ABANDONED_PACK })
+      ),
+      investigatePoint(
+        'forest_sounds_deeper',
+        '수풀의 기척을 듣는다',
+        EXPLORATION_POINT_ID.FOREST_SOUNDS,
+        noneOf({ type: 'PLAYER_KNOWS_FACT', factId: CHAPTER_FACT_ID.FOREST_SOUNDS })
+      ),
+      {
+        id: 'fight_forest_deep',
+        text: '깊은 숲으로 들어간다',
+        action: { type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_FOREST_DEEP },
+        choicePurpose: 'PROGRESSION',
+      },
     ],
   },
   [STORY_SCENE_ID.FOREST_AMBUSH]: {
     id: STORY_SCENE_ID.FOREST_AMBUSH,
     locationId: forest,
     title: '숲 안쪽의 기척',
-    narrative: '정찰대를 물리친 뒤에도 숲 안쪽에서 활 시위 소리가 들린다. 피할 수도, 확인할 수도 있다.',
+    narrative: '활 시위 소리 너머로 늑대 숨이 난다. 고블린만 있는 길이 아니다.',
     entryConditions: allOf(
       loc(forest),
       { type: 'WORLD_FLAG', flagId: WORLD_FLAG.FOREST_GOBLIN_DEFEATED },
@@ -880,20 +1103,21 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     choices: [
       {
         id: 'fight_forest_ambush',
-        text: '고블린 소리를 확인한다',
+        text: '수풀의 늑대와 고블린이 길을 막는다',
         action: { type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_FOREST_AMBUSH },
+        choicePurpose: 'PROGRESSION',
       },
+      investigatePoint(
+        'forest_tracks_ambush',
+        '진흙의 발자국을 살핀다',
+        EXPLORATION_POINT_ID.FOREST_TRACKS,
+        noneOf({ type: 'PLAYER_KNOWS_FACT', factId: CHAPTER_FACT_ID.FOREST_TRACKS })
+      ),
       {
-        id: 'skip_forest_ambush',
-        text: '피해서 길을 간다',
-        action: { type: 'LOOK_AROUND' },
-      },
-      move(CHOICE_MOVE_VILLAGE, '마을로 돌아간다', village),
-      {
-        id: 'ambush_to_ruins',
-        text: '폐허 쪽으로 향한다',
-        conditions: { type: 'LOCATION_DISCOVERED', locationId: LOCATION_ID.ANCIENT_RUINS },
-        action: { type: 'MOVE_TO_LOCATION', locationId: ruins },
+        id: CHOICE_MOVE_VILLAGE,
+        text: '길드에 보고하러 마을로 돌아간다',
+        action: { type: 'MOVE_TO_LOCATION', locationId: village },
+        choicePurpose: 'PROGRESSION',
       },
     ],
   },
@@ -909,8 +1133,20 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     ),
     priority: 108,
     choices: [
-      learn('ambush_arrow', '궁수의 화살을 살핀다', CHAPTER_FACT_ID.GOBLIN_ARCHER_HINT),
-      learn('ambush_path', '폐허 쪽 길을 확인한다', CHAPTER_FACT_ID.GOBLIN_MOVEMENT_TRACES),
+      {
+        id: 'fight_forest_deep_after_ambush',
+        text: '깊은 숲으로 들어간다',
+        conditions: noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.FOREST_DEEP_CLEARED }),
+        action: { type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_FOREST_DEEP },
+        choicePurpose: 'PROGRESSION',
+      },
+      {
+        id: CHOICE_MOVE_RUINS,
+        text: '폐허 입구로 향한다',
+        conditions: { type: 'WORLD_FLAG', flagId: WORLD_FLAG.RUINS_KEY_ACQUIRED },
+        action: { type: 'MOVE_TO_LOCATION', locationId: ruins },
+        choicePurpose: 'PROGRESSION',
+      },
       move(CHOICE_MOVE_VILLAGE, '마을로 돌아간다', village),
     ],
   },
@@ -921,6 +1157,7 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     narrative: '부러진 나뭇가지와 그을린 자리가 야영지의 흔적이다. 정면으로 들어갈 수도, 주변을 볼 수도 있다.',
     entryConditions: allOf(
       loc(forest),
+      { type: 'WORLD_FLAG', flagId: WORLD_FLAG.FOREST_DEEP_CLEARED },
       { type: 'QUEST_STATUS', questId: QUEST_ID.LEON_GOBLIN_WATCH, status: QUEST_STATUS.ACTIVE },
       noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.GOBLIN_CAMP_CLEARED })
     ),
@@ -934,6 +1171,7 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
       {
         id: 'observe_goblin_camp',
         text: '주변을 관찰한다',
+        conditions: noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.GOBLIN_CAMP_OBSERVED }),
         action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.FOREST_CAMP_OBSERVED },
       },
       move(CHOICE_MOVE_VILLAGE, '지나간다', village),
@@ -944,11 +1182,14 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     id: STORY_SCENE_ID.FOREST_CAMP_OBSERVED,
     locationId: forest,
     title: '야영지를 살핀다',
-    narrative: '목책 뒤에서 활을 든 고블린이 자리를 지키고, 가운데는 덩치 큰 그림자가 서성인다. 옆길로 붙으면 진입이 조금 쉽다.',
+    narrative:
+      '목책 뒤에서 활을 든 고블린이 자리를 지키고, 가운데는 덩치 큰 그림자가 서성인다. 옆길로 붙으면 진입이 조금 쉽다. 야영지 한쪽에 사람이 그린 듯한 표시가 있다.',
+    activation: 'on_talk',
     entryConditions: allOf(
       loc(forest),
-      { type: 'SCENE_VISITED', sceneId: STORY_SCENE_ID.FOREST_CAMP_OBSERVED },
-      { type: 'SCENE_NOT_VISITED', sceneId: STORY_SCENE_ID.FOREST_CAMP_OBSERVED }
+      { type: 'QUEST_STATUS', questId: QUEST_ID.LEON_GOBLIN_WATCH, status: QUEST_STATUS.ACTIVE },
+      { type: 'SCENE_NOT_VISITED', sceneId: STORY_SCENE_ID.FOREST_CAMP_OBSERVED },
+      noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.GOBLIN_CAMP_CLEARED })
     ),
     onEnter: [{ type: 'SET_WORLD_FLAG', flagId: WORLD_FLAG.GOBLIN_CAMP_OBSERVED, value: true }],
     priority: 146,
@@ -966,7 +1207,7 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     id: STORY_SCENE_ID.FOREST_CAMP_AFTER,
     locationId: forest,
     title: '야영지 조사',
-    narrative: '고블린들이 쓰러진 뒤, 상자·지도 조각·푸른 잔광이 남았다.',
+    narrative: '고블린들이 쓰러진 뒤, 상자·지도 조각·푸른 잔광이 남았다. 지도의 선은 고블린의 손이 아니다.',
     entryConditions: allOf(
       loc(forest),
       { type: 'WORLD_FLAG', flagId: WORLD_FLAG.GOBLIN_CAMP_CLEARED },
@@ -986,7 +1227,8 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     id: STORY_SCENE_ID.ANCIENT_RUINS_ARRIVAL,
     locationId: ruins,
     title: '고대 폐허',
-    narrative: '허물어진 석문이 열린다. 문, 조각상, 고블린 흔적, 그리고 차가운 마력이 공기를 무겁게 한다. 안쪽에서 쇠붙이 소리가 난다.',
+    narrative:
+      '허물어진 석문이 열린다. 문, 조각상, 고블린 흔적, 그리고 차가운 마력이 공기를 무겁게 한다. 석문 옆 덩굴이 최근에 잘려 있고, 이끼 아래 발자국이 아직 말랑하다. 안쪽에서 쇠붙이 소리가 난다.',
     entryConditions: allOf(
       loc(ruins),
       { type: 'SCENE_NOT_VISITED', sceneId: STORY_SCENE_ID.ANCIENT_RUINS_ARRIVAL },
@@ -998,10 +1240,10 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
         id: CHOICE_FIGHT_RUINS_MIXED,
         text: '입구의 고블린들과 싸운다',
         action: { type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_RUINS_GATE },
+        choicePurpose: 'PROGRESSION',
       },
-      learn('ruins_door', '석문을 살핀다', CHAPTER_FACT_ID.RUINS_OLD_INSCRIPTION),
-      learn('ruins_statue_peek', '입구의 조각상을 본다', CHAPTER_FACT_ID.RUINS_BROKEN_STATUE),
       move(CHOICE_MOVE_FOREST, '숲길로 돌아간다', forest),
+      look(),
     ],
   },
   [STORY_SCENE_ID.ANCIENT_RUINS_ENEMY]: {
@@ -1016,7 +1258,14 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
         id: CHOICE_FIGHT_RUINS_MIXED,
         text: '고블린과 싸운다',
         action: { type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_RUINS_GATE },
+        choicePurpose: 'PROGRESSION',
       },
+      investigatePoint(
+        'ruins_inscription_enemy',
+        '낡은 명문을 읽는다',
+        EXPLORATION_POINT_ID.RUINS_OLD_INSCRIPTION,
+        noneOf({ type: 'PLAYER_KNOWS_FACT', factId: CHAPTER_FACT_ID.RUINS_OLD_INSCRIPTION })
+      ),
       move(CHOICE_MOVE_FOREST, '숲길로 돌아간다', forest),
       look(),
     ],
@@ -1055,9 +1304,9 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
         conditions: { type: 'PLAYER_CLASS', classId: PLAYER_CLASS_ID.ROGUE },
         action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.ANCIENT_RUINS_INVESTIGATION_ROGUE },
       },
-      investigatePoint('ruins_statue', '부서진 석상을 조사한다', EXPLORATION_POINT_ID.RUINS_BROKEN_STATUE),
       investigatePoint('ruins_inscription', '낡은 명문을 조사한다', EXPLORATION_POINT_ID.RUINS_OLD_INSCRIPTION),
       investigatePoint('ruins_residue', '마력의 잔여를 조사한다', EXPLORATION_POINT_ID.RUINS_MAGIC_RESIDUE),
+      investigatePoint('ruins_statue', '부서진 석상을 조사한다', EXPLORATION_POINT_ID.RUINS_BROKEN_STATUE),
       investigateAltar(CHOICE_INVESTIGATE_ALTAR, '제단을 조사한다'),
       move(CHOICE_MOVE_FOREST, '숲길로 돌아간다', forest),
     ],
@@ -1163,10 +1412,11 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     locationId: ruins,
     title: '왕실 마법석',
     narrative:
-      '제단 아래 돌틈에서 차가운 빛이 샌다.\n왕실 문장이 새겨진 마법석이다. 이곳은 단순한 폐허가 아니다.\n봉인 주위가 불안정하다.',
+      '제단 아래 돌틈에서 차가운 빛이 샌다. 왕실 문장의 마법석이다.\n봉인 주위는 이미 불안정하다. 당신이 처음 연 것이 아니다.',
     entryConditions: allOf(
       loc(ruins),
       { type: 'PLAYER_KNOWS_FACT', factId: RUINS_SEAL_FACT_ID },
+      { type: 'WORLD_FLAG', flagId: WORLD_FLAG.RUINS_GOBLINS_DEFEATED },
       noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.RUINS_GUARDIAN_DEFEATED }),
       noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.RUINS_GUARDIAN_LOST })
     ),
@@ -1174,15 +1424,20 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     choices: [
       {
         id: 'touch_magic_stone',
-        text: '마법석에 손을 댄다',
+        text: '마법석에 손을 댄다 — 수호자가 반응한다',
         conditions: noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.RUINS_GUARDIAN_DEFEATED }),
-        action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.RUINS_GUARDIAN_AWAKENS },
+        // Fun Pass: Reveal → Combat in one action (no ENTER_SCENE / on_talk deadlock).
+        action: { type: 'START_COMBAT', combatId: ENCOUNTER_ID.RUINS_BOSS_01 },
+        effects: [{ type: 'SET_WORLD_FLAG', flagId: WORLD_FLAG.TOUCHED_STONE_RASHLY, value: true }],
+        choicePurpose: 'PROGRESSION',
       },
       {
         id: 'inspect_seal_first',
-        text: '주변부터 조사한다',
+        text: '훼손 흔적을 확인한 뒤 맞선다',
         conditions: noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.RUINS_GUARDIAN_DEFEATED }),
-        action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.RUINS_GUARDIAN_AWAKENS },
+        action: { type: 'START_COMBAT', combatId: ENCOUNTER_ID.RUINS_BOSS_01 },
+        effects: [{ type: 'LEARN_FACT', factId: CHAPTER_FACT_ID.RUINS_MAGIC_RESIDUE }],
+        choicePurpose: 'PROGRESSION',
       },
       {
         id: 'step_back_altar',
@@ -1196,21 +1451,25 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     id: STORY_SCENE_ID.RUINS_GUARDIAN_AWAKENS,
     locationId: ruins,
     title: '깨어난 수호자',
-    narrative: '봉인이 흔들린다. 돌과 빛이 한 몸으로 일어나며, 잠들어 있던 마력 수호자가 길을 막는다.',
-    activation: 'on_talk',
+    narrative:
+      '금이 간 봉인이 흔들린다. 돌과 빛이 일어나며 마력 수호자가 길을 막는다.\n불안정한 시설이 조사에 반응한 것이다.',
+    // Must outrank discovery (170) so follow-up resolve cannot kick the player out.
+    activation: 'auto',
     entryConditions: allOf(
       loc(ruins),
       { type: 'PLAYER_KNOWS_FACT', factId: RUINS_SEAL_FACT_ID },
+      { type: 'WORLD_FLAG', flagId: WORLD_FLAG.RUINS_GOBLINS_DEFEATED },
       { type: 'SCENE_VISITED', sceneId: STORY_SCENE_ID.ANCIENT_RUINS_DISCOVERY },
       noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.RUINS_GUARDIAN_DEFEATED }),
       noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.RUINS_GUARDIAN_LOST })
     ),
-    priority: SCENE_PRIORITY.BOSS,
+    priority: SCENE_PRIORITY.POST_BOSS_CRITICAL,
     choices: [
       {
         id: CHOICE_FIGHT_GUARDIAN,
         text: '고대 수호자에게 맞선다',
         action: { type: 'START_COMBAT', combatId: ENCOUNTER_ID.RUINS_BOSS_01 },
+        choicePurpose: 'PROGRESSION',
       },
       move(CHOICE_MOVE_FOREST, '잠시 물러난다', forest),
       look(),
@@ -1220,7 +1479,8 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     id: STORY_SCENE_ID.RUINS_GUARDIAN_AFTER_VICTORY,
     locationId: ruins,
     title: '수호자의 소멸',
-    narrative: '고대 수호자의 몸을 이루던 마력이 서서히 흩어진다.\n폐허 전체를 감싸던 푸른 빛이 흔들리며, 수호자가 서 있던 자리 뒤편으로 지금까지 보이지 않던 깊은 통로가 드러난다.\n벽면의 오래된 문양 일부가 빛을 발한다.\n\n수호자의 핵과 마법석이 공명하듯 희미하게 빛나고, 벽의 문양은 왕실의 것임이 분명하다.\n봉인의 일부가 최근에 훼손된 흔적이 보인다. 누군가 당신보다 먼저 이 봉인을 건드린 것이다.',
+    narrative:
+      '수호자가 쓰러진 자리에 빛이 남은 핵이 굴러 있다.\n봉인 문양은 아직 제단 위에 있다. 누가 먼저 손댔는지는, 직접 봐야 한다.',
     entryConditions: allOf(
       loc(ruins),
       { type: 'WORLD_FLAG', flagId: WORLD_FLAG.RUINS_GUARDIAN_DEFEATED },
@@ -1228,20 +1488,59 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     ),
     priority: 135,
     choices: [
-      { id: 'investigate_guardian_core', text: '마법석의 기록을 남기고 그대로 둔다', action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.POST_GUARDIAN_AFTERMATH } },
-      { id: 'take_core_fragment', text: '수호자 핵의 파편을 하나 가져간다', action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.POST_GUARDIAN_AFTERMATH } },
-      { id: 'inspect_broken_seal', text: '훼손된 봉인을 조사한다', action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.POST_GUARDIAN_AFTERMATH } },
-      { id: 'leave_ruins_now', text: '더 이상 머물지 않고 바로 나간다', action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.POST_GUARDIAN_AFTERMATH } },
+      {
+        id: 'investigate_guardian_core',
+        text: '코어를 조사한다',
+        action: { type: 'INVESTIGATE', targetId: EXPLORATION_POINT_ID.GUARDIAN_CORE },
+        effects: [
+          { type: 'LEARN_FACT', factId: CHAPTER_FACT_ID.EVIDENCE_RECORDED },
+          { type: 'SET_WORLD_FLAG', flagId: WORLD_FLAG.EVIDENCE_RECORDED, value: true },
+          { type: 'LEARN_FACT', factId: CHAPTER_FACT_ID.GUARDIAN_NOT_OUR_FAULT },
+        ],
+      },
+      {
+        id: 'take_core_fragment',
+        text: '수호자 핵의 파편을 하나 가져간다',
+        action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.POST_GUARDIAN_AFTERMATH },
+        effects: [
+          { type: 'GRANT_ITEM', itemId: ITEM_ID.GUARDIAN_CORE_FRAGMENT, quantity: 1, sourceEventId: 'story:guardian:fragment' },
+          { type: 'SET_WORLD_FLAG', flagId: WORLD_FLAG.GUARDIAN_FRAGMENT_TAKEN, value: true },
+          { type: 'LEARN_FACT', factId: CHAPTER_FACT_ID.GUARDIAN_NOT_OUR_FAULT },
+        ],
+      },
+      {
+        id: 'inspect_broken_seal',
+        text: '봉인을 살핀다',
+        action: { type: 'INVESTIGATE', targetId: EXPLORATION_POINT_ID.BROKEN_SEAL_AFTER },
+        effects: [
+          { type: 'LEARN_FACT', factId: CHAPTER_FACT_ID.BROKEN_SEAL_DETAIL },
+          { type: 'SET_WORLD_FLAG', flagId: WORLD_FLAG.BROKEN_SEAL_DETAIL, value: true },
+          { type: 'LEARN_FACT', factId: CHAPTER_FACT_ID.GUARDIAN_NOT_OUR_FAULT },
+        ],
+      },
+      {
+        id: 'leave_ruins_now',
+        text: '더 이상 머물지 않고 바로 나간다',
+        action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.POST_GUARDIAN_AFTERMATH },
+        choicePurpose: 'PROGRESSION',
+        effects: [
+          { type: 'LEARN_FACT', factId: CHAPTER_FACT_ID.LEFT_RUINS_EARLY },
+          { type: 'SET_WORLD_FLAG', flagId: WORLD_FLAG.LEFT_RUINS_EARLY, value: true },
+          { type: 'LEARN_FACT', factId: CHAPTER_FACT_ID.GUARDIAN_NOT_OUR_FAULT },
+        ],
+      },
     ],
   },
   [STORY_SCENE_ID.POST_GUARDIAN_AFTERMATH]: {
     id: STORY_SCENE_ID.POST_GUARDIAN_AFTERMATH,
     locationId: ruins,
     title: '폐허를 빠져나가며',
-    narrative: '수호자가 사라진 뒤 폐허의 구조가 불안정해졌다.\n돌 부스러기가 떨어지고, 벽의 마력 무늬가 서서히 꺼져 간다.\n더 이상 여기 있을 이유는 없다.',
+    narrative:
+      '수호자가 사라진 뒤 폐허의 구조가 불안정해졌다.\n돌 부스러기가 떨어지고, 벽의 마력 무늬가 서서히 꺼져 간다.\n이건 당신이 시작한 일이 아니다. 더 이상 여기 있을 이유는 없다.',
     entryConditions: allOf(
       loc(ruins),
-      { type: 'WORLD_FLAG', flagId: WORLD_FLAG.POST_GUARDIAN_INVESTIGATED }
+      { type: 'WORLD_FLAG', flagId: WORLD_FLAG.RUINS_GUARDIAN_DEFEATED },
+      { type: 'SCENE_NOT_VISITED', sceneId: STORY_SCENE_ID.POST_GUARDIAN_AFTERMATH }
     ),
     priority: 131,
     choices: [
@@ -1256,13 +1555,15 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     id: STORY_SCENE_ID.FOREST_RETURN_EVENT,
     locationId: forest,
     title: '돌아오는 길',
-    narrative: '숲이 이상하게 조용하다. 폐허에서 마력이 흩어진 탓인지, 평소 출몰하던 고블린들의 기척조차 없다.\n멀리 북쪽 하늘에서 아주 희미한 푸른 빛이 한 줄기 보인다.\n순간이었지만 분명히 보았다.',
+    narrative:
+      '숲이 이상하게 조용하다. 북쪽 하늘에 폐허와 같은 푸른 빛이 한 줄기 보인다. 같은 사건이 북쪽으로 퍼지고 있다.',
     entryConditions: allOf(
       loc(forest),
       { type: 'WORLD_FLAG', flagId: WORLD_FLAG.RUINS_ESCAPED },
       noneOf({ type: 'SCENE_VISITED', sceneId: STORY_SCENE_ID.FOREST_RETURN_EVENT })
     ),
-    priority: 125,
+    priority: 165,
+    onEnter: [{ type: 'LEARN_FACT', factId: CHAPTER_FACT_ID.NORTHERN_BLUE_LIGHT }],
     choices: [
       move(CHOICE_MOVE_VILLAGE, '서둘러 루엔으로 돌아간다', village),
       look(),
@@ -1272,7 +1573,7 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     id: STORY_SCENE_ID.LUEN_RETURN_REACTION,
     locationId: village,
     title: '무사 귀환',
-    narrative: '루엔의 익숙한 풍경이 눈에 들어온다.\n마르타가 여관 앞을 지나다 이쪽을 본다.',
+    narrative: '숲을 빠져나오자 루엔의 익숙한 풍경이 눈에 들어온다.\n마르타가 여관 앞을 지나다 이쪽을 본다.',
     npcId: 'innkeeper',
     npcDialogue: '세상에, 무사히 돌아왔구나. 몰골이 말이 아니네. 여관에서 물약이라도 들이켜.',
     entryConditions: allOf(
@@ -1280,7 +1581,7 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
       { type: 'WORLD_FLAG', flagId: WORLD_FLAG.RUINS_ESCAPED },
       { type: 'SCENE_NOT_VISITED', sceneId: STORY_SCENE_ID.LUEN_RETURN_REACTION }
     ),
-    priority: 128,
+    priority: 165,
     choices: [
       {
         id: CHOICE_REPORT_RUINS,
@@ -1299,9 +1600,9 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     id: STORY_SCENE_ID.SERIA_FINAL_REPORT,
     locationId: village,
     title: '세리아의 정리',
-    narrative: '세리아가 기다리고 있었다는 듯 다가온다.\n"무엇을 봤지? 처음부터 말해."',
+    narrative: '세리아가 기다리고 있었다는 듯 다가온다.',
     npcId: 'seria',
-    npcDialogue: '봉인, 수호자, 문양. 네가 본 것만 말해. 추측은 나중에.',
+    npcDialogue: '네가 적은 결이 중요해. 봉인의 마력과 수호자를 움직인 방향이 다르면, 원인은 하나가 아니야.',
     entryConditions: allOf(
       loc(village),
       { type: 'QUEST_STATUS', questId: QUEST_ID.RUINS_MYSTERY, status: QUEST_STATUS.COMPLETED },
@@ -1312,18 +1613,36 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     choices: [
       {
         id: 'report_all',
-        text: '마법석과 문양을 모두 말한다',
-        action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.SERIA_REPORT_FOLLOWUP },
+        text: '조사한 내용을 전부 공개한다',
+        // Fun Pass: report → Leon in one beat (skip followup Next-click).
+        action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.LEON_CONFRONTATION },
+        effects: [
+          { type: 'SET_WORLD_FLAG', flagId: WORLD_FLAG.SERIA_REPORT_FULL, value: true },
+          { type: 'SET_WORLD_FLAG', flagId: WORLD_FLAG.SERIA_FINAL_REPORT, value: true },
+          { type: 'RELATIONSHIP_CHANGE', npcId: 'seria', reason: 'PLAYER_SHARED_INFORMATION', sourceEventId: 'story:seria:report_full' },
+        ],
+        choicePurpose: 'DECISION',
       },
       {
-        id: 'report_guardian_only',
-        text: 'Guardian 이야기부터 한다',
-        action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.SERIA_REPORT_FOLLOWUP },
+        id: 'report_withhold_evidence',
+        text: '수호자와 봉인은 말하되, 파편과 물증은 보류한다',
+        action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.LEON_CONFRONTATION },
+        effects: [
+          { type: 'SET_WORLD_FLAG', flagId: WORLD_FLAG.SERIA_REPORT_WITHHELD_EVIDENCE, value: true },
+          { type: 'SET_WORLD_FLAG', flagId: WORLD_FLAG.SERIA_FINAL_REPORT, value: true },
+        ],
+        choicePurpose: 'DECISION',
       },
       {
-        id: 'report_royal_first',
-        text: '훼손된 봉인에 집중한다',
-        action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.SERIA_REPORT_FOLLOWUP },
+        id: 'report_human_intrusion',
+        text: '인간의 최근 침입 흔적을 강조한다',
+        action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.LEON_CONFRONTATION },
+        effects: [
+          { type: 'SET_WORLD_FLAG', flagId: WORLD_FLAG.SERIA_REPORT_HUMAN_INTRUSION, value: true },
+          { type: 'SET_WORLD_FLAG', flagId: WORLD_FLAG.SERIA_FINAL_REPORT, value: true },
+          { type: 'LEARN_FACT', factId: CHAPTER_FACT_ID.RUINS_RECENT_HUMAN_TRACE },
+        ],
+        choicePurpose: 'DECISION',
       },
     ],
   },
@@ -1331,18 +1650,21 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     id: STORY_SCENE_ID.SERIA_REPORT_FOLLOWUP,
     locationId: village,
     title: '세리아의 질문',
-    narrative: '세리아가 눈을 가늘게 뜬다.\n“누가 먼저 봉인을 건드렸을까. 왕실과 관련이 있다고 보나?”',
+    narrative:
+      '세리아가 눈을 가늘게 뜬다.\n“누가 먼저 봉인을 건드렸을까. 왕실과 관련이 있다고 보나? 레온은 보고를 원할 거야. 나는 더 조사해야 해.”',
     npcId: 'seria',
     npcDialogue: '나는 더 조사해야 해. 레온은 보고를 원할 거야.',
+    // Kept for save compatibility; mainline jumps report → Leon.
     activation: 'on_talk',
     entryConditions: allOf(
       loc(village),
       { type: 'SCENE_VISITED', sceneId: STORY_SCENE_ID.SERIA_FINAL_REPORT },
       { type: 'SCENE_NOT_VISITED', sceneId: STORY_SCENE_ID.SERIA_REPORT_FOLLOWUP },
       { type: 'QUEST_STATUS', questId: QUEST_ID.RUINS_MYSTERY, status: QUEST_STATUS.COMPLETED },
-      noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.LEON_CONFRONTATION_DONE })
+      noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.LEON_CONFRONTATION_DONE }),
+      noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.SERIA_FINAL_REPORT })
     ),
-    priority: 127,
+    priority: 90,
     onEnter: [{ type: 'SET_WORLD_FLAG', flagId: WORLD_FLAG.SERIA_FINAL_REPORT, value: true }],
     choices: [
       talk('seria_follow_who', '먼저 온 자에 대해 이야기한다'),
@@ -1354,19 +1676,38 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     id: STORY_SCENE_ID.LEON_CONFRONTATION,
     locationId: village,
     title: '레온의 등장',
-    narrative: '세리아와 이야기를 나누는 사이, 레온이 성큼 다가온다.\n“왕실에 보고해야 한다. 이건 가벼운 일이 아니다.”',
+    narrative:
+      '레온이 세리아의 말끝을 자르며 다가온다.',
     npcId: 'leon',
-    npcDialogue: '세리아는 조사를 원할 것이다. 나는 책임을 먼저 본다.',
+    npcDialogue: '새어 나온 게 아니라 끌어낸 거라면? 마법이 저절로 봉인을 열진 않는다. 누군가 손댄 거다.',
     entryConditions: allOf(
       loc(village),
       { type: 'WORLD_FLAG', flagId: WORLD_FLAG.SERIA_FINAL_REPORT },
       { type: 'SCENE_NOT_VISITED', sceneId: STORY_SCENE_ID.LEON_CONFRONTATION }
     ),
-    priority: 124,
+    priority: 128,
     choices: [
-      learn('leon_agree_seria', '세리아의 조사에 동의한다', CHAPTER_FACT_ID.PLAYER_BACKS_SERIA),
-      learn('leon_agree_report', '레온의 보고가 먼저라고 생각한다', CHAPTER_FACT_ID.PLAYER_BACKS_LEON),
-      learn('leon_wait_judge', '아직 판단하기 이르다고 말한다', CHAPTER_FACT_ID.PLAYER_WAITS_TO_JUDGE),
+      {
+        id: 'leon_agree_seria',
+        text: '세리아의 조사에 동의한다',
+        action: { type: 'LEARN_FACT', factId: CHAPTER_FACT_ID.PLAYER_BACKS_SERIA },
+        effects: [
+          { type: 'RELATIONSHIP_CHANGE', npcId: 'seria', reason: 'PLAYER_SHARED_INFORMATION', sourceEventId: 'story:leon:back_seria' },
+        ],
+      },
+      {
+        id: 'leon_agree_report',
+        text: '레온의 보고가 먼저라고 생각한다',
+        action: { type: 'LEARN_FACT', factId: CHAPTER_FACT_ID.PLAYER_BACKS_LEON },
+        effects: [
+          { type: 'RELATIONSHIP_CHANGE', npcId: 'leon', reason: 'PLAYER_SHARED_INFORMATION', sourceEventId: 'story:leon:back_leon' },
+        ],
+      },
+      {
+        id: 'leon_wait_judge',
+        text: '아직 판단하기 이르다고 말한다',
+        action: { type: 'LEARN_FACT', factId: CHAPTER_FACT_ID.PLAYER_WAITS_TO_JUDGE },
+      },
     ],
     onEnter: [
       { type: 'SET_WORLD_FLAG', flagId: WORLD_FLAG.LEON_CONFRONTATION_DONE, value: true },
@@ -1376,7 +1717,8 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     id: STORY_SCENE_ID.EPILOGUE_INN,
     locationId: LOCATION_ID.BLUE_MOON_INN,
     title: '긴 하루의 끝',
-    narrative: '긴 하루가 저물어 간다.\n루엔에 도착했던 아침. 처음 만난 사람들. 숲. 폐허. 수호자. 왕실의 문양.\n내일이면 길드에서 공적을 인정해 줄 것이라는 소식이 들렸다.',
+    narrative:
+      '긴 하루가 저물어 간다.\n마르타가 말없이 따뜻한 국을 내놓는다. 폐허에서 돌아온 사람에게 물은 받지 않겠다는 뜻이다.\n길드에 들르기 전에 몸을 추스를 수 있다.',
     npcId: 'innkeeper',
     npcDialogue: '오늘은 푹 쉬어. 오늘만큼은 돈 받지 않을게.',
     entryConditions: allOf(
@@ -1385,42 +1727,55 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
       { type: 'QUEST_STATUS', questId: QUEST_ID.RUINS_MYSTERY, status: QUEST_STATUS.COMPLETED },
       noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.EPILOGUE_REST_DONE })
     ),
-    priority: 122,
+    // Optional Free Roam rest — no longer gates guild recognition.
+    priority: 90,
     choices: [
       { id: CHOICE_REST_INN, text: '여관에서 쉰다', action: { type: 'REST' }, choicePurpose: 'DECISION' },
+      move(CHOICE_MOVE_VILLAGE, '마을로 돌아간다', village),
     ],
   },
   [STORY_SCENE_ID.GUILD_RECOGNITION]: {
     id: STORY_SCENE_ID.GUILD_RECOGNITION,
     locationId: LOCATION_ID.LUEN_ADVENTURERS_GUILD,
     title: '공적 인정',
-    narrative: '도란이 장부를 펼치며 고개를 끄덕인다.\n"폐허까지 다녀온 신입은 드물다. 실력만으로 끝나는 일은 아니다."',
+    narrative:
+      '도란이 장부를 펼치며 고개를 끄덕인다.\n"폐허까지 다녀온 신입은 드물다. 공적은 인정한다.\n북쪽에서도 같은 푸른 빛이 보인다는 보고가 왔다. 북문으로 가 봐라."',
     npcId: 'guildmaster_doran',
-    npcDialogue: '모험가의 기본은 살아 돌아오는 것이다. 이제 전문화가 필요하다. 준비되면 길을 골라라.',
+    npcDialogue: '공적은 인정한다. 이제 북문을 확인해라.',
     entryConditions: allOf(
       loc(LOCATION_ID.LUEN_ADVENTURERS_GUILD),
-      { type: 'WORLD_FLAG', flagId: WORLD_FLAG.EPILOGUE_REST_DONE },
+      { type: 'WORLD_FLAG', flagId: WORLD_FLAG.LEON_CONFRONTATION_DONE },
       { type: 'SCENE_NOT_VISITED', sceneId: STORY_SCENE_ID.GUILD_RECOGNITION }
     ),
     priority: SCENE_PRIORITY.CHAPTER_EPILOGUE,
     choices: [
+      {
+        id: CHOICE_MOVE_GATE,
+        text: '북문으로 간다',
+        action: { type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.NORTHERN_GATE },
+        choicePurpose: 'PROGRESSION',
+      },
       talk(CHOICE_TALK_DORAN, '공적 기록을 확인한다'),
       look(),
     ],
     onEnter: [
       { type: 'SET_WORLD_FLAG', flagId: WORLD_FLAG.GUILD_RECOGNITION_DONE, value: true },
+      { type: 'DISCOVER_LOCATION', locationId: LOCATION_ID.NORTHERN_GATE },
+      // Compatibility for older objective/rest checks — recognition implies the day has turned.
+      { type: 'SET_WORLD_FLAG', flagId: WORLD_FLAG.EPILOGUE_REST_DONE, value: true },
     ],
   },
   [STORY_SCENE_ID.NORTHERN_GATE_EMERGENCY]: {
     id: STORY_SCENE_ID.NORTHERN_GATE_EMERGENCY,
     locationId: LOCATION_ID.NORTHERN_GATE,
     title: '북문의 긴급 보고',
-    narrative: '레온이 북문 앞에서 전령과 이야기를 나누고 있다.\n"북문 너머 경비초소와 연락이 끊겼습니다."\n레온의 표정이 굳는다.',
+    narrative:
+      '레온이 북문에서 전령과 말한다. 북쪽 초소와 연락이 끊겼다.\n폐허와 같은 색의 푸른 빛이 북쪽 하늘에 남는다. 같은 사건이 북쪽으로 가고 있다.',
     npcId: 'leon',
-    npcDialogue: '…폐허에서 본 그 빛과 관련이 있을지도 모른다. 아직 확정은 아니지만.',
+    npcDialogue: '폐허의 빛과 같다. 다음 발걸음은 북쪽이다.',
     entryConditions: allOf(
       loc(LOCATION_ID.NORTHERN_GATE),
-      { type: 'WORLD_FLAG', flagId: WORLD_FLAG.FIRST_ADVANCEMENT_DONE },
+      { type: 'WORLD_FLAG', flagId: WORLD_FLAG.GUILD_RECOGNITION_DONE },
       { type: 'SCENE_NOT_VISITED', sceneId: STORY_SCENE_ID.NORTHERN_GATE_EMERGENCY }
     ),
     priority: SCENE_PRIORITY.CHAPTER,
@@ -1463,9 +1818,45 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     priority: SCENE_PRIORITY.DEFAULT,
     fallbackSceneId: STORY_SCENE_ID.ANCIENT_RUINS_DEFAULT,
     choices: [
-      investigateAltar(CHOICE_INVESTIGATE_ALTAR, '폐허 안쪽을 조사한다'),
+      {
+        id: CHOICE_FIGHT_RUINS_MIXED,
+        text: '입구의 고블린들과 싸운다',
+        conditions: noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.RUINS_GOBLINS_DEFEATED }),
+        action: { type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_RUINS_GATE },
+        choicePurpose: 'PROGRESSION',
+      },
+      {
+        id: CHOICE_FIGHT_GUARDIAN,
+        text: '수호자에게 도전한다',
+        conditions: allOf(
+          { type: 'WORLD_FLAG', flagId: WORLD_FLAG.RUINS_GOBLINS_DEFEATED },
+          noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.RUINS_GUARDIAN_DEFEATED })
+        ),
+        action: { type: 'START_COMBAT', combatId: ENCOUNTER_ID.RUINS_BOSS_01 },
+        choicePurpose: 'PROGRESSION',
+      },
+      investigateAltar(
+        CHOICE_INVESTIGATE_ALTAR,
+        '제단의 봉인을 살핀다',
+        allOf(
+          { type: 'WORLD_FLAG', flagId: WORLD_FLAG.RUINS_GOBLINS_DEFEATED },
+          noneOf({ type: 'PLAYER_KNOWS_FACT', factId: RUINS_SEAL_FACT_ID })
+        )
+      ),
+      investigatePoint(
+        'ruins_inscription_default',
+        '낡은 명문을 읽는다',
+        EXPLORATION_POINT_ID.RUINS_OLD_INSCRIPTION,
+        noneOf({ type: 'PLAYER_KNOWS_FACT', factId: CHAPTER_FACT_ID.RUINS_OLD_INSCRIPTION })
+      ),
+      investigatePoint(
+        'ruins_residue_default',
+        '마력의 잔여를 살핀다',
+        EXPLORATION_POINT_ID.RUINS_MAGIC_RESIDUE,
+        noneOf({ type: 'PLAYER_KNOWS_FACT', factId: CHAPTER_FACT_ID.RUINS_MAGIC_RESIDUE })
+      ),
       move(CHOICE_MOVE_FOREST, '숲길로 돌아간다', forest),
-      look(),
+      move(CHOICE_MOVE_VILLAGE, '마을로 돌아간다', LOCATION_ID.LUEN_VILLAGE),
     ],
   },
   [STORY_SCENE_ID.SERIA_REPORT_UNKNOWN]: {
@@ -1638,6 +2029,7 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
         choicePurpose: 'DECISION',
       },
       talk(CHOICE_TALK_MARTA, '마르타에게 말을 건다'),
+      move(CHOICE_MOVE_VILLAGE, '마을로 나간다', village),
     ],
   },
   [STORY_SCENE_ID.NORTHERN_GATE]: {
@@ -1669,7 +2061,7 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     narrative:
       '폐허에서 깨어난 것의 정체가 드러났다.\n루엔은 잠시 숨을 고르지만, 북문 너머의 소문은 이미 마을까지 스며들고 있다.\n길드 장부에는 아직 모험가로 적혀 있다. 도란이라면 이제 길을 정할 때라고 말할 것이다.',
     npcId: 'seria',
-    npcDialogue: '이건 시작일 뿐이야. 북문 쪽을 한 번 확인해 보는 게 좋겠어.',
+    npcDialogue: '장부는 아직 모험가야. 도란에게 가면 길을 정할 수 있어.',
     entryConditions: allOf(loc(village), { type: 'WORLD_FLAG', flagId: WORLD_FLAG.CHAPTER_1_COMPLETE }),
     priority: SCENE_PRIORITY.CHAPTER,
     choices: [
@@ -1685,7 +2077,7 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     title: '북문의 그림자',
     narrative: '북문 너머에서 이상한 움직임이 보고되고 있다. 레온의 표정은 평소보다 굳어 있다.',
     npcId: 'leon',
-    npcDialogue: '북문 너머에서 이상한 움직임이 보고되고 있다. 아직은 통과할 수 없지만, 대비는 해야 한다.',
+    npcDialogue: '북문 너머에서 이상한 움직임이 보고되고 있다. 폐허와 같은 푸른 맥동이다. 아직은 통과할 수 없지만, 대비는 해야 한다.',
     entryConditions: allOf(
       loc(LOCATION_ID.NORTHERN_GATE),
       { type: 'WORLD_FLAG', flagId: WORLD_FLAG.CHAPTER_1_COMPLETE }
@@ -1693,7 +2085,29 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     priority: SCENE_PRIORITY.CHAPTER,
     fallbackSceneId: STORY_SCENE_ID.NORTHERN_GATE_HOOK,
     choices: [
-      talk(CHOICE_TALK_LEON, '북문 너머의 소문을 듣는다'),
+      {
+        id: 'hook_hear_rumor',
+        text: '북문 너머의 소문을 듣는다',
+        action: { type: 'TALK', promptId: 'leon_gate' },
+      },
+      {
+        id: 'hook_back_leon',
+        text: '공식 보고 쪽이 맞았다고 말한다',
+        conditions: { type: 'PLAYER_KNOWS_FACT', factId: CHAPTER_FACT_ID.PLAYER_BACKS_LEON },
+        action: { type: 'TALK', promptId: 'leon_royal' },
+      },
+      {
+        id: 'hook_back_seria',
+        text: '세리아의 추가 조사가 필요하다고 말한다',
+        conditions: { type: 'PLAYER_KNOWS_FACT', factId: CHAPTER_FACT_ID.PLAYER_BACKS_SERIA },
+        action: { type: 'TALK', promptId: 'leon_seria_view' },
+      },
+      {
+        id: 'hook_wait_judge',
+        text: '아직 누구 편도 들지 않았다고 말한다',
+        conditions: { type: 'PLAYER_KNOWS_FACT', factId: CHAPTER_FACT_ID.PLAYER_WAITS_TO_JUDGE },
+        action: { type: 'TALK', promptId: CHOICE_TALK_LEON },
+      },
       move(CHOICE_MOVE_VILLAGE, '마을로 돌아간다', village),
       { id: CHOICE_PASS_GATE, text: '문을 통과한다', action: { type: 'PASS_GATE' } },
     ],

@@ -1,0 +1,29 @@
+{
+  "backgrounds": [
+    "forest.png",
+    "camp.png",
+    "ruins.png",
+    "guardian.png",
+    "yard.png"
+  ],
+  "obstacles": [
+    "forest_tree.png",
+    "forest_rock.png",
+    "forest_cart.png",
+    "camp_palisade.png",
+    "camp_crate.png",
+    "camp_tent.png",
+    "camp_fire.png",
+    "ruins_pillar.png",
+    "ruins_statue.png",
+    "ruins_rubble.png",
+    "ruins_altar.png",
+    "yard_crate.png"
+  ],
+  "notes": {
+    "background_size": "1920x1080 opaque",
+    "obstacle_size": "512x512 RGBA transparent, bottom-center grounded",
+    "obstacle_count": 12,
+    "note": "The provided table contains 12 obstacle filenames, although the request text said 11."
+  }
+}

@@ -4,7 +4,7 @@ import type { SkillDefinition } from './skill-types';
 export const SKILLS: Readonly<Record<string, SkillDefinition>> = {
   adventurer_quick_strike: {
     id: 'adventurer_quick_strike',
-    name: 'Quick Strike',
+    name: '빠른 일격',
     description: '짧게 파고들어 한 대를 넣는다.',
     classId: PLAYER_CLASS_ID.ADVENTURER,
     slot: 'Q',
@@ -18,7 +18,7 @@ export const SKILLS: Readonly<Record<string, SkillDefinition>> = {
   },
   warrior_charge_slash: {
     id: 'warrior_charge_slash',
-    name: 'Charge Slash',
+    name: '돌진 베기',
     description: '앞으로 짧게 돌진하면서 공격한다.',
     classId: PLAYER_CLASS_ID.WARRIOR,
     slot: 'Q',
@@ -32,7 +32,7 @@ export const SKILLS: Readonly<Record<string, SkillDefinition>> = {
   },
   warrior_guard: {
     id: 'warrior_guard',
-    name: 'Guard',
+    name: '방어',
     description: '짧은 시간 방어 상태가 된다.',
     classId: PLAYER_CLASS_ID.WARRIOR,
     slot: 'E',
@@ -45,7 +45,7 @@ export const SKILLS: Readonly<Record<string, SkillDefinition>> = {
   },
   mage_fireball: {
     id: 'mage_fireball',
-    name: 'Fireball',
+    name: '화염탄',
     description: '마우스 방향으로 화염탄을 발사한다.',
     classId: PLAYER_CLASS_ID.MAGE,
     slot: 'Q',
@@ -60,8 +60,8 @@ export const SKILLS: Readonly<Record<string, SkillDefinition>> = {
   },
   mage_frost_nova: {
     id: 'mage_frost_nova',
-    name: 'Frost Nova',
-    description: 'Player 주변에 범위 공격을 가한다.',
+    name: '냉기 폭발',
+    description: '몸 주변에 범위 공격을 가한다.',
     classId: PLAYER_CLASS_ID.MAGE,
     slot: 'E',
     cooldownMs: 5000,
@@ -76,7 +76,7 @@ export const SKILLS: Readonly<Record<string, SkillDefinition>> = {
   },
   rogue_shadow_dash: {
     id: 'rogue_shadow_dash',
-    name: 'Shadow Dash',
+    name: '그림자 질주',
     description: '마우스 방향으로 빠르게 이동하며 경로의 적에게 피해를 준다.',
     classId: PLAYER_CLASS_ID.ROGUE,
     slot: 'Q',
@@ -90,7 +90,7 @@ export const SKILLS: Readonly<Record<string, SkillDefinition>> = {
   },
   rogue_backstab: {
     id: 'rogue_backstab',
-    name: 'Backstab',
+    name: '급소 찌르기',
     description: '가까운 적에게 강한 근접 공격을 가한다. 뒤에서 더 강하다.',
     classId: PLAYER_CLASS_ID.ROGUE,
     slot: 'E',

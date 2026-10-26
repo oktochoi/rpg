@@ -1,0 +1,45 @@
+{
+  "textureKey": "projectiles_effects",
+  "path": "projectiles_effects/projectiles_effects_spritesheet_8x5_256.png",
+  "frameConfig": {
+    "frameWidth": 256,
+    "frameHeight": 256
+  },
+  "animations": [
+    {
+      "key": "projectiles_effects_arrow",
+      "start": 0,
+      "end": 7,
+      "frameRate": 16,
+      "repeat": 0
+    },
+    {
+      "key": "projectiles_effects_shadow_bolt",
+      "start": 8,
+      "end": 15,
+      "frameRate": 14,
+      "repeat": 0
+    },
+    {
+      "key": "projectiles_effects_arcane_orb",
+      "start": 16,
+      "end": 23,
+      "frameRate": 14,
+      "repeat": 0
+    },
+    {
+      "key": "projectiles_effects_fireball",
+      "start": 24,
+      "end": 31,
+      "frameRate": 14,
+      "repeat": 0
+    },
+    {
+      "key": "projectiles_effects_slash_hit",
+      "start": 32,
+      "end": 39,
+      "frameRate": 16,
+      "repeat": 0
+    }
+  ]
+}

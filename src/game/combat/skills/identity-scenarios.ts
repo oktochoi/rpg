@@ -101,7 +101,7 @@ export function runStep20IdentityScenarios(): string[] {
     mage: `${getSkillForSlot('mage', 'Q')?.name}/${getSkillForSlot('mage', 'E')?.name}`,
     rogue: `${getSkillForSlot('rogue', 'Q')?.name}/${getSkillForSlot('rogue', 'E')?.name}`,
   };
-  if (allImplemented && hudNames.warrior === 'Charge Slash/Guard' && hudNames.mage === 'Fireball/Frost Nova' && hudNames.rogue === 'Shadow Dash/Backstab') {
+  if (allImplemented && hudNames.warrior === '돌진 베기/방어' && hudNames.mage === '화염탄/냉기 폭발' && hudNames.rogue === '그림자 질주/급소 찌르기') {
     pass('D-hud-skills', `${hudNames.warrior} | ${hudNames.mage} | ${hudNames.rogue}`);
   } else {
     fail('D-hud-skills', JSON.stringify({ allImplemented, hudNames }));

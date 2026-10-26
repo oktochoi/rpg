@@ -114,6 +114,22 @@ async function unlockAndReachRuins() {
   });
   await orch.dispatch({ type: 'ACCEPT_QUEST', questId: QUEST_ID.RUINS_MYSTERY });
   await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.FOREST_ROAD });
+  await orch.dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_FOREST_KEY_HOLDER });
+  if (orch.getState().mode === 'COMBAT') {
+    await orch.dispatch({
+      type: 'RESOLVE_COMBAT',
+      result: {
+        combatId: ENCOUNTER_ID.CH1_FOREST_KEY_HOLDER,
+        outcome: 'VICTORY',
+        player: { remainingHp: 80, remainingMp: 40 },
+        defeatedEnemyIds: ['key_holder_goblin_001'],
+        defeatedEnemyTypes: ['goblin'],
+      },
+    });
+  }
+  if (orch.getState().world.currentLocationId !== LOCATION_ID.FOREST_ROAD) {
+    await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.FOREST_ROAD });
+  }
   await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.ANCIENT_RUINS });
   await orch.dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.RUINS_MIXED_01 });
   await orch.dispatch({
@@ -174,11 +190,11 @@ export async function runStep25BossScenarios(): Promise<string[]> {
   const runtime = createBossRuntime(BOSS_DEFINITIONS.RUINS_GUARDIAN);
   if (
     definition &&
-    definition.maxHp === 1000 &&
-    runtime.currentHp === 1000 &&
+    definition.maxHp === 2000 &&
+    runtime.currentHp === 2000 &&
     runtime.instanceId === BOSS_INSTANCE_ID.RUINS_GUARDIAN &&
     runtime.currentPhase === 1 &&
-    BOSS_DEFINITIONS.RUINS_GUARDIAN.maxHp === 1000
+    BOSS_DEFINITIONS.RUINS_GUARDIAN.maxHp === 2000
   ) {
     pass('definition-runtime', `hp ${definition.maxHp} phase ${runtime.currentPhase}`);
   } else {
@@ -227,9 +243,9 @@ export async function runStep25BossScenarios(): Promise<string[]> {
   slam.start(slamMock.ctx);
   slam.update(100, slamMock.ctx);
   const windupTelegraph = slamMock.telegraph === 'slam' && !slamMock.hitbox.active;
-  slam.update(650, slamMock.ctx);
+  slam.update(900, slamMock.ctx);
   const activeHit = slamMock.state === 'ATTACKING' && slamMock.hitbox.active;
-  slam.update(250, slamMock.ctx);
+  slam.update(280, slamMock.ctx);
   const recovery = slamMock.state === 'RECOVERY' && !slamMock.hitbox.active;
   if (windupTelegraph && activeHit && recovery) {
     pass('B-slam', `${slamMock.state} telegraph ${slamMock.telegraph ?? 'hidden'}`);
@@ -240,11 +256,11 @@ export async function runStep25BossScenarios(): Promise<string[]> {
   const burst = new ProjectileBurstPattern();
   const burst1 = createMockContext(1);
   burst.start(burst1.ctx);
-  burst.update(600, burst1.ctx);
+  burst.update(RUINS_GUARDIAN_CONFIG.projectileBurst.windUpMs + 40, burst1.ctx);
   const burst2 = createMockContext(2);
   const burstPhase2 = new ProjectileBurstPattern();
   burstPhase2.start(burst2.ctx);
-  burstPhase2.update(600, burst2.ctx);
+  burstPhase2.update(RUINS_GUARDIAN_CONFIG.projectileBurst.windUpMs + 40, burst2.ctx);
   if (burst1.shots.length === 3 && burst2.shots.length === 5 && burst1.shots.every((shot) => shot.sourceId === 'ruins_guardian_001')) {
     pass('C-burst', `p1 ${burst1.shots.length} p2 ${burst2.shots.length}`);
   } else {
@@ -284,8 +300,8 @@ export async function runStep25BossScenarios(): Promise<string[]> {
     !before &&
     atThreshold &&
     !again &&
-    p1Delay === 1100 &&
-    p2Delay === 750 &&
+    p1Delay === 700 &&
+    p2Delay === 420 &&
     p2Delay < p1Delay &&
     p1First === BOSS_PATTERN_ID.HEAVY_SLAM &&
     p2First === BOSS_PATTERN_ID.PROJECTILE_BURST
@@ -374,7 +390,7 @@ export async function runStep25BossScenarios(): Promise<string[]> {
     lost.story.currentSceneId === STORY_SCENE_ID.RUINS_GUARDIAN_AFTER_DEFEAT &&
     lost.world.flags[WORLD_FLAG.RUINS_GUARDIAN_LOST] &&
     !lost.world.flags[WORLD_FLAG.RUINS_GUARDIAN_DEFEATED] &&
-    resetRuntime.currentHp === 1000 &&
+    resetRuntime.currentHp === 2000 &&
     resetRuntime.currentPhase === 1 &&
     saveBlocked
   ) {

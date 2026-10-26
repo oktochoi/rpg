@@ -12,6 +12,7 @@ import {
   ENEMY_KNOCKBACK_DURATION_MS,
   ENEMY_KNOCKBACK_SPEED,
 } from '../enemies/EnemyConfig';
+import { isCombatDebugEnabled } from '../../debug/debug-flags';
 import { RUINS_GUARDIAN_CONFIG, bossSlowMultiplier } from './boss-config';
 import { GUARDIAN_RESIDUE } from './pattern-selection';
 import { createBossRuntime, shouldTriggerPhase2 } from './boss-definitions';
@@ -34,6 +35,7 @@ export class BossController implements CombatHittable {
   private readonly telegraph: Phaser.GameObjects.Graphics;
   private readonly debugLabel: Phaser.GameObjects.Text;
   private readonly phaseLabel: Phaser.GameObjects.Text;
+  private coreRemnant: Phaser.GameObjects.Arc | null = null;
   private readonly knockbackVelocity = new Phaser.Math.Vector2();
   private readonly lockedDirection = new Phaser.Math.Vector2(1, 0);
   private readonly _attackDirection = new Phaser.Math.Vector2(1, 0);
@@ -126,6 +128,7 @@ export class BossController implements CombatHittable {
     });
     this.debugLabel.setOrigin(0.5, 1);
     this.debugLabel.setDepth(4);
+    this.debugLabel.setVisible(isCombatDebugEnabled());
 
     this.phaseLabel = scene.add.text(0, 0, '', {
       fontFamily: 'Arial, sans-serif',
@@ -254,6 +257,14 @@ export class BossController implements CombatHittable {
     }
   }
 
+  /** Clears halt after boss awakening intro. */
+  resume(): void {
+    if (this.runtime.isDead) {
+      return;
+    }
+    this.halted = false;
+  }
+
   applySlow(multiplier: number, durationMs: number): void {
     if (this.runtime.isDead) {
       return;
@@ -263,12 +274,13 @@ export class BossController implements CombatHittable {
   }
 
   takeDamage(hit: EnemyDamageHit): boolean {
-    if (this.runtime.isDead || hit.amount <= 0 || this.lastHitAttackId === hit.attackId) {
+    if (this.runtime.isDead || this.runtime.isTransitioningPhase || hit.amount <= 0 || this.lastHitAttackId === hit.attackId) {
       return false;
     }
 
     this.lastHitAttackId = hit.attackId;
-    this.runtime.currentHp = Math.max(0, this.runtime.currentHp - hit.amount);
+    const dealt = Math.max(1, Math.round(hit.amount * 0.75));
+    this.runtime.currentHp = Math.max(0, this.runtime.currentHp - dealt);
     this.playHitFeedback();
     this.startKnockback(hit.direction, (hit.knockbackScale ?? 1) * RUINS_GUARDIAN_CONFIG.knockbackScale);
 
@@ -336,8 +348,10 @@ export class BossController implements CombatHittable {
     this.knockbackRemainingMs = 0;
     this.visual.setFillStyle(PHASE2_COLOR);
     this.visual.setScale(1.12);
-    this.phaseLabel.setText('PHASE 2');
-    this.phaseLabel.setVisible(true);
+    if (isCombatDebugEnabled()) {
+      this.phaseLabel.setText('PHASE 2');
+      this.phaseLabel.setVisible(true);
+    }
   }
 
   private tickPhaseTransition(delta: number): void {
@@ -368,6 +382,11 @@ export class BossController implements CombatHittable {
     this.body.setVelocity(0, 0);
     this.body.setEnable(false);
     this.deathFadeRemainingMs = ENEMY_DEATH_FADE_MS + 180;
+    if (!this.coreRemnant) {
+      this.coreRemnant = this.visual.scene.add.circle(this.visual.x, this.visual.y + 24, 16, 0x8fd4ff, 0.95);
+      this.coreRemnant.setStrokeStyle(4, 0xd7b4ff, 0.95);
+      this.coreRemnant.setDepth(6);
+    }
     this.onDeath?.();
   }
 
@@ -586,11 +605,9 @@ export class BossController implements CombatHittable {
     this.telegraph.lineStyle(2, color, 0.85);
 
     if (kind === 'slam') {
-      const range = RUINS_GUARDIAN_CONFIG.heavySlam.range;
-      const width = RUINS_GUARDIAN_CONFIG.heavySlam.width;
-      const cx = this.visual.x + dir.x * (range / 2 + 8);
-      const cy = this.visual.y + dir.y * (range / 2 + 8);
-      this.drawOrientedRect(cx, cy, width, range, dir.angle());
+      const radius = RUINS_GUARDIAN_CONFIG.heavySlam.range / 2;
+      this.telegraph.fillCircle(this.visual.x, this.visual.y, radius);
+      this.telegraph.strokeCircle(this.visual.x, this.visual.y, radius);
       return;
     }
 
@@ -628,8 +645,10 @@ export class BossController implements CombatHittable {
   private syncHitboxes(): void {
     const dir = this.lockedDirection;
     const slamRange = RUINS_GUARDIAN_CONFIG.heavySlam.range;
-    this.slamHitbox.setPosition(this.visual.x + dir.x * (slamRange / 2 + 8), this.visual.y + dir.y * (slamRange / 2 + 8));
-    this.slamHitbox.setRotation(dir.angle());
+    this.slamHitbox.setPosition(this.visual.x, this.visual.y);
+    this.slamHitbox.setRotation(0);
+    this.slamHitbox.setSize(slamRange, slamRange);
+    this.slamHitboxBody.setSize(slamRange, slamRange);
     this.slamHitbox.setVisible(this.telegraphKind === 'slam' || this.slamHitboxActive);
     this.slamHitbox.setAlpha(this.slamHitboxActive ? ENEMY_ATTACK_ACTIVE_ALPHA : ENEMY_ATTACK_WINDUP_ALPHA);
     this.slamHitboxBody.setEnable(this.slamHitboxActive && !this.runtime.isDead);
@@ -659,9 +678,11 @@ export class BossController implements CombatHittable {
     const top = this.visual.y - this.definition.size / 2 - 10;
     this.debugLabel.setPosition(this.visual.x, top);
     this.phaseLabel.setPosition(this.visual.x, top - 16);
-    if (this.runtime.currentPhase === 2 && !this.runtime.isDead) {
+    if (isCombatDebugEnabled() && this.runtime.currentPhase === 2 && !this.runtime.isDead) {
       this.phaseLabel.setVisible(true);
       this.phaseLabel.setText('PHASE 2');
+    } else if (!isCombatDebugEnabled()) {
+      this.phaseLabel.setVisible(false);
     }
   }
 
@@ -674,6 +695,7 @@ export class BossController implements CombatHittable {
     this.telegraph.destroy();
     this.slamHitbox.destroy();
     this.chargeHitbox.destroy();
+    this.coreRemnant?.destroy();
     this.debugLabel.destroy();
     this.phaseLabel.destroy();
   };

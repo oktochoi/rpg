@@ -5,7 +5,8 @@ import type { NpcId } from '../core/ids';
 import { sceneIdForAftermathChoice } from '../core/reducer';
 import { eventsForGrantFact, eventsForPlayerDiscoveredFact, eventsForRecordedFact, eventsForShareFact } from '../knowledge/knowledge-service';
 import { actorKnowsFact } from '../knowledge/knowledge-selectors';
-import { isTalkChoice, npcIdFromTalkKey } from '../npc/talk-choices';
+import { isTalkChoice, npcIdFromTalkKey, getTalkPrompt, talkReplyFor } from '../npc/talk-choices';
+import { CHAPTER_FACT_ID } from '../knowledge/chapter-1-facts';
 import { eventsForBeginFreeAction, eventsForCommitFreeAction } from '../actions/action-rules';
 import { eventsForRest, canRest } from '../time/day-rules';
 import { eventsForUseItem } from '../inventory/item-rules';
@@ -13,13 +14,19 @@ import { eventsForEquipItem, eventsForUnequipSlot, eventsForAdvancementStarter, 
 import { eventsForEnhanceEquipment, enhanceBlockedReason } from '../inventory/enhancement-rules';
 import { eventsForDialogueConsumption } from '../dialogue/dialogue-effects';
 import { currentShopId, eventsForBuyItem, buyBlockedReason, eventsForSellItem, sellBlockedReason } from '../economy/shop-rules';
-import { isEncounterCleared } from '../combat/encounters/encounter-progress';
 import { playerHasItem } from '../player/player-state';
+import { derivedPlayerStats } from '../inventory/derived-stats';
 import { canChooseFirstAdvancement } from '../player/classes/first-advancement';
 import { PLAYER_CLASS_ID } from '../player/classes';
 import { lookAroundResult } from '../world/living-luen';
+import { eventsForSceneEffects } from '../story/story-progress';
+import { canUseFreeTravel } from '../story/sequences';
+import { nextAdventureProgressChoice } from '../story/adventure-progress';
+import { getGamePhase, GAME_PHASE, isAdventurePhase, isAdventureSequenceId } from '../story/game-phase';
 import { isNpcDuelCombatId } from '../actions/action-validator';
 import { ENCOUNTER_ID, isStartableCombatId } from '../combat/encounters/encounter-definitions';
+import { isEncounterCleared } from '../combat/encounters/encounter-progress';
+import { isTrainingCombatId, TRAINING_COMBAT_ID } from '../combat/training/training-combat';
 import { getQuestDefinition, QUEST_ID, RUINS_SEAL_FACT_ID } from '../quests/quest-definitions';
 import { requirementsMet } from '../quests/quest-selectors';
 import {
@@ -37,6 +44,7 @@ import {
   CHOICE_FIGHT_FOREST_GOBLIN,
   CHOICE_PASS_GATE,
   CHOICE_REGISTER_GUILD,
+  CHOICE_START_TRAINING,
   locationChoiceDestination,
 } from '../world/locations/location-story-choices';
 import { LOCATION_ID, WORLD_FLAG } from '../world/locations/location-definitions';
@@ -146,9 +154,6 @@ export function createRulesEngine(): RulesEngine {
         case 'DELETE_SAVE':
           return allow([{ type: 'SAVE_NOTICE', message: '저장 데이터를 삭제했습니다.' }]);
         case 'NEW_GAME':
-          if (state.mode === 'COMBAT') {
-            return reject('전투 중에는 새 게임을 시작할 수 없습니다.');
-          }
           return allow([{ type: 'GAME_STARTED', name: command.name }]);
         case 'CHOOSE_CLASS_PATH': {
           return evaluateChooseClassPath(command.classId, state);
@@ -190,12 +195,18 @@ function evaluateStartCombat(combatId: string, state: Readonly<GameState>): Rule
   if (!isStartableCombatId(combatId) && !isNpcDuelCombatId(combatId)) {
     return reject('알 수 없는 전투입니다.');
   }
-  if (isEncounterCleared(state, combatId)) {
-    return reject('이미 정리한 싸움이다.');
-  }
   if (state.player.currentHp <= 0) {
     return reject('전투를 시작할 수 없는 상태입니다.');
   }
+  if (isTrainingCombatId(combatId)) {
+    if (getGamePhase(state) !== GAME_PHASE.VILLAGE) {
+      return reject('모험 중에는 훈련장을 이용할 수 없다.');
+    }
+    if (state.world.currentLocationId !== LOCATION_ID.LUEN_TRAINING_GROUND) {
+      return reject('훈련장에서만 훈련을 시작할 수 있다.');
+    }
+  }
+  // Cleared encounters may be rechallenged (gold-only rewards).
   return allow([{ type: 'COMBAT_STARTED', combatId }]);
 }
 
@@ -210,7 +221,18 @@ function evaluateResolveCombat(
     return reject('전투 ID가 일치하지 않습니다.');
   }
 
-    const remainingHp = Math.max(0, command.result.player.remainingHp);
+  // Training yard: end session without HP/MP/item/EXP/quest side effects.
+  if (isTrainingCombatId(command.result.combatId)) {
+    return allow([
+      { type: 'COMBAT_LOST', combatId: command.result.combatId },
+      { type: 'COMBAT_ENDED', combatId: command.result.combatId },
+    ]);
+  }
+
+  const reportedHp = Math.max(0, command.result.player.remainingHp);
+  const maxHp = derivedPlayerStats(state.player).maxHp;
+  const remainingHp =
+    command.result.outcome === 'DEFEAT' && reportedHp <= 0 ? Math.max(1, Math.round(maxHp * 0.45)) : reportedHp;
   const resourceEvents: GameEvent[] = [{ type: 'PLAYER_COMBAT_HP_UPDATED', currentHp: remainingHp }];
   if (typeof command.result.player.remainingMp === 'number') {
     resourceEvents.push({
@@ -245,12 +267,24 @@ function evaluateResolveCombat(
     ]);
   }
 
+  const retreatEvents: GameEvent[] = [];
+  if (command.result.retreatToVillage && state.world.currentLocationId !== LOCATION_ID.LUEN_VILLAGE) {
+    if (isAdventureSequenceId(state.story.currentSequenceId)) {
+      retreatEvents.push({ type: 'ADVENTURE_ENDED', adventureId: 'combat_retreat' });
+    }
+    retreatEvents.push(
+      { type: 'LOCATION_LEFT', locationId: state.world.currentLocationId },
+      { type: 'LOCATION_ENTERED', locationId: LOCATION_ID.LUEN_VILLAGE }
+    );
+  }
+
   return allow([
     ...resourceEvents,
     { type: 'PLAYER_DEFEATED' },
     { type: 'COMBAT_LOST', combatId: command.result.combatId },
     ...createCombatFacts(state, command.result).flatMap(eventsForRecordedFact),
     { type: 'COMBAT_ENDED', combatId: command.result.combatId },
+    ...retreatEvents,
   ]);
 }
 
@@ -415,6 +449,28 @@ function evaluateAllocateStatPoint(statId: string, state: Readonly<GameState>): 
   return allow(eventsForAllocateStat(state, statId));
 }
 
+function withChoiceEffects(
+  choice: StoryChoiceDefinition,
+  state: Readonly<GameState>,
+  result: RuleResult
+): RuleResult {
+  if (!result.allowed || !choice.effects || choice.effects.length === 0) {
+    return result;
+  }
+  const extras = eventsForSceneEffects(state, choice.effects);
+  if (extras.length === 0) {
+    return result;
+  }
+  const events = [...result.events];
+  const resolvedAt = events.findIndex((event) => event.type === 'CHOICE_RESOLVED');
+  if (resolvedAt >= 0) {
+    events.splice(resolvedAt + 1, 0, ...extras);
+  } else {
+    events.unshift(...extras);
+  }
+  return allow(events);
+}
+
 function evaluateStoryChoice(
   choiceId: string,
   choice: StoryChoiceDefinition,
@@ -456,7 +512,34 @@ function evaluateStoryChoice(
     if (!share.allowed) {
       return share;
     }
-    return allow([{ type: 'CHOICE_RESOLVED', choiceId }, ...share.events]);
+    const reply =
+      action.toId === 'guildmaster_doran'
+        ? '장부에 적겠다. 잔광과 이동. 폐허 쪽 결은 세리아가 읽고, 사람 목숨은 내가 본다.'
+        : action.toId === 'seria'
+          ? '직접 본 거구나. 봉인의 결과와 수호자를 움직인 마력의 방향이 다르면, 원인은 하나가 아니야.'
+          : action.toId === 'leon'
+            ? '보고는 받았다. 사람 손이 닿은 자리라면 북문은 더 닫아 둔다.'
+            : '그 이야기는 기억해 두겠다.';
+    return allow([
+      { type: 'CHOICE_RESOLVED', choiceId },
+      ...share.events,
+      {
+        type: 'DIALOGUE_TURN_RECORDED',
+        npcId: action.toId,
+        playerText: choice.text,
+        npcText: reply,
+      },
+      {
+        type: 'ACTION_RESOLVED',
+        turnId: state.world.turn,
+        resolution: {
+          success: true,
+          actionType: 'TALK',
+          narrative: reply,
+          nextMode: 'STORY',
+        },
+      },
+    ]);
   }
   if (action.type === 'ACCEPT_QUEST') {
     const accepted = evaluateAcceptQuest(action.questId, state);
@@ -475,7 +558,7 @@ function evaluateStoryChoice(
     return evaluateContinueStory(state, action.nextSceneId ?? choice.nextSceneId);
   }
   if (action.type === 'REST') {
-    const rested = evaluateRest(state);
+    const rested = evaluateRest(state, { fromStoryChoice: true });
     if (!rested.allowed) {
       return rested;
     }
@@ -513,20 +596,42 @@ function evaluateStoryChoice(
     return allow([{ type: 'CHOICE_RESOLVED', choiceId }, ...entered.events]);
   }
   if (action.type === 'TALK') {
-    const npcId = npcIdFromTalkKey(choiceId, action.promptId) ?? state.story.currentNpcId ?? undefined;
+    const npcId = npcIdFromTalkKey(choiceId, action.promptId) ?? state.story.currentNpcId ?? 'seria';
+    const prompt = getTalkPrompt(action.promptId ?? choiceId) ?? choice.text;
+    const sceneLine = getStorySceneDefinition(state.story.currentSceneId)?.npcDialogue;
+    const reply = talkReplyFor(action.promptId ?? choiceId, npcId, sceneLine);
+    const talked = action.promptId ?? choiceId;
+    const learnedFact =
+      talked === 'ask_recent_event'
+        ? CHAPTER_FACT_ID.SERIA_BLUE_PULSE
+        : talked === 'ask_elin_prices'
+          ? CHAPTER_FACT_ID.ASKED_ELIN_PRICES
+          : talked === 'ask_quest_goblin_danger' || choiceId === 'ask_goblin_danger'
+            ? CHAPTER_FACT_ID.ASKED_GOBLIN_DANGER
+            : null;
+    const learned = learnedFact
+      ? eventsForPlayerDiscoveredFact(state, learnedFact, ['story', 'dialogue'])
+      : [];
     return allow([
       { type: 'CHOICE_RESOLVED', choiceId },
+      ...learned,
       ...eventsForDialogueConsumption(state, {
         npcId,
         promptId: action.promptId ?? choiceId,
       }),
+      {
+        type: 'DIALOGUE_TURN_RECORDED',
+        npcId,
+        playerText: prompt,
+        npcText: reply,
+      },
       {
         type: 'ACTION_RESOLVED',
         turnId: state.world.turn,
         resolution: {
           success: true,
           actionType: 'TALK',
-          narrative: '대화를 나눈다.',
+          narrative: reply,
           nextMode: 'STORY',
         },
       },
@@ -534,6 +639,14 @@ function evaluateStoryChoice(
   }
   if (action.type === 'LEARN_FACT') {
     const learned = eventsForPlayerDiscoveredFact(state, action.factId);
+    const narrative =
+      action.factId === CHAPTER_FACT_ID.PLAYER_BACKS_SERIA
+        ? '레온이 잠시 입을 다문다. 세리아의 조사를 막지는 않겠다는 뜻이다.'
+        : action.factId === CHAPTER_FACT_ID.PLAYER_BACKS_LEON
+          ? '레온이 고개를 끄덕인다. 보고는 문지기 쪽에서 먼저 올라간다.'
+          : action.factId === CHAPTER_FACT_ID.PLAYER_WAITS_TO_JUDGE
+            ? '둘 다 당장 결론을 재촉하지 않는다. 증거는 아직 부족하다.'
+            : '그 선택은 기억에 남는다.';
     const events: GameEvent[] = [
       { type: 'CHOICE_RESOLVED', choiceId },
       ...learned,
@@ -543,7 +656,7 @@ function evaluateStoryChoice(
         resolution: {
           success: true,
           actionType: 'ASK',
-          narrative: '그 선택은 기억에 남는다.',
+          narrative,
           nextMode: 'STORY',
         },
       },
@@ -628,7 +741,7 @@ function evaluateSelectDynamicChoice(
       text: candidate.textTemplate,
       action: storyAction,
     };
-    return evaluateStoryChoice(command.choiceId, synthetic, state);
+    return withChoiceEffects(synthetic, state, evaluateStoryChoice(command.choiceId, synthetic, state));
   }
 
   if (candidate.actionType === 'MOVE' && candidate.targetId) {
@@ -684,11 +797,24 @@ function evaluateSelectChoice(choiceId: string, state: Readonly<GameState>): Rul
 
   const storyChoice = findAvailableChoiceDefinition(state, choiceId);
   if (storyChoice) {
-    return evaluateStoryChoice(choiceId, storyChoice, state);
+    return withChoiceEffects(storyChoice, state, evaluateStoryChoice(choiceId, storyChoice, state));
   }
 
   if (choiceId === 'intro_square' || choiceId === 'intro_guild' || choiceId === 'intro_inn' || choiceId === 'intro_continue') {
     return evaluateContinueStory(state, STORY_SCENE_ID.LUEN_VILLAGE_HUB);
+  }
+  if (choiceId === 'story_continue') {
+    const scene = getStorySceneDefinition(state.story.currentSceneId);
+    const next = scene?.continueTo;
+    if (next && next !== state.story.currentSceneId) {
+      return evaluateContinueStory(state, next);
+    }
+    const progress = nextAdventureProgressChoice(state);
+    if (progress) {
+      return withChoiceEffects(progress, state, evaluateStoryChoice(progress.id, progress, state));
+    }
+    // No authored next beat — treat as look-around so the button is never a no-op.
+    return allow(lookAroundEvents(choiceId, state));
   }
   if (choiceId === CHOICE_REGISTER_GUILD || choiceId === 'register_adventurer') {
     if (worldFlag(state, WORLD_FLAG.GUILD_REGISTERED)) {
@@ -762,6 +888,13 @@ function evaluateSelectChoice(choiceId: string, state: Readonly<GameState>): Rul
     }
     return allow([{ type: 'CHOICE_RESOLVED', choiceId }, ...combat.events]);
   }
+  if (choiceId === CHOICE_START_TRAINING) {
+    const combat = evaluateStartCombat(TRAINING_COMBAT_ID, state);
+    if (!combat.allowed) {
+      return combat;
+    }
+    return allow([{ type: 'CHOICE_RESOLVED', choiceId }, ...combat.events]);
+  }
   if (choiceId === CHOICE_OPEN_SHOP) {
     return evaluateOpenMenu('shop', state);
   }
@@ -822,6 +955,9 @@ function evaluateBeginFreeAction(
   if (isStoryInputBlocked(state)) {
     return reject('지금은 자유 입력을 받을 수 없습니다.');
   }
+  if (isAdventurePhase(state)) {
+    return reject('모험 중에는 자유 대화/행동을 할 수 없다. 선택지로 진행하자.');
+  }
   if (state.mode !== 'STORY' && state.mode !== 'DIALOGUE') {
     return reject('현재 모드에서는 자유 입력을 할 수 없습니다.');
   }
@@ -865,11 +1001,14 @@ function evaluateMoveToLocation(locationId: string, state: Readonly<GameState>):
 }
 
 function evaluateMoveChoice(choiceId: string, locationId: string, state: Readonly<GameState>): RuleResult {
-  const moved = evaluateMoveToLocation(locationId, state);
-  if (!moved.allowed) {
-    return moved;
+  const check = validateMoveToLocation(state, locationId, { fromStoryChoice: true });
+  if (!check.allowed) {
+    return reject(check.reason ?? '지금은 이동할 수 없습니다.');
   }
-  return allow([{ type: 'CHOICE_RESOLVED', choiceId }, ...moved.events]);
+  return allow([
+    { type: 'CHOICE_RESOLVED', choiceId },
+    ...eventsForMoveToLocation(state, locationId, { fromStoryChoice: true }),
+  ]);
 }
 
 function evaluateMoveNpc(npcId: NpcId, locationId: string, state: Readonly<GameState>): RuleResult {
@@ -899,6 +1038,23 @@ function evaluateMoveNpc(npcId: NpcId, locationId: string, state: Readonly<GameS
 function evaluateInvestigateChoice(choiceId: string, state: Readonly<GameState>, targetId?: string): RuleResult {
   const input = choiceId === CHOICE_INVESTIGATE_ALTAR ? '부서진 제단을 조사한다.' : '주변을 조사한다.';
   const resolved = resolveExplorationForInvestigate(state, input, targetId);
+  const altar =
+    choiceId === CHOICE_INVESTIGATE_ALTAR || resolved.point?.id === 'royal_magic_stone';
+  if (altar && !isEncounterCleared(state, ENCOUNTER_ID.CH1_RUINS_GATE)) {
+    return allow([
+      { type: 'CHOICE_RESOLVED', choiceId },
+      {
+        type: 'ACTION_RESOLVED',
+        turnId: state.world.turn,
+        resolution: {
+          success: true,
+          actionType: 'INVESTIGATE',
+          narrative: '입구를 지키는 고블린 때문에 제단까지 갈 수 없다.',
+          nextMode: 'STORY',
+        },
+      },
+    ]);
+  }
   const events: GameEvent[] = [
     { type: 'CHOICE_RESOLVED', choiceId },
     { type: 'AREA_INVESTIGATED', locationId: state.world.currentLocationId },
@@ -1017,7 +1173,13 @@ function evaluateOpenMenu(menu: MenuId | undefined, state: Readonly<GameState>):
   if (!menu) {
     return reject('열 메뉴가 없습니다.');
   }
+  if (menu === 'map' || menu === 'characters' || menu === 'journal') {
+    return reject('해당 메뉴는 더 이상 사용하지 않는다.');
+  }
   if (menu === 'shop') {
+    if (isAdventurePhase(state)) {
+      return reject('모험 중에는 상점을 열 수 없다.');
+    }
     if (!currentShopId(state)) {
       return reject('상점 안에서만 거래할 수 있다.');
     }
@@ -1043,9 +1205,15 @@ function evaluateLoadGame(state: Readonly<GameState>): RuleResult {
   return allow([]);
 }
 
-function evaluateRest(state: Readonly<GameState>): RuleResult {
+function evaluateRest(state: Readonly<GameState>, options: { fromStoryChoice?: boolean } = {}): RuleResult {
   if (isStoryInputBlocked(state)) {
     return reject('지금은 쉴 수 없습니다.');
+  }
+  if (isAdventurePhase(state) && !options.fromStoryChoice) {
+    return reject('모험 중에는 여관에서 쉴 수 없다.');
+  }
+  if (!options.fromStoryChoice && !canUseFreeTravel(state)) {
+    return reject('스토리 진행 중에는 여관에서 쉴 수 없습니다.');
   }
   const events = eventsForRest(state);
   if (events.length === 0) {

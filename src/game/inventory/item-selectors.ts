@@ -46,7 +46,7 @@ export function compareEquipmentStats(currentId: string | null, next: ItemDefini
   const nextBonus = next.statBonuses ?? {};
   const currentBonus = current?.statBonuses ?? {};
   return [
-    { label: 'Attack', delta: (nextBonus.attack ?? 0) - (currentBonus.attack ?? 0) },
+    { label: '공격', delta: (nextBonus.attack ?? 0) - (currentBonus.attack ?? 0) },
     { label: 'HP', delta: (nextBonus.hp ?? 0) - (currentBonus.hp ?? 0) },
     { label: 'MP', delta: (nextBonus.mp ?? 0) - (currentBonus.mp ?? 0) },
   ].filter((row) => row.delta !== 0);

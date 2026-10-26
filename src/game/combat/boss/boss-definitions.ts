@@ -12,7 +12,7 @@ export const BOSS_DEFINITIONS: Record<BossId, BossDefinition> = {
   [BOSS_ID.RUINS_GUARDIAN]: {
     id: BOSS_ID.RUINS_GUARDIAN,
     name: '고대 수호자',
-    maxHp: 1000,
+    maxHp: 2000,
     moveSpeed: 88,
     damage: 28,
     size: 64,

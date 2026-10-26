@@ -1,7 +1,7 @@
 export { audioManager } from './AudioManager';
 export { BGM_ASSETS, SFX_ASSETS, listAudioAssets } from './audio-registry';
 export { bgmContextForCombat, bgmContextForCombatResult, bgmContextForLocation } from './audio-context';
-export { sfxForDash, sfxForEnemyAttack, sfxForPlayerAttack, sfxForSkill } from './combat-audio';
+export { playPlayerSwing, playerSwingVoice, sfxForDash, sfxForEnemyAttack, sfxForPlayerAttack, sfxForSkill, swingPlaybackRate } from './combat-audio';
 export {
   AUDIO_STORAGE_KEY,
   BGM_CONTEXT,

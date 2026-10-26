@@ -5,37 +5,44 @@ export const EXP_TO_NEXT_LEVEL: readonly number[] = [
   1580, 1700, 1830, 1960, 2100, 2240, 2390,
 ];
 
+/** Permanent growth EXP — first clear / discovery / quest only. */
 export const EXP_REWARD = {
-  ENCOUNTER: 40,
+  ENCOUNTER: 80,
   QUEST: 50,
-  BOSS: 120,
-  DISCOVERY: 25,
-  CHAPTER: 60,
+  /** Fun Pass: mainline reaches Lv5 after Guardian without side grind. */
+  BOSS: 180,
+  DISCOVERY: 40,
+  MILESTONE: 100,
+  CHAPTER: 80,
   GUILD_RECOGNITION: 50,
 } as const;
 
+/**
+ * Per-action EXP. Grindable actions are 0 — growth comes from first discovery / clear.
+ * NEW_FACT / NEW_LOCATION / QUEST_PROGRESS remain the primary non-combat sources.
+ */
 export const ACTION_EXP: Readonly<Record<string, number>> = {
-  TALK: 1,
-  ASK: 1,
-  MOVE: 4,
-  INVESTIGATE: 4,
-  HELP: 8,
-  RESCUE: 8,
-  GIVE: 4,
-  BRIBE: 4,
-  THREATEN: 3,
-  USE_ITEM: 2,
+  TALK: 0,
+  ASK: 0,
+  MOVE: 0,
+  INVESTIGATE: 0,
+  HELP: 0,
+  RESCUE: 0,
+  GIVE: 0,
+  BRIBE: 0,
+  THREATEN: 0,
+  USE_ITEM: 0,
   WAIT: 0,
-  STORY_CHOICE: 3,
-  QUEST_PROGRESS: 10,
-  NEW_LOCATION: 8,
-  NEW_FACT: 6,
-  IMPORTANT_DISCOVERY: 16,
+  STORY_CHOICE: 0,
+  QUEST_PROGRESS: 12,
+  NEW_LOCATION: 20,
+  NEW_FACT: 15,
+  IMPORTANT_DISCOVERY: 40,
   ATTACK: 0,
   REST: 0,
-  LEAVE: 3,
-  USE_SKILL: 2,
-  UNKNOWN: 1,
+  LEAVE: 0,
+  USE_SKILL: 0,
+  UNKNOWN: 0,
 };
 
 export const LEVEL_GROWTH = {

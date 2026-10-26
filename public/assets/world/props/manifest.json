@@ -1,0 +1,1177 @@
+{
+  "source": "어두운_판타지_rpg_환경_소품_아틀라스.png",
+  "count": 90,
+  "items": [
+    {
+      "id": 1,
+      "filename": "environment_props_001.png",
+      "source_bbox": [
+        182,
+        8,
+        345,
+        259
+      ],
+      "width": 163,
+      "height": 251,
+      "pixel_count": 21546
+    },
+    {
+      "id": 2,
+      "filename": "environment_props_002.png",
+      "source_bbox": [
+        632,
+        8,
+        809,
+        265
+      ],
+      "width": 177,
+      "height": 257,
+      "pixel_count": 16800
+    },
+    {
+      "id": 3,
+      "filename": "environment_props_003.png",
+      "source_bbox": [
+        16,
+        9,
+        191,
+        253
+      ],
+      "width": 175,
+      "height": 244,
+      "pixel_count": 23120
+    },
+    {
+      "id": 4,
+      "filename": "environment_props_004.png",
+      "source_bbox": [
+        488,
+        10,
+        621,
+        265
+      ],
+      "width": 133,
+      "height": 255,
+      "pixel_count": 14563
+    },
+    {
+      "id": 5,
+      "filename": "environment_props_005.png",
+      "source_bbox": [
+        810,
+        11,
+        1007,
+        263
+      ],
+      "width": 197,
+      "height": 252,
+      "pixel_count": 19080
+    },
+    {
+      "id": 6,
+      "filename": "environment_props_006.png",
+      "source_bbox": [
+        334,
+        18,
+        499,
+        257
+      ],
+      "width": 165,
+      "height": 239,
+      "pixel_count": 20480
+    },
+    {
+      "id": 7,
+      "filename": "environment_props_007.png",
+      "source_bbox": [
+        1011,
+        46,
+        1182,
+        247
+      ],
+      "width": 171,
+      "height": 201,
+      "pixel_count": 13090
+    },
+    {
+      "id": 8,
+      "filename": "environment_props_008.png",
+      "source_bbox": [
+        1283,
+        69,
+        1435,
+        197
+      ],
+      "width": 152,
+      "height": 128,
+      "pixel_count": 8534
+    },
+    {
+      "id": 9,
+      "filename": "environment_props_009.png",
+      "source_bbox": [
+        1176,
+        75,
+        1292,
+        184
+      ],
+      "width": 116,
+      "height": 109,
+      "pixel_count": 6368
+    },
+    {
+      "id": 10,
+      "filename": "environment_props_010.png",
+      "source_bbox": [
+        1168,
+        180,
+        1310,
+        262
+      ],
+      "width": 142,
+      "height": 82,
+      "pixel_count": 5938
+    },
+    {
+      "id": 11,
+      "filename": "environment_props_011.png",
+      "source_bbox": [
+        1317,
+        180,
+        1429,
+        255
+      ],
+      "width": 112,
+      "height": 75,
+      "pixel_count": 4443
+    },
+    {
+      "id": 12,
+      "filename": "environment_props_012.png",
+      "source_bbox": [
+        703,
+        251,
+        864,
+        378
+      ],
+      "width": 161,
+      "height": 127,
+      "pixel_count": 10486
+    },
+    {
+      "id": 13,
+      "filename": "environment_props_013.png",
+      "source_bbox": [
+        17,
+        260,
+        162,
+        363
+      ],
+      "width": 145,
+      "height": 103,
+      "pixel_count": 9810
+    },
+    {
+      "id": 14,
+      "filename": "environment_props_014.png",
+      "source_bbox": [
+        169,
+        258,
+        296,
+        373
+      ],
+      "width": 127,
+      "height": 115,
+      "pixel_count": 8965
+    },
+    {
+      "id": 15,
+      "filename": "environment_props_015.png",
+      "source_bbox": [
+        441,
+        259,
+        570,
+        372
+      ],
+      "width": 129,
+      "height": 113,
+      "pixel_count": 8199
+    },
+    {
+      "id": 16,
+      "filename": "environment_props_016.png",
+      "source_bbox": [
+        866,
+        263,
+        1031,
+        376
+      ],
+      "width": 165,
+      "height": 113,
+      "pixel_count": 10146
+    },
+    {
+      "id": 17,
+      "filename": "environment_props_017.png",
+      "source_bbox": [
+        304,
+        264,
+        435,
+        366
+      ],
+      "width": 131,
+      "height": 102,
+      "pixel_count": 8576
+    },
+    {
+      "id": 18,
+      "filename": "environment_props_018.png",
+      "source_bbox": [
+        1331,
+        270,
+        1431,
+        344
+      ],
+      "width": 100,
+      "height": 74,
+      "pixel_count": 3144
+    },
+    {
+      "id": 19,
+      "filename": "environment_props_019.png",
+      "source_bbox": [
+        569,
+        272,
+        702,
+        372
+      ],
+      "width": 133,
+      "height": 100,
+      "pixel_count": 8189
+    },
+    {
+      "id": 20,
+      "filename": "environment_props_020.png",
+      "source_bbox": [
+        1238,
+        272,
+        1314,
+        316
+      ],
+      "width": 76,
+      "height": 44,
+      "pixel_count": 1476
+    },
+    {
+      "id": 21,
+      "filename": "environment_props_021.png",
+      "source_bbox": [
+        1171,
+        277,
+        1245,
+        339
+      ],
+      "width": 74,
+      "height": 62,
+      "pixel_count": 2512
+    },
+    {
+      "id": 22,
+      "filename": "environment_props_022.png",
+      "source_bbox": [
+        1049,
+        278,
+        1097,
+        308
+      ],
+      "width": 48,
+      "height": 30,
+      "pixel_count": 758
+    },
+    {
+      "id": 23,
+      "filename": "environment_props_023.png",
+      "source_bbox": [
+        1270,
+        306,
+        1344,
+        370
+      ],
+      "width": 74,
+      "height": 64,
+      "pixel_count": 2437
+    },
+    {
+      "id": 24,
+      "filename": "environment_props_024.png",
+      "source_bbox": [
+        1037,
+        312,
+        1118,
+        361
+      ],
+      "width": 81,
+      "height": 49,
+      "pixel_count": 1985
+    },
+    {
+      "id": 25,
+      "filename": "environment_props_025.png",
+      "source_bbox": [
+        1244,
+        321,
+        1270,
+        346
+      ],
+      "width": 26,
+      "height": 25,
+      "pixel_count": 476
+    },
+    {
+      "id": 26,
+      "filename": "environment_props_026.png",
+      "source_bbox": [
+        1111,
+        325,
+        1165,
+        368
+      ],
+      "width": 54,
+      "height": 43,
+      "pixel_count": 1207
+    },
+    {
+      "id": 27,
+      "filename": "environment_props_027.png",
+      "source_bbox": [
+        1368,
+        325,
+        1421,
+        350
+      ],
+      "width": 53,
+      "height": 25,
+      "pixel_count": 588
+    },
+    {
+      "id": 28,
+      "filename": "environment_props_028.png",
+      "source_bbox": [
+        1175,
+        335,
+        1225,
+        376
+      ],
+      "width": 50,
+      "height": 41,
+      "pixel_count": 947
+    },
+    {
+      "id": 29,
+      "filename": "environment_props_029.png",
+      "source_bbox": [
+        1358,
+        361,
+        1430,
+        466
+      ],
+      "width": 72,
+      "height": 105,
+      "pixel_count": 4872
+    },
+    {
+      "id": 30,
+      "filename": "environment_props_030.png",
+      "source_bbox": [
+        993,
+        360,
+        1131,
+        557
+      ],
+      "width": 138,
+      "height": 197,
+      "pixel_count": 17302
+    },
+    {
+      "id": 31,
+      "filename": "environment_props_031.png",
+      "source_bbox": [
+        16,
+        373,
+        173,
+        529
+      ],
+      "width": 157,
+      "height": 156,
+      "pixel_count": 15374
+    },
+    {
+      "id": 32,
+      "filename": "environment_props_032.png",
+      "source_bbox": [
+        290,
+        374,
+        454,
+        540
+      ],
+      "width": 164,
+      "height": 166,
+      "pixel_count": 15374
+    },
+    {
+      "id": 33,
+      "filename": "environment_props_033.png",
+      "source_bbox": [
+        618,
+        373,
+        998,
+        562
+      ],
+      "width": 380,
+      "height": 189,
+      "pixel_count": 44218
+    },
+    {
+      "id": 34,
+      "filename": "environment_props_034.png",
+      "source_bbox": [
+        1288,
+        382,
+        1332,
+        425
+      ],
+      "width": 44,
+      "height": 43,
+      "pixel_count": 1330
+    },
+    {
+      "id": 35,
+      "filename": "environment_props_035.png",
+      "source_bbox": [
+        1136,
+        386,
+        1280,
+        556
+      ],
+      "width": 144,
+      "height": 170,
+      "pixel_count": 16471
+    },
+    {
+      "id": 36,
+      "filename": "environment_props_036.png",
+      "source_bbox": [
+        447,
+        387,
+        623,
+        520
+      ],
+      "width": 176,
+      "height": 133,
+      "pixel_count": 11838
+    },
+    {
+      "id": 37,
+      "filename": "environment_props_037.png",
+      "source_bbox": [
+        166,
+        393,
+        297,
+        509
+      ],
+      "width": 131,
+      "height": 116,
+      "pixel_count": 8810
+    },
+    {
+      "id": 38,
+      "filename": "environment_props_038.png",
+      "source_bbox": [
+        1291,
+        434,
+        1369,
+        534
+      ],
+      "width": 78,
+      "height": 100,
+      "pixel_count": 4666
+    },
+    {
+      "id": 39,
+      "filename": "environment_props_039.png",
+      "source_bbox": [
+        1079,
+        471,
+        1437,
+        673
+      ],
+      "width": 358,
+      "height": 202,
+      "pixel_count": 29374
+    },
+    {
+      "id": 40,
+      "filename": "environment_props_040.png",
+      "source_bbox": [
+        558,
+        506,
+        628,
+        639
+      ],
+      "width": 70,
+      "height": 133,
+      "pixel_count": 4545
+    },
+    {
+      "id": 41,
+      "filename": "environment_props_041.png",
+      "source_bbox": [
+        192,
+        510,
+        330,
+        692
+      ],
+      "width": 138,
+      "height": 182,
+      "pixel_count": 10378
+    },
+    {
+      "id": 42,
+      "filename": "environment_props_042.png",
+      "source_bbox": [
+        9,
+        512,
+        94,
+        675
+      ],
+      "width": 85,
+      "height": 163,
+      "pixel_count": 7257
+    },
+    {
+      "id": 43,
+      "filename": "environment_props_043.png",
+      "source_bbox": [
+        415,
+        522,
+        573,
+        681
+      ],
+      "width": 158,
+      "height": 159,
+      "pixel_count": 12905
+    },
+    {
+      "id": 44,
+      "filename": "environment_props_044.png",
+      "source_bbox": [
+        979,
+        537,
+        1076,
+        693
+      ],
+      "width": 97,
+      "height": 156,
+      "pixel_count": 9406
+    },
+    {
+      "id": 45,
+      "filename": "environment_props_045.png",
+      "source_bbox": [
+        626,
+        545,
+        679,
+        630
+      ],
+      "width": 53,
+      "height": 85,
+      "pixel_count": 2928
+    },
+    {
+      "id": 46,
+      "filename": "environment_props_046.png",
+      "source_bbox": [
+        89,
+        548,
+        207,
+        682
+      ],
+      "width": 118,
+      "height": 134,
+      "pixel_count": 7697
+    },
+    {
+      "id": 47,
+      "filename": "environment_props_047.png",
+      "source_bbox": [
+        820,
+        549,
+        890,
+        682
+      ],
+      "width": 70,
+      "height": 133,
+      "pixel_count": 4560
+    },
+    {
+      "id": 48,
+      "filename": "environment_props_048.png",
+      "source_bbox": [
+        208,
+        557,
+        257,
+        639
+      ],
+      "width": 49,
+      "height": 82,
+      "pixel_count": 2267
+    },
+    {
+      "id": 49,
+      "filename": "environment_props_049.png",
+      "source_bbox": [
+        322,
+        557,
+        409,
+        674
+      ],
+      "width": 87,
+      "height": 117,
+      "pixel_count": 5231
+    },
+    {
+      "id": 50,
+      "filename": "environment_props_050.png",
+      "source_bbox": [
+        884,
+        554,
+        975,
+        690
+      ],
+      "width": 91,
+      "height": 136,
+      "pixel_count": 6756
+    },
+    {
+      "id": 51,
+      "filename": "environment_props_051.png",
+      "source_bbox": [
+        752,
+        562,
+        828,
+        663
+      ],
+      "width": 76,
+      "height": 101,
+      "pixel_count": 4770
+    },
+    {
+      "id": 52,
+      "filename": "environment_props_052.png",
+      "source_bbox": [
+        653,
+        569,
+        762,
+        678
+      ],
+      "width": 109,
+      "height": 109,
+      "pixel_count": 5458
+    },
+    {
+      "id": 53,
+      "filename": "environment_props_053.png",
+      "source_bbox": [
+        583,
+        627,
+        661,
+        686
+      ],
+      "width": 78,
+      "height": 59,
+      "pixel_count": 2474
+    },
+    {
+      "id": 54,
+      "filename": "environment_props_054.png",
+      "source_bbox": [
+        325,
+        652,
+        372,
+        685
+      ],
+      "width": 47,
+      "height": 33,
+      "pixel_count": 704
+    },
+    {
+      "id": 55,
+      "filename": "environment_props_055.png",
+      "source_bbox": [
+        1336,
+        655,
+        1430,
+        802
+      ],
+      "width": 94,
+      "height": 147,
+      "pixel_count": 5994
+    },
+    {
+      "id": 56,
+      "filename": "environment_props_056.png",
+      "source_bbox": [
+        1171,
+        658,
+        1257,
+        807
+      ],
+      "width": 86,
+      "height": 149,
+      "pixel_count": 3975
+    },
+    {
+      "id": 57,
+      "filename": "environment_props_057.png",
+      "source_bbox": [
+        396,
+        668,
+        468,
+        796
+      ],
+      "width": 72,
+      "height": 128,
+      "pixel_count": 4789
+    },
+    {
+      "id": 58,
+      "filename": "environment_props_058.png",
+      "source_bbox": [
+        1071,
+        672,
+        1166,
+        800
+      ],
+      "width": 95,
+      "height": 128,
+      "pixel_count": 5409
+    },
+    {
+      "id": 59,
+      "filename": "environment_props_059.png",
+      "source_bbox": [
+        1250,
+        675,
+        1327,
+        806
+      ],
+      "width": 77,
+      "height": 131,
+      "pixel_count": 3342
+    },
+    {
+      "id": 60,
+      "filename": "environment_props_060.png",
+      "source_bbox": [
+        779,
+        681,
+        816,
+        796
+      ],
+      "width": 37,
+      "height": 115,
+      "pixel_count": 1612
+    },
+    {
+      "id": 61,
+      "filename": "environment_props_061.png",
+      "source_bbox": [
+        13,
+        679,
+        171,
+        796
+      ],
+      "width": 158,
+      "height": 117,
+      "pixel_count": 10058
+    },
+    {
+      "id": 62,
+      "filename": "environment_props_062.png",
+      "source_bbox": [
+        743,
+        683,
+        765,
+        793
+      ],
+      "width": 22,
+      "height": 110,
+      "pixel_count": 1418
+    },
+    {
+      "id": 63,
+      "filename": "environment_props_063.png",
+      "source_bbox": [
+        463,
+        684,
+        593,
+        801
+      ],
+      "width": 130,
+      "height": 117,
+      "pixel_count": 8929
+    },
+    {
+      "id": 64,
+      "filename": "environment_props_064.png",
+      "source_bbox": [
+        588,
+        680,
+        739,
+        817
+      ],
+      "width": 151,
+      "height": 137,
+      "pixel_count": 11825
+    },
+    {
+      "id": 65,
+      "filename": "environment_props_065.png",
+      "source_bbox": [
+        805,
+        689,
+        838,
+        803
+      ],
+      "width": 33,
+      "height": 114,
+      "pixel_count": 1942
+    },
+    {
+      "id": 66,
+      "filename": "environment_props_066.png",
+      "source_bbox": [
+        283,
+        698,
+        396,
+        798
+      ],
+      "width": 113,
+      "height": 100,
+      "pixel_count": 6113
+    },
+    {
+      "id": 67,
+      "filename": "environment_props_067.png",
+      "source_bbox": [
+        758,
+        697,
+        790,
+        805
+      ],
+      "width": 32,
+      "height": 108,
+      "pixel_count": 1502
+    },
+    {
+      "id": 68,
+      "filename": "environment_props_068.png",
+      "source_bbox": [
+        965,
+        701,
+        1066,
+        817
+      ],
+      "width": 101,
+      "height": 116,
+      "pixel_count": 4920
+    },
+    {
+      "id": 69,
+      "filename": "environment_props_069.png",
+      "source_bbox": [
+        842,
+        707,
+        968,
+        812
+      ],
+      "width": 126,
+      "height": 105,
+      "pixel_count": 6084
+    },
+    {
+      "id": 70,
+      "filename": "environment_props_070.png",
+      "source_bbox": [
+        170,
+        710,
+        288,
+        794
+      ],
+      "width": 118,
+      "height": 84,
+      "pixel_count": 5097
+    },
+    {
+      "id": 71,
+      "filename": "environment_props_071.png",
+      "source_bbox": [
+        1237,
+        794,
+        1434,
+        953
+      ],
+      "width": 197,
+      "height": 159,
+      "pixel_count": 18348
+    },
+    {
+      "id": 72,
+      "filename": "environment_props_072.png",
+      "source_bbox": [
+        214,
+        801,
+        284,
+        894
+      ],
+      "width": 70,
+      "height": 93,
+      "pixel_count": 4972
+    },
+    {
+      "id": 73,
+      "filename": "environment_props_073.png",
+      "source_bbox": [
+        16,
+        803,
+        222,
+        909
+      ],
+      "width": 206,
+      "height": 106,
+      "pixel_count": 13853
+    },
+    {
+      "id": 74,
+      "filename": "environment_props_074.png",
+      "source_bbox": [
+        1049,
+        800,
+        1253,
+        929
+      ],
+      "width": 204,
+      "height": 129,
+      "pixel_count": 12888
+    },
+    {
+      "id": 75,
+      "filename": "environment_props_075.png",
+      "source_bbox": [
+        898,
+        805,
+        1087,
+        932
+      ],
+      "width": 189,
+      "height": 127,
+      "pixel_count": 12828
+    },
+    {
+      "id": 76,
+      "filename": "environment_props_076.png",
+      "source_bbox": [
+        357,
+        810,
+        425,
+        901
+      ],
+      "width": 68,
+      "height": 91,
+      "pixel_count": 4559
+    },
+    {
+      "id": 77,
+      "filename": "environment_props_077.png",
+      "source_bbox": [
+        578,
+        812,
+        801,
+        913
+      ],
+      "width": 223,
+      "height": 101,
+      "pixel_count": 13989
+    },
+    {
+      "id": 78,
+      "filename": "environment_props_078.png",
+      "source_bbox": [
+        416,
+        818,
+        593,
+        913
+      ],
+      "width": 177,
+      "height": 95,
+      "pixel_count": 8823
+    },
+    {
+      "id": 79,
+      "filename": "environment_props_079.png",
+      "source_bbox": [
+        290,
+        823,
+        359,
+        897
+      ],
+      "width": 69,
+      "height": 74,
+      "pixel_count": 3755
+    },
+    {
+      "id": 80,
+      "filename": "environment_props_080.png",
+      "source_bbox": [
+        802,
+        827,
+        892,
+        922
+      ],
+      "width": 90,
+      "height": 95,
+      "pixel_count": 4826
+    },
+    {
+      "id": 81,
+      "filename": "environment_props_081.png",
+      "source_bbox": [
+        523,
+        895,
+        559,
+        1062
+      ],
+      "width": 36,
+      "height": 167,
+      "pixel_count": 3022
+    },
+    {
+      "id": 82,
+      "filename": "environment_props_082.png",
+      "source_bbox": [
+        14,
+        900,
+        155,
+        1047
+      ],
+      "width": 141,
+      "height": 147,
+      "pixel_count": 10241
+    },
+    {
+      "id": 83,
+      "filename": "environment_props_083.png",
+      "source_bbox": [
+        703,
+        906,
+        1036,
+        1079
+      ],
+      "width": 333,
+      "height": 173,
+      "pixel_count": 32600
+    },
+    {
+      "id": 84,
+      "filename": "environment_props_084.png",
+      "source_bbox": [
+        266,
+        917,
+        390,
+        1070
+      ],
+      "width": 124,
+      "height": 153,
+      "pixel_count": 8518
+    },
+    {
+      "id": 85,
+      "filename": "environment_props_085.png",
+      "source_bbox": [
+        569,
+        917,
+        617,
+        1033
+      ],
+      "width": 48,
+      "height": 116,
+      "pixel_count": 2715
+    },
+    {
+      "id": 86,
+      "filename": "environment_props_086.png",
+      "source_bbox": [
+        643,
+        919,
+        714,
+        1058
+      ],
+      "width": 71,
+      "height": 139,
+      "pixel_count": 5195
+    },
+    {
+      "id": 87,
+      "filename": "environment_props_087.png",
+      "source_bbox": [
+        1201,
+        920,
+        1431,
+        1068
+      ],
+      "width": 230,
+      "height": 148,
+      "pixel_count": 18449
+    },
+    {
+      "id": 88,
+      "filename": "environment_props_088.png",
+      "source_bbox": [
+        1015,
+        936,
+        1212,
+        1075
+      ],
+      "width": 197,
+      "height": 139,
+      "pixel_count": 11896
+    },
+    {
+      "id": 89,
+      "filename": "environment_props_089.png",
+      "source_bbox": [
+        389,
+        941,
+        513,
+        1045
+      ],
+      "width": 124,
+      "height": 104,
+      "pixel_count": 7819
+    },
+    {
+      "id": 90,
+      "filename": "environment_props_090.png",
+      "source_bbox": [
+        148,
+        943,
+        278,
+        1054
+      ],
+      "width": 130,
+      "height": 111,
+      "pixel_count": 7462
+    }
+  ],
+  "background_rule": "pixels with all RGB > 200 and channel spread < 25 made transparent"
+}

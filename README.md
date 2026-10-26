@@ -10,7 +10,7 @@ This template has been updated for:
 - [Next.js 15.3.1](https://github.com/vercel/next.js)
 - [TypeScript 5](https://github.com/microsoft/TypeScript)
 
-![screenshot](screenshot.png)
+![screenshot](docs/images/screenshot.png)
 
 ## Requirements
 

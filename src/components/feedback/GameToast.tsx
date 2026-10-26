@@ -4,6 +4,7 @@ export interface GameToastItem {
   id: string;
   title: string;
   detail?: string;
+  kind?: 'default' | 'levelup';
 }
 
 interface GameToastProps {
@@ -17,7 +18,10 @@ export function GameToast({ items }: GameToastProps) {
   return (
     <div className={styles.stack} aria-live="polite">
       {items.map((item) => (
-        <article className={styles.toast} key={item.id}>
+        <article
+          className={`${styles.toast} ${item.kind === 'levelup' ? styles.levelUp : ''}`}
+          key={item.id}
+        >
           <p className={styles.title}>{item.title}</p>
           {item.detail ? <p className={styles.detail}>{item.detail}</p> : null}
         </article>

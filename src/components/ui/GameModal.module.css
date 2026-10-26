@@ -1,0 +1,94 @@
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: grid;
+    place-items: center;
+    padding: clamp(12px, 3vw, 28px);
+    background: #070605;
+    pointer-events: auto;
+}
+
+.panel {
+    composes: dialog from './ui-kit.module.css';
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: min(var(--modal-width, 560px), 100%);
+    max-height: min(84vh, 820px);
+    overflow: auto;
+    padding: 10px 14px 16px;
+    color: var(--text);
+    box-shadow:
+        0 24px 64px rgba(0, 0, 0, 0.72),
+        inset 0 0 0 1px rgba(62, 46, 28, 0.85);
+}
+
+.overlay .panel {
+    background-color: #120f0d;
+}
+
+.fitContent {
+    width: min(var(--modal-width, 560px), calc(100vw - 24px));
+    max-height: min(92vh, 860px);
+    overflow: auto;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(61, 52, 40, 0.75);
+}
+
+.titles {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.kicker {
+    margin: 0;
+    color: var(--text-dim);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.title {
+    margin: 0;
+    color: var(--gold);
+    font-size: clamp(18px, 2.4vw, 22px);
+    letter-spacing: 0.12em;
+}
+
+.meta {
+    margin: 0;
+    color: var(--text-dim);
+    font-size: 13px;
+}
+
+.close {
+    composes: choice from './ui-kit.module.css';
+    flex: 0 0 auto;
+    min-height: 36px;
+    padding: 0 8px;
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+}
+
+.close:hover,
+.close:focus-visible {
+    color: var(--gold);
+}
+
+.body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-height: 0;
+}

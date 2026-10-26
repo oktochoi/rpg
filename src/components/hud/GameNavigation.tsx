@@ -1,16 +1,13 @@
 import type { CommandDispatcher, MenuId } from '@/game/core/command';
 import { audioManager, SFX_ID } from '@/game/audio';
+import { GameIcon, type GameIconName } from '@/components/ui/GameIcon';
 import styles from './hud.module.css';
 
-const NAV_ITEMS: readonly { menu: MenuId; label: string }[] = [
-  { menu: 'character', label: '캐릭터' },
-  { menu: 'characters', label: '인물' },
-  { menu: 'inventory', label: '가방' },
-  { menu: 'map', label: '지도' },
-  { menu: 'quest', label: '퀘스트' },
-  { menu: 'journal', label: '기록' },
-  { menu: 'save', label: '저장' },
-  { menu: 'settings', label: '설정' },
+const NAV_ITEMS: readonly { menu: MenuId; label: string; icon: GameIconName }[] = [
+  { menu: 'character', label: '캐릭터', icon: 'character' },
+  { menu: 'inventory', label: '가방', icon: 'bag' },
+  { menu: 'quest', label: '퀘스트', icon: 'quest' },
+  { menu: 'settings', label: '설정', icon: 'settings' },
 ];
 
 interface GameNavigationProps {
@@ -32,7 +29,8 @@ export function GameNavigation({ dispatch, unspentStatPoints = 0 }: GameNavigati
             dispatch({ type: 'OPEN_MENU', menu: item.menu });
           }}
         >
-          {item.label}
+          <GameIcon name={item.icon} />
+          <span>{item.label}</span>
           {item.menu === 'character' && unspentStatPoints > 0 ? <span className={styles.dot} aria-hidden="true" /> : null}
         </button>
       ))}

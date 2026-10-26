@@ -137,10 +137,10 @@ export async function runStep28VisualScenarios(): Promise<string[]> {
   const hudMageLow = toCombatHudSkills(createSkills(PLAYER_CLASS_ID.MAGE, 10).getHudSlots(), 10);
   const frost = hudMageLow.find((slot) => slot.slot === 'E');
   if (
-    hudWarrior[0]?.name === 'Charge Slash' &&
-    hudWarrior[1]?.name === 'Guard' &&
+    hudWarrior[0]?.name === '돌진 베기' &&
+    hudWarrior[1]?.name === '방어' &&
     hudWarrior.every((slot) => slot.available) &&
-    frost?.name === 'Frost Nova' &&
+    frost?.name === '냉기 폭발' &&
     frost.available === false &&
     frost.mpCost === 30
   ) {
@@ -151,8 +151,8 @@ export async function runStep28VisualScenarios(): Promise<string[]> {
 
   const hudRogue = toCombatHudSkills(createSkills(PLAYER_CLASS_ID.ROGUE, 80).getHudSlots(), 80);
   if (
-    hudRogue[0]?.name === 'Shadow Dash' &&
-    hudRogue[1]?.name === 'Backstab' &&
+    hudRogue[0]?.name === '그림자 질주' &&
+    hudRogue[1]?.name === '급소 찌르기' &&
     getSkillIconId('warrior_charge_slash') === 'slash' &&
     getSkillIconId('mage_fireball') === 'fire'
   ) {
@@ -166,11 +166,11 @@ export async function runStep28VisualScenarios(): Promise<string[]> {
   const marta = resolveNpcPortrait('marta');
   if (
     seria.assetId === 'seria_curiosity' &&
-    seria.path === '/assets/story_assets_pack/06_seria_scholar_npc.png' &&
+    seria.path === '/assets/story/06_seria_scholar_npc.png' &&
     leon.letter !== seria.letter &&
-    leon.path === '/assets/story_assets_pack/07_leon_knight_npc.png' &&
+    leon.path === '/assets/story/07_leon_knight_npc.png' &&
     marta.npcId === 'innkeeper' &&
-    marta.path === '/assets/story_assets_pack/08_marta_innkeeper_npc.png' &&
+    marta.path === '/assets/story/08_marta_innkeeper_npc.png' &&
     getNpcAsset('innkeeper').id === 'innkeeper'
   ) {
     pass('J-portraits', `${seria.assetId} ${leon.letter} ${marta.letter}`);
@@ -185,7 +185,7 @@ export async function runStep28VisualScenarios(): Promise<string[]> {
   const guild = resolveStoryBackground(LOCATION_ID.LUEN_ADVENTURERS_GUILD);
   if (
     village.theme === 'village' &&
-    village.path === '/assets/story_assets_pack/01_luen_village_square.png' &&
+    village.path === '/assets/story/01_luen_village_square.png' &&
     forest.theme === 'forest' &&
     ruins.theme === 'ruins' &&
     guild.theme === 'guild' &&

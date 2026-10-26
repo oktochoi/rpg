@@ -68,7 +68,7 @@ export function relationshipRequestsForAction(input: {
     return [{ npcId: targetId, reason: 'PLAYER_HELPED_NPC', sourceEventId: source('PLAYER_HELPED_NPC') }];
   }
   if (actionType === 'RESCUE') {
-    return [{ npcId: targetId, reason: 'PLAYER_SAVED_NPC', sourceEventId: source('PLAYER_SAVED_NPC') }];
+    return [{ npcId: targetId, reason: 'PLAYER_HELPED_NPC', sourceEventId: source('PLAYER_HELPED_NPC') }];
   }
   if (actionType === 'THREATEN') {
     return [{ npcId: targetId, reason: 'PLAYER_THREATENED_NPC', sourceEventId: source('PLAYER_THREATENED_NPC') }];
@@ -144,6 +144,14 @@ export function relationshipRequestsForQuest(state: Readonly<GameState>, questId
     });
   }
   return requests;
+}
+
+export function authoredRescueRequest(npcId: NpcId, sourceEventId = `authored:rescue:${npcId}`): RelationshipRequest {
+  return {
+    npcId,
+    reason: 'PLAYER_SAVED_NPC',
+    sourceEventId,
+  };
 }
 
 export function relationshipRequestsForShare(fromId: string, toId: NpcId, factId: string): RelationshipRequest[] {

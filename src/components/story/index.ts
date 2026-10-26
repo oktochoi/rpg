@@ -1,5 +1,4 @@
 export { ChoicePanel } from './ChoicePanel';
-export { FreeActionInput } from './FreeActionInput';
 export { InfoPanel } from './InfoPanel';
 export { QuestPanel } from './QuestPanel';
 export { StoryPanel } from './StoryPanel';

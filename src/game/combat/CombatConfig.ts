@@ -20,4 +20,4 @@ export const PLAYER_HP_BAR_FILL = 0xc4a574;
 export const PLAYER_MP_BAR_FILL = 0x6b8cce;
 export const PLAYER_SIZE = 32;
 export const POTION_COOLDOWN_MS = 1600;
-export const ATTACK_MOVE_MULTIPLIER = 0.72;
+export const ATTACK_MOVE_MULTIPLIER = 0.42;

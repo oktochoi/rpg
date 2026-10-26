@@ -1,4 +1,30 @@
+import { audioManager } from './AudioManager';
 import { SFX_ID, type SfxId } from './audio-types';
+
+const SWING_RATES = [0.9, 1.04, 0.96, 1.12] as const;
+/** Sword clicks sit below the short UI tick so a fight click is a heavier swing. */
+const SWORD_SWING_RATES = [0.76, 0.84, 0.8, 0.88] as const;
+
+export type SwingTone = 'flat' | 'blade';
+
+export function swingPlaybackRate(attackId: number): number {
+  const index = Math.abs(attackId) % SWING_RATES.length;
+  return SWING_RATES[index] ?? 1;
+}
+
+export function playerSwingVoice(classId: string, attackId: number): { id: SfxId; rate: number; tone: SwingTone } {
+  const id = sfxForPlayerAttack(classId);
+  if (id === SFX_ID.PLAYER_ATTACK) {
+    const index = Math.abs(attackId) % SWORD_SWING_RATES.length;
+    return { id, rate: SWORD_SWING_RATES[index] ?? 0.8, tone: 'blade' };
+  }
+  return { id, rate: swingPlaybackRate(attackId), tone: 'flat' };
+}
+
+export function playPlayerSwing(classId: string, attackId: number): void {
+  const voice = playerSwingVoice(classId, attackId);
+  audioManager.playSfx(voice.id, voice.rate, voice.tone);
+}
 
 export function sfxForPlayerAttack(classId: string): SfxId {
   if (classId === 'mage') {

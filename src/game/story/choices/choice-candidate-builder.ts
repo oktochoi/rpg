@@ -8,19 +8,20 @@ import { PLAYER_CLASS_ID } from '../../player/classes';
 import { getQuestDefinition } from '../../quests/quest-definitions';
 import { currentObjective } from '../../quests/quest-selectors';
 import { QUEST_OBJECTIVE_TYPE, QUEST_STATUS } from '../../quests/quest-types';
-import { getExplorationPoint, explorationPointsAt } from '../../world/exploration/exploration-definitions';
+import { EXPLORATION_POINT_ID, getExplorationPoint, explorationPointsAt } from '../../world/exploration/exploration-definitions';
 import { isExplorationPointCompleted } from '../../world/exploration/exploration-service';
 import { getLocationDefinition, LOCATION_ID, WORLD_FLAG } from '../../world/locations/location-definitions';
 import { validateMoveDestination } from '../../world/locations/location-rules';
 import { isHubLocation, isNpcAtCurrentLocation, reachableLocationIds, worldFlag } from '../../world/locations/location-selectors';
+import { canUseFreeTravel } from '../sequences';
 import { getAvailableChoiceDefinitions } from '../story-choice-service';
 import { getStorySceneDefinition, STORY_SCENE_ID } from '../story-scene-definitions';
 import type { StoryChoiceAction, StoryChoiceDefinition } from '../story-scene-types';
 import type { StoryDirectorContext } from '../../../ai/director/director-types';
 import { CHOICE_PRIORITY } from './choice-priority';
 import { CHOICE_INTENT, CHOICE_SOURCE, candidateActionKey, type ChoiceCandidate } from './choice-types';
-import { CHOICE_TEXT, fillTemplate, playerFacingFactTopic, sanitizeChoiceText } from './choice-templates';
-import { activeEncounterIdsForLocation } from '../../combat/encounters/encounter-progress';
+import { CHOICE_TEXT, fillTemplate, moveTowardLabel, playerFacingFactTopic, sanitizeChoiceText } from './choice-templates';
+import { activeEncounterIdsForLocation, isEncounterCleared } from '../../combat/encounters/encounter-progress';
 import { canChooseFirstAdvancement } from '../../player/classes/first-advancement';
 import { isTopicAvailable, shouldSuppressSemanticKey } from '../../dialogue/dialogue-topic-state';
 import { topicsForNpc } from '../../dialogue/dialogue-topics';
@@ -39,6 +40,8 @@ const ENCOUNTER_NAMES: Readonly<Record<string, string>> = {
   [ENCOUNTER_ID.FOREST_GOBLIN_01]: '고블린 정찰대',
   [ENCOUNTER_ID.CH1_FOREST_AMBUSH]: '숲 매복',
   [ENCOUNTER_ID.CH1_GOBLIN_CAMP]: '고블린 야영지',
+  [ENCOUNTER_ID.CH1_FOREST_DEEP]: '깊은 숲 무리',
+  [ENCOUNTER_ID.CH1_FOREST_KEY_HOLDER]: '수상한 고블린',
   [ENCOUNTER_ID.CH1_RUINS_GATE]: '폐허 입구의 적',
   [ENCOUNTER_ID.RUINS_MIXED_01]: '폐허 입구의 적',
   [ENCOUNTER_ID.RUINS_BOSS_01]: '고대 수호자',
@@ -121,7 +124,8 @@ function storyCandidates(state: Readonly<GameState>): ChoiceCandidate[] {
   if (scene?.autoContinue) {
     const meaningful = definitions.filter((choice) => choice.choicePurpose === 'ROLEPLAY' || choice.choicePurpose === 'DECISION');
     if (meaningful.length === 0) {
-      return [continueCandidate(state, scene.continueTo)];
+      const authored = definitions.find((choice) => choice.action.type === 'CONTINUE' && choice.text.trim() && choice.text !== '계속');
+      return [continueCandidate(state, scene.continueTo, authored?.text)];
     }
     return meaningful.map((choice) => storyChoiceToCandidate(choice, state));
   }
@@ -135,19 +139,20 @@ function storyCandidates(state: Readonly<GameState>): ChoiceCandidate[] {
     return true;
   });
   if (filtered.length === 0 && (scene?.autoContinue || definitions.some((choice) => choice.choicePurpose === 'PROGRESSION'))) {
-    return [continueCandidate(state, scene?.continueTo)];
+    const authored = definitions.find((choice) => choice.action.type === 'CONTINUE' && choice.text.trim() && choice.text !== '계속');
+    return [continueCandidate(state, scene?.continueTo, authored?.text)];
   }
   return filtered.map((choice) => storyChoiceToCandidate(choice, state));
 }
 
-function continueCandidate(state: Readonly<GameState>, nextSceneId?: string): ChoiceCandidate {
+function continueCandidate(state: Readonly<GameState>, nextSceneId?: string, label?: string): ChoiceCandidate {
   return {
     id: 'story_continue',
     actionType: 'WAIT',
     intent: CHOICE_INTENT.PROGRESS_STORY,
     source: CHOICE_SOURCE.STORY,
     basePriority: CHOICE_PRIORITY.STORY_CRITICAL,
-    textTemplate: '계속',
+    textTemplate: label?.trim() || '앞으로 움직인다',
     semanticKey: 'CONTINUE',
     metadata: {
       storyAction: { type: 'CONTINUE', nextSceneId: nextSceneId ?? state.story.currentSceneId },
@@ -325,7 +330,7 @@ function questObjectiveCandidate(
       intent: CHOICE_INTENT.PROGRESS_STORY,
       source: CHOICE_SOURCE.QUEST,
       basePriority: CHOICE_PRIORITY.QUEST_CRITICAL,
-      textTemplate: fillTemplate(CHOICE_TEXT.moveTo, { locationName: dest?.name ?? hop }),
+      textTemplate: moveTowardLabel(dest?.name ?? hop),
       metadata: { questId, locationId: hop, storyAction: { type: 'MOVE_TO_LOCATION', locationId: hop } },
       critical: true,
     };
@@ -358,7 +363,7 @@ function questObjectiveCandidate(
       intent: CHOICE_INTENT.PROGRESS_STORY,
       source: CHOICE_SOURCE.QUEST,
       basePriority: CHOICE_PRIORITY.QUEST_CRITICAL,
-      textTemplate: fillTemplate(CHOICE_TEXT.moveTo, { locationName: dest?.name ?? hop }),
+      textTemplate: moveTowardLabel(dest?.name ?? hop),
       metadata: { questId, locationId: hop, storyAction: { type: 'MOVE_TO_LOCATION', locationId: hop } },
       critical: true,
     };
@@ -380,7 +385,7 @@ function questObjectiveCandidate(
         intent: CHOICE_INTENT.PROGRESS_STORY,
         source: CHOICE_SOURCE.QUEST,
         basePriority: CHOICE_PRIORITY.QUEST_CRITICAL,
-        textTemplate: fillTemplate(CHOICE_TEXT.moveTo, { locationName: dest?.name ?? hop }),
+        textTemplate: moveTowardLabel(dest?.name ?? hop),
         metadata: { questId, locationId: hop, storyAction: { type: 'MOVE_TO_LOCATION', locationId: hop } },
         critical: true,
       };
@@ -413,7 +418,7 @@ function questObjectiveCandidate(
         intent: CHOICE_INTENT.PROGRESS_STORY,
         source: CHOICE_SOURCE.QUEST,
         basePriority: CHOICE_PRIORITY.QUEST_CRITICAL,
-        textTemplate: fillTemplate(CHOICE_TEXT.moveTo, { locationName: dest?.name ?? hop }),
+        textTemplate: moveTowardLabel(dest?.name ?? hop),
         semanticKey: `MOVE:${hop}`,
         metadata: { questId, locationId: hop, storyAction: { type: 'MOVE_TO_LOCATION', locationId: hop }, semanticKey: `MOVE:${hop}` },
         critical: true,
@@ -559,7 +564,15 @@ function memoryCandidates(context: StoryDirectorContext): ChoiceCandidate[] {
 
 function explorationCandidates(state: Readonly<GameState>): ChoiceCandidate[] {
   return explorationPointsAt(state.world.currentLocationId)
-    .filter((point) => !point.oneTime || !isExplorationPointCompleted(state, point.id))
+    .filter((point) => {
+      if (
+        point.id === EXPLORATION_POINT_ID.ROYAL_MAGIC_STONE &&
+        !isEncounterCleared(state, ENCOUNTER_ID.CH1_RUINS_GATE)
+      ) {
+        return false;
+      }
+      return !point.oneTime || !isExplorationPointCompleted(state, point.id);
+    })
     .map((point) => ({
       id: `explore_${point.id}`,
       actionType: 'INVESTIGATE' as const,
@@ -576,21 +589,34 @@ function combatCandidates(state: Readonly<GameState>, context: StoryDirectorCont
   const active = activeEncounterIdsForLocation(state);
   return context.availableEncounterIds
     .filter((encounterId) => active.includes(encounterId))
-    .map((encounterId) => ({
-      id: `combat_${encounterId}`,
-      actionType: 'ATTACK' as const,
-      targetId: encounterId,
-      intent: CHOICE_INTENT.FIGHT,
-      source: CHOICE_SOURCE.COMBAT,
-      basePriority: encounterId === ENCOUNTER_ID.RUINS_BOSS_01 ? CHOICE_PRIORITY.STORY_CRITICAL : CHOICE_PRIORITY.COMBAT,
-      textTemplate: fillTemplate(CHOICE_TEXT.fight, { enemyName: ENCOUNTER_NAMES[encounterId] ?? '적' }),
-      semanticKey: `FIGHT:${encounterId}`,
-      metadata: { encounterId, storyAction: { type: 'START_COMBAT' as const, combatId: encounterId }, semanticKey: `FIGHT:${encounterId}` },
-      critical: encounterId === ENCOUNTER_ID.RUINS_BOSS_01,
-    }));
+    .map((encounterId) => {
+      const cleared = isEncounterCleared(state, encounterId);
+      const name = ENCOUNTER_NAMES[encounterId] ?? '적';
+      return {
+        id: `combat_${encounterId}`,
+        actionType: 'ATTACK' as const,
+        targetId: encounterId,
+        intent: CHOICE_INTENT.FIGHT,
+        source: CHOICE_SOURCE.COMBAT,
+        basePriority: encounterId === ENCOUNTER_ID.RUINS_BOSS_01 ? CHOICE_PRIORITY.STORY_CRITICAL : CHOICE_PRIORITY.COMBAT,
+        textTemplate: cleared
+          ? `${name} · ✓ CLEAR · 재도전 (Gold)`
+          : fillTemplate(CHOICE_TEXT.fight, { enemyName: name }),
+        semanticKey: `FIGHT:${encounterId}`,
+        metadata: {
+          encounterId,
+          storyAction: { type: 'START_COMBAT' as const, combatId: encounterId },
+          semanticKey: `FIGHT:${encounterId}`,
+        },
+        critical: encounterId === ENCOUNTER_ID.RUINS_BOSS_01 && !cleared,
+      };
+    });
 }
 
 function moveCandidates(state: Readonly<GameState>): ChoiceCandidate[] {
+  if (!canUseFreeTravel(state)) {
+    return [];
+  }
   if (isHubLocation(state.world.currentLocationId) && !activeEncounterIdsForLocation(state).includes(ENCOUNTER_ID.RUINS_BOSS_01)) {
     return [];
   }
@@ -607,7 +633,7 @@ function moveCandidates(state: Readonly<GameState>): ChoiceCandidate[] {
       basePriority: retreat ? CHOICE_PRIORITY.STORY_CRITICAL : CHOICE_PRIORITY.MOVE,
       textTemplate: retreat
         ? '잠시 물러난다.'
-        : fillTemplate(CHOICE_TEXT.moveTo, { locationName: definition?.name ?? locationId }),
+        : moveTowardLabel(definition?.name ?? locationId),
       metadata: { locationId, storyAction: { type: 'MOVE_TO_LOCATION' as const, locationId } },
       critical: retreat,
     };
@@ -724,7 +750,7 @@ function utilityCandidates(state: Readonly<GameState>): ChoiceCandidate[] {
         intent: CHOICE_INTENT.MOVE,
         source: CHOICE_SOURCE.MOVE,
         basePriority: CHOICE_PRIORITY.MOVE + 4,
-        textTemplate: '장비를 준비하기 위해 상점으로 간다.',
+        textTemplate: '잡화점에 들른다.',
         semanticKey: 'MOVE:luen_general_store',
         metadata: { locationId: hop, storyAction: { type: 'MOVE_TO_LOCATION', locationId: hop }, semanticKey: 'MOVE:luen_general_store' },
       });
@@ -788,7 +814,9 @@ function locationForEncounter(encounterId: string): string {
     encounterId === ENCOUNTER_ID.CH1_FOREST_SCOUTS ||
     encounterId === ENCOUNTER_ID.FOREST_GOBLIN_01 ||
     encounterId === ENCOUNTER_ID.CH1_FOREST_AMBUSH ||
-    encounterId === ENCOUNTER_ID.CH1_GOBLIN_CAMP
+    encounterId === ENCOUNTER_ID.CH1_GOBLIN_CAMP ||
+    encounterId === ENCOUNTER_ID.CH1_FOREST_DEEP ||
+    encounterId === ENCOUNTER_ID.CH1_FOREST_KEY_HOLDER
   ) {
     return LOCATION_ID.FOREST_ROAD;
   }

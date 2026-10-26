@@ -15,12 +15,14 @@ export function CombatHUD() {
     return null;
   }
 
+  const defeated = snapshot.status === 'DEFEAT';
+
   return (
     <div className={styles.hud}>
       <PlayerStatusHUD player={snapshot.player} />
-      {snapshot.boss ? <BossHUD boss={snapshot.boss} /> : null}
-      <SkillBar player={snapshot.player} />
-      <p className={styles.hint}>WASD 이동 · 마우스 조준 · H 물약</p>
+      {!defeated && snapshot.boss ? <BossHUD boss={snapshot.boss} /> : null}
+      {defeated ? null : <SkillBar player={snapshot.player} />}
+      {defeated ? null : <p className={styles.hint}>WASD 이동 · 마우스 조준 · H 물약</p>}
     </div>
   );
 }

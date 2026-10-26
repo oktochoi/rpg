@@ -3,6 +3,7 @@ import type { GameState } from '../core/game-state';
 import { canSellItem, getItemDefinition } from '../inventory/item-definitions';
 import { inventoryQuantity } from '../inventory/item-selectors';
 import { shopAtLocation, SHOP_ID } from './shop-definitions';
+import { getCombatUpgrade, isCombatUpgradeId } from './combat-upgrades';
 import { isShopConsumable, shopItemIdsFor } from './shop-stock';
 import { WORLD_FLAG } from '../world/locations/location-definitions';
 import { worldFlag } from '../world/locations/location-selectors';
@@ -13,8 +14,40 @@ export function currentShopId(state: Readonly<GameState>): string | null {
 
 export function eventsForBuyItem(state: Readonly<GameState>, itemId: string): GameEvent[] {
   const shopId = currentShopId(state) ?? SHOP_ID.LUEN_GENERAL_STORE;
+  if (!shopItemIdsFor(state, shopId).includes(itemId)) {
+    return [];
+  }
+
+  if (isCombatUpgradeId(itemId)) {
+    const upgrade = getCombatUpgrade(itemId);
+    if (!upgrade || !upgrade.shopListed) {
+      return [];
+    }
+    if ((state.player.purchasedUpgradeIds ?? []).includes(itemId)) {
+      return [];
+    }
+    if (state.player.gold < upgrade.buyPrice) {
+      return [];
+    }
+    const sourceEventId = `shop:upgrade:${shopId}:${itemId}:${state.world.turn}:${state.player.gold}`;
+    return [
+      {
+        type: 'PLAYER_GOLD_SPENT',
+        amount: upgrade.buyPrice,
+        reason: 'BUY',
+        sourceEventId: `${sourceEventId}:gold`,
+      },
+      {
+        type: 'COMBAT_UPGRADE_APPLIED',
+        upgradeId: itemId,
+        sourceEventId: `${sourceEventId}:upgrade`,
+        mods: upgrade.mods,
+      },
+    ];
+  }
+
   const definition = getItemDefinition(itemId);
-  if (!definition || !shopItemIdsFor(state, shopId).includes(itemId)) {
+  if (!definition) {
     return [];
   }
   if (!worldFlag(state, WORLD_FLAG.SHOP_UNLOCKED) && !isShopConsumable(itemId)) {
@@ -50,8 +83,24 @@ export function buyBlockedReason(state: Readonly<GameState>, itemId: string): st
   if (!shopId) {
     return '상점 안에서만 살 수 있다.';
   }
+  if (!shopItemIdsFor(state, shopId).includes(itemId)) {
+    return '여기서는 그 물건을 팔지 않는다.';
+  }
+  if (isCombatUpgradeId(itemId)) {
+    const upgrade = getCombatUpgrade(itemId);
+    if (!upgrade) {
+      return '여기서는 그 물건을 팔지 않는다.';
+    }
+    if ((state.player.purchasedUpgradeIds ?? []).includes(itemId)) {
+      return '이미 적용된 강화입니다.';
+    }
+    if (state.player.gold < upgrade.buyPrice) {
+      return `골드가 부족하다. (${state.player.gold}G / ${upgrade.buyPrice}G)`;
+    }
+    return null;
+  }
   const definition = getItemDefinition(itemId);
-  if (!definition || !shopItemIdsFor(state, shopId).includes(itemId)) {
+  if (!definition) {
     return '여기서는 그 물건을 팔지 않는다.';
   }
   if (!shopUnlocked(state) && !isShopConsumable(itemId)) {
@@ -66,6 +115,9 @@ export function buyBlockedReason(state: Readonly<GameState>, itemId: string): st
 export function sellBlockedReason(state: Readonly<GameState>, itemId: string, quantity = 1): string | null {
   if (!currentShopId(state)) {
     return '상점 안에서만 팔 수 있다.';
+  }
+  if (isCombatUpgradeId(itemId)) {
+    return '그 물건은 팔 수 없다.';
   }
   if (!canSellItem(itemId)) {
     return '그 물건은 팔 수 없다.';

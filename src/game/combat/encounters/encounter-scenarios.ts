@@ -25,6 +25,7 @@ import { collectTargetsInRadius } from '../skills/skill-combat-rules';
 import { SKILLS } from '../skills/skill-definitions';
 import { createCombatFacts } from '../../world/facts/fact-service';
 import { runCombatPressureScenarios } from '../arenas/combat-pressure-scenarios';
+import { runEncounterStartScenarios } from './encounter-start-scenarios';
 
 function contextFor(
   definition: (typeof ENEMY_DEFINITIONS)[keyof typeof ENEMY_DEFINITIONS],
@@ -62,7 +63,7 @@ export async function runStep21EncounterScenarios(): Promise<string[]> {
   const brute = ENEMY_DEFINITIONS[ENEMY_TYPE_ID.BRUTE];
   if (
     goblin.behaviorType === ENEMY_BEHAVIOR_TYPE.MELEE &&
-    goblin.maxHp === 70 &&
+    goblin.maxHp === 108 &&
     goblin.moveSpeed > archer.moveSpeed &&
     goblin.attackCooldownMs === 900
   ) {
@@ -101,7 +102,7 @@ export async function runStep21EncounterScenarios(): Promise<string[]> {
   const tooClose = ranged.shouldStartAttack(contextFor(archer, { distance: 40 }));
   if (
     archer.behaviorType === ENEMY_BEHAVIOR_TYPE.RANGED &&
-    archer.maxHp === 55 &&
+    archer.maxHp === 72 &&
     approach.vx > 0 &&
     Math.abs(hold.vx) < archer.moveSpeed * 0.4 &&
     retreat.vx < 0 &&
@@ -141,11 +142,11 @@ export async function runStep21EncounterScenarios(): Promise<string[]> {
   const slowChase = heavy.chooseMove(contextFor(brute, { distance: 200, playerX: 200 }));
   if (
     brute.behaviorType === ENEMY_BEHAVIOR_TYPE.HEAVY_MELEE &&
-    brute.maxHp === 180 &&
-    brute.damage === 30 &&
+    brute.maxHp === 160 &&
+    brute.damage === 26 &&
     brute.moveSpeed < goblin.moveSpeed &&
     brute.telegraphMs >= 500 &&
-    brute.attackCooldownMs === 1800 &&
+    brute.attackCooldownMs === 1600 &&
     slowChase.vx > 0 &&
     slowChase.vx < chase.vx
   ) {
@@ -299,5 +300,6 @@ export async function runStep21EncounterScenarios(): Promise<string[]> {
   }
 
   lines.push(...runCombatPressureScenarios());
+  lines.push(...runEncounterStartScenarios());
   return lines;
 }

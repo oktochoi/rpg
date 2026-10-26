@@ -6,26 +6,44 @@ import { TEST_GOBLIN_COMBAT_ID, TEST_GOBLIN_ENEMY_ID } from '../story/test-scene
 import { doesNpcKnowFact, doesPlayerKnowFact } from '../knowledge/knowledge-selectors';
 import { getMemoriesForNpc } from '../npc/memory/memory-selectors';
 import { createMemoryStorage, createSaveService } from '../save';
+import { ITEM_ID } from '../inventory/item-definitions';
 import { QUEST_ID, RUINS_SEAL_FACT_ID } from './quest-definitions';
 import { eventsForQuestProgress } from './quest-service';
 import { QUEST_STATUS } from './quest-types';
 import { PLAYER_CLASS_ID } from '../player/classes';
-import { LOCATION_ID } from '../world/locations/location-definitions';
+import { LOCATION_ID, WORLD_FLAG } from '../world/locations/location-definitions';
+import { CHOICE_INVESTIGATE_ALTAR } from '../world/locations/location-story-choices';
 import type { GameOrchestrator } from '../core/orchestrator';
 
-async function travelToRuins(orch: GameOrchestrator) {
-  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.FOREST_ROAD });
-  await orch.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.ANCIENT_RUINS });
+async function travelToRuins(orch: GameOrchestrator): Promise<GameOrchestrator> {
+  const keyed = createGameOrchestrator(
+    applyEvents(orch.getState(), [
+      { type: 'WORLD_FLAG_SET', flagId: WORLD_FLAG.RUINS_KEY_ACQUIRED, value: true },
+      {
+        type: 'ITEM_OBTAINED',
+        itemId: ITEM_ID.RUINS_OLD_KEY,
+        quantity: 1,
+        sourceEventId: 'test:ruins_key',
+      },
+      { type: 'LOCATION_DISCOVERED', locationId: LOCATION_ID.ANCIENT_RUINS },
+      {
+        type: 'QUEST_OBJECTIVE_PROGRESS',
+        questId: QUEST_ID.RUINS_MYSTERY,
+        objectiveId: 'find_key',
+        currentCount: 1,
+        completed: true,
+      },
+      { type: 'QUEST_OBJECTIVE_COMPLETED', questId: QUEST_ID.RUINS_MYSTERY, objectiveId: 'find_key' },
+    ])
+  );
+  await keyed.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.FOREST_ROAD });
+  await keyed.dispatch({ type: 'MOVE_TO_LOCATION', locationId: LOCATION_ID.ANCIENT_RUINS });
+  return keyed;
 }
 
 async function unlockAndAccept() {
   const orch = createGameOrchestrator(createInitialGameState());
-  await orch.dispatch({
-    type: 'RECORD_DIALOGUE',
-    npcId: 'seria',
-    playerText: '폐허에 대해 알고 있는 게 있어?',
-    npcText: '폐허에서 이상한 마력이 느껴지고 있어.',
-  });
+  await orch.dispatch({ type: 'COMPLETE_QUEST', questId: QUEST_ID.FOREST_GOBLIN_SCOUR });
   await orch.dispatch({ type: 'ACCEPT_QUEST', questId: QUEST_ID.RUINS_MYSTERY });
   return orch;
 }
@@ -37,12 +55,7 @@ export async function runStep22QuestScenarios(): Promise<string[]> {
 
   const orchA = createGameOrchestrator(createInitialGameState());
   const locked = orchA.getState().quests[QUEST_ID.RUINS_MYSTERY]?.status;
-  await orchA.dispatch({
-    type: 'RECORD_DIALOGUE',
-    npcId: 'seria',
-    playerText: '폐허에 대해 알고 있는 게 있어?',
-    npcText: '폐허에서 이상한 마력이 느껴지고 있어.',
-  });
+  await orchA.dispatch({ type: 'COMPLETE_QUEST', questId: QUEST_ID.FOREST_GOBLIN_SCOUR });
   const available = orchA.getState().quests[QUEST_ID.RUINS_MYSTERY]?.status;
   await orchA.dispatch({ type: 'ACCEPT_QUEST', questId: QUEST_ID.RUINS_MYSTERY });
   const accepted = orchA.getState().quests[QUEST_ID.RUINS_MYSTERY];
@@ -50,7 +63,7 @@ export async function runStep22QuestScenarios(): Promise<string[]> {
     locked === QUEST_STATUS.LOCKED &&
     available === QUEST_STATUS.AVAILABLE &&
     accepted?.status === QUEST_STATUS.ACTIVE &&
-    accepted.objectiveProgress.talk_seria
+    accepted.objectiveProgress.talk_seria?.completed
   ) {
     pass('A-accept', `${locked} → ${available} → ${accepted.status}`);
   } else {
@@ -88,9 +101,26 @@ export async function runStep22QuestScenarios(): Promise<string[]> {
     fail('B-combat', JSON.stringify({ mixedDone, easyDone }));
   }
 
-  const orchC = await unlockAndAccept();
-  await travelToRuins(orchC);
-  await orchC.dispatch({ type: 'FREE_ACTION', turnId: orchC.getState().world.turn, input: '폐허 내부를 자세히 조사한다.' });
+  async function clearGateAndInvestigate(orch: GameOrchestrator) {
+    await orch.dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_RUINS_GATE });
+    if (orch.getState().mode === 'COMBAT') {
+      await orch.dispatch({
+        type: 'RESOLVE_COMBAT',
+        result: {
+          combatId: ENCOUNTER_ID.CH1_RUINS_GATE,
+          outcome: 'VICTORY',
+          player: { remainingHp: 80, remainingMp: 40 },
+          defeatedEnemyIds: ['gate_goblin_001', 'gate_archer_001', 'gate_brute_001'],
+          defeatedEnemyTypes: ['goblin', 'archer', 'goblin'],
+        },
+      });
+    }
+    await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_INVESTIGATE_ALTAR });
+    await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'inspect_seal_first' });
+    return orch;
+  }
+
+  const orchC = await clearGateAndInvestigate(await travelToRuins(await unlockAndAccept()));
   const stateC = orchC.getState();
   const investigateDone = stateC.quests[QUEST_ID.RUINS_MYSTERY]?.objectiveProgress.investigate_ruins?.completed;
   const playerKnows = doesPlayerKnowFact(stateC, RUINS_SEAL_FACT_ID);
@@ -101,9 +131,7 @@ export async function runStep22QuestScenarios(): Promise<string[]> {
     fail('C-investigate', JSON.stringify({ investigateDone, playerKnows, seriaKnowsC, facts: stateC.world.facts.map((fact) => fact.id) }));
   }
 
-  const orchD = await unlockAndAccept();
-  await travelToRuins(orchD);
-  await orchD.dispatch({ type: 'FREE_ACTION', turnId: orchD.getState().world.turn, input: '폐허 내부를 자세히 조사한다.' });
+  const orchD = await clearGateAndInvestigate(await travelToRuins(await unlockAndAccept()));
   const beforeShare = orchD.getState();
   const seriaBefore = doesNpcKnowFact(beforeShare, 'seria', RUINS_SEAL_FACT_ID);
   await orchD.dispatch({ type: 'SHARE_FACT', factId: RUINS_SEAL_FACT_ID, fromId: 'player', toId: 'seria' });
@@ -125,8 +153,7 @@ export async function runStep22QuestScenarios(): Promise<string[]> {
     );
   }
 
-  const orchE = await unlockAndAccept();
-  await travelToRuins(orchE);
+  const orchE = await travelToRuins(await unlockAndAccept());
   await orchE.dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.RUINS_MIXED_01 });
   await orchE.dispatch({
     type: 'RESOLVE_COMBAT',
@@ -137,8 +164,18 @@ export async function runStep22QuestScenarios(): Promise<string[]> {
       defeatedEnemyIds: ['goblin_001', 'archer_001'],
     },
   });
-  const turnAfterCombat = orchE.getState().world.turn;
-  await orchE.dispatch({ type: 'FREE_ACTION', turnId: turnAfterCombat, input: '폐허 내부를 자세히 조사한다.' });
+  await orchE.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_INVESTIGATE_ALTAR });
+  await orchE.dispatch({ type: 'SELECT_CHOICE', choiceId: 'inspect_seal_first' });
+  await orchE.dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.RUINS_BOSS_01 });
+  await orchE.dispatch({
+    type: 'RESOLVE_COMBAT',
+    result: {
+      combatId: ENCOUNTER_ID.RUINS_BOSS_01,
+      outcome: 'VICTORY',
+      player: { remainingHp: 60, remainingMp: 30 },
+      defeatedEnemyIds: ['guardian_001'],
+    },
+  });
   await orchE.dispatch({ type: 'SHARE_FACT', factId: RUINS_SEAL_FACT_ID, fromId: 'player', toId: 'seria' });
   const stateE = orchE.getState();
   const questE = stateE.quests[QUEST_ID.RUINS_MYSTERY];
@@ -149,7 +186,7 @@ export async function runStep22QuestScenarios(): Promise<string[]> {
     (stateE.relationships.seria.affection ?? 0) > 0 &&
     (stateE.relationships.seria.trust ?? 0) > 0 &&
     memoryE &&
-    nextQuest?.status === QUEST_STATUS.AVAILABLE &&
+    nextQuest?.status === QUEST_STATUS.LOCKED &&
     stateE.world.facts.some((fact) => fact.type === 'QUEST_COMPLETED')
   ) {
     pass('E-complete', `aff ${stateE.relationships.seria.affection} memory ${memoryE.summary}`);
@@ -167,8 +204,7 @@ export async function runStep22QuestScenarios(): Promise<string[]> {
     );
   }
 
-  const orchF = await unlockAndAccept();
-  await travelToRuins(orchF);
+  const orchF = await travelToRuins(await unlockAndAccept());
   await orchF.dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.RUINS_MIXED_01 });
   await orchF.dispatch({
     type: 'RESOLVE_COMBAT',
@@ -189,7 +225,7 @@ export async function runStep22QuestScenarios(): Promise<string[]> {
   const loaded = saveOrch.getState().quests[QUEST_ID.RUINS_MYSTERY];
   const completedLoaded = Object.values(loaded?.objectiveProgress ?? {}).filter((item) => item.completed).length;
   if (completedMid >= 3 && completedLoaded === completedMid && loaded?.status === QUEST_STATUS.ACTIVE) {
-    pass('F-save', `${completedLoaded} / 5 restored`);
+    pass('F-save', `${completedLoaded} objectives restored`);
   } else {
     fail('F-save', JSON.stringify({ completedMid, completedLoaded, status: loaded?.status, progress: loaded?.objectiveProgress }));
   }

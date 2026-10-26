@@ -236,6 +236,15 @@ function seriaTopics(state: Readonly<GameState>, phase: string): DialogueTopicDe
       repeatPolicy: REPEAT_POLICY.ONCE,
     });
     topics.push({
+      topicId: 'seria_why_not_go',
+      npcId,
+      semanticKey: 'TALK:SERIA:WHY_NOT_GO',
+      promptId: 'ask_seria_why_not_go',
+      text: '왜 직접 가지 않습니까?',
+      priority: 84,
+      repeatPolicy: REPEAT_POLICY.ONCE,
+    });
+    topics.push({
       topicId: 'seria_ruins_background',
       npcId,
       semanticKey: 'TALK:SERIA:RUINS_BACKGROUND',
@@ -359,6 +368,15 @@ function leonTopics(state: Readonly<GameState>, phase: string): DialogueTopicDef
       promptId: 'talk_leon_here',
       text: '마을 치안을 묻는다.',
       priority: 80,
+      repeatPolicy: REPEAT_POLICY.ONCE,
+    });
+    topics.push({
+      topicId: 'leon_report_first',
+      npcId,
+      semanticKey: 'TALK:LEON:REPORT_FIRST',
+      promptId: 'leon_seria_view',
+      text: '왕실 흔적이면 보고가 먼저라고 듣는다.',
+      priority: 92,
       repeatPolicy: REPEAT_POLICY.ONCE,
     });
     topics.push({

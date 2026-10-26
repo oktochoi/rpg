@@ -8,14 +8,15 @@ interface PlayerVisualPreviewProps {
   jobId: string;
   rankId?: string;
   alt?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'sheet';
+  src?: string;
 }
 
-export function PlayerVisualPreview({ jobId, rankId, alt = '', size = 'md' }: PlayerVisualPreviewProps) {
+export function PlayerVisualPreview({ jobId, rankId, alt = '', size = 'md', src: srcOverride }: PlayerVisualPreviewProps) {
   const visual = resolvePlayerVisual(jobId, rankId);
   const [failed, setFailed] = useState(false);
   const appearance = getClassAppearance(resolvePlayerClassId(jobId));
-  const src = visual.portraitPath ?? visual.path;
+  const src = srcOverride ?? visual.portraitPath ?? visual.path;
 
   useEffect(() => {
     setFailed(false);

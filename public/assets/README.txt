@@ -1,35 +1,14 @@
-RPG FULL SPRITE PACK V2
+Runtime art served from /assets.
 
-Included:
-PLAYER
-- adventurer
-- swordsman
-- mage
-- rogue
+characters/   player full-body and class reference sheets
+sprites/      smooth creature packs (8x5 sheets)
+enemies/      older per-action enemy frames
+bosses/       ruins guardian frames
+story/        location backgrounds and NPC portraits
+ui/           interface kit
+world/        dungeon tiles, terrain tiles, props
+vfx/          projectiles and hit effects
+brand/        template logo, star, background
 
-ENEMIES
-- goblin
-- goblin_archer
-- brute
-
-BOSS
-- ruins_guardian
-
-Recommended project paths:
-
-public/game-assets/characters/adventurer/
-public/game-assets/characters/swordsman/
-public/game-assets/characters/mage/
-public/game-assets/characters/rogue/
-
-public/game-assets/enemies/goblin/
-public/game-assets/enemies/goblin-archer/
-public/game-assets/enemies/brute/
-
-public/game-assets/bosses/ruins-guardian/
-
-Notes:
-- The remade monster sheets were cut into 8 action PNGs each.
-- The adventurer and 3 advancement classes include reference/action sheets so the same character/style can be preserved.
-- Keep gameplay hitboxes, damage, speed, and physics separate from visual sprite sizes.
-- Use Asset Registry / Visual Layer only when integrating these files.
+Source sheets that are not loaded in game live in docs/art-reference/.
+Older placeholder copies live in public/game-assets/.

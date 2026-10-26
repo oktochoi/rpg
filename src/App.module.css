@@ -20,19 +20,3 @@
     cursor: pointer;
 }
 
-.debugToggle {
-    position: fixed;
-    left: 12px;
-    bottom: 12px;
-    z-index: 30;
-    min-height: 32px;
-    padding: 0 10px;
-    border: 1px solid var(--panel-border);
-    background: var(--panel);
-    color: var(--text-dim);
-    font: inherit;
-    font-size: 11px;
-    letter-spacing: 0.12em;
-    cursor: pointer;
-    opacity: 0.55;
-}

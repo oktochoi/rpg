@@ -3,82 +3,71 @@ import { AudioSettings } from '@/components/settings/AudioSettings';
 import styles from './TitleScreen.module.css';
 
 interface TitleScreenProps {
-  canContinue: boolean;
   settingsOpen: boolean;
   onNewGame: () => void;
-  onContinue: () => void;
   onOpenSettings: () => void;
   onCloseSettings: () => void;
 }
+
+const BACKGROUND = '/assets/story/01_luen_village_square.png';
 
 const LORE = `왕국의 변방, 루엔.
 오랫동안 잠들어 있던 폐허에서
 왕실의 문장이 새겨진 마법석이 발견되기 시작했다.`;
 
 export function TitleScreen({
-  canContinue,
   settingsOpen,
   onNewGame,
-  onContinue,
   onOpenSettings,
   onCloseSettings,
 }: TitleScreenProps) {
-  if (settingsOpen) {
-    return (
-      <div className={styles.screen}>
+  return (
+    <div className={styles.screen}>
+      <img className={styles.background} src={BACKGROUND} alt="" />
+      <div className={styles.overlay} aria-hidden="true" />
+      {settingsOpen ? (
         <section className={styles.panel} aria-label="설정">
-          <button className={styles.back} type="button" onClick={onCloseSettings}>
-            뒤로
-          </button>
           <h1 className={styles.title}>설정</h1>
           <div className={styles.settings}>
             <AudioSettings />
           </div>
+          <div className={styles.actions}>
+            <button className={styles.button} type="button" onClick={onCloseSettings}>
+              <span className={styles.buttonLabel}>뒤로</span>
+            </button>
+          </div>
         </section>
-      </div>
-    );
-  }
-
-  return (
-    <div className={styles.screen}>
-      <section className={styles.panel} aria-label="타이틀">
-        <p className={styles.kicker}>AI RPG</p>
-        <h1 className={styles.title}>잿빛 연대기</h1>
-        <p className={styles.lore}>{LORE}</p>
-        <div className={styles.actions}>
-          <button
-            type="button"
-            onClick={() => {
-              audioManager.unlock();
-              audioManager.playSfx(SFX_ID.UI_CONFIRM);
-              onNewGame();
-            }}
-          >
-            NEW GAME
-          </button>
-          <button
-            type="button"
-            disabled={!canContinue}
-            onClick={() => {
-              audioManager.unlock();
-              audioManager.playSfx(SFX_ID.UI_CONFIRM);
-              onContinue();
-            }}
-          >
-            CONTINUE
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              audioManager.unlock();
-              audioManager.playSfx(SFX_ID.UI_CLICK);
-              onOpenSettings();
-            }}
-          >
-            SETTINGS
-          </button>
-        </div>
-      </section>
+      ) : (
+        <section className={styles.panel} aria-label="타이틀">
+          <p className={styles.kicker}>이야기</p>
+          <h1 className={styles.title}>잿빛 연대기</h1>
+          <p className={styles.description}>{LORE}</p>
+          <div className={styles.actions}>
+            <button
+              className={styles.button}
+              type="button"
+              onClick={() => {
+                audioManager.unlock();
+                audioManager.playSfx(SFX_ID.UI_CONFIRM);
+                onNewGame();
+              }}
+            >
+              <span className={styles.buttonLabel}>새 게임</span>
+            </button>
+            <button
+              className={styles.button}
+              type="button"
+              onClick={() => {
+                audioManager.unlock();
+                audioManager.playSfx(SFX_ID.UI_CLICK);
+                onOpenSettings();
+              }}
+            >
+              <span className={styles.buttonLabel}>설정</span>
+            </button>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

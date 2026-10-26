@@ -1,6 +1,7 @@
 export const APP_PHASE = {
   TITLE: 'TITLE',
   CHARACTER_CREATION: 'CHARACTER_CREATION',
+  INTRO: 'INTRO',
   GAME: 'GAME',
 } as const;
 
