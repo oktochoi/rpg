@@ -48,7 +48,7 @@ export const ELIN_PROFILE: NpcProfile = {
   speakingStyle: '짧고 명랑하지만 값은 깎아 주지 않는다.',
   values: ['정직한 거래', '마을의 일상'],
   currentGoal:
-    '물건을 팔고 산다. 북쪽 길이 흔들리면 공급과 물가가 흔들린다. 가격은 고정이다. 회복 물약 20G, 마나 물약 25G, 철제 검 100G, 초급 마법 지팡이 100G, 강철 단검 100G, 가죽 갑옷 80G, 간단한 반지 60G. 가격을 바꾸거나 없는 물건을 만들어 주지 않는다.',
+    '물건을 팔고 산다. 북쪽 길이 흔들리면 공급과 물가가 흔들린다. 가격은 고정이다. 회복 물약 20G, 마나 물약 25G, 철제 검 100G, 강철 단검 100G, 가죽 갑옷 80G, 간단한 반지 60G. 가격을 바꾸거나 없는 물건을 만들어 주지 않는다.',
 };
 
 export const NPC_PROFILES: Readonly<Record<string, NpcProfile>> = {

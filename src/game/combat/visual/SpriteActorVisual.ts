@@ -41,6 +41,8 @@ export class SpriteActorVisual {
   private readonly hitWash: Phaser.GameObjects.Sprite;
   private readonly animator: SpriteAnimationController;
   private baseScale: number;
+  private displayAspect = 1;
+  private aspectLocked = false;
   private poseTime = 0;
   private poseState: VisualAnimState = 'idle';
   private usingPlaceholder = true;
@@ -91,14 +93,13 @@ export class SpriteActorVisual {
     this.sprite.setDepth(COMBAT_DEPTH.character + state.y * 0.001);
     this.shadow.setDepth(COMBAT_DEPTH.shadow + state.y * 0.001);
 
+    this.applyPose(state, anim);
     const artFacesLeft = this.asset.artFacesLeft === true;
     if (state.facingX < -0.15) {
       this.sprite.setFlipX(!artFacesLeft);
     } else if (state.facingX > 0.15) {
       this.sprite.setFlipX(artFacesLeft);
     }
-
-    this.applyPose(state, anim);
     this.syncHitWash(state);
   }
 
@@ -143,14 +144,13 @@ export class SpriteActorVisual {
   }
 
   private applyPose(state: ActorVisualState, anim: VisualAnimState): void {
-    let scale = this.baseScale;
+    let scale = 1;
     let alpha = 1;
     let rotation = 0;
 
-    if (state.phase === 2 && !state.dead) {
-      scale *= 1.08 + Math.sin(performance.now() / 180) * 0.03;
-      this.sprite.setTint(0xffc8e8);
-    } else if (!state.hit) {
+    if (state.phaseTransition && !state.dead) {
+      scale *= 1.04;
+    } else if (!state.hit && !state.phaseTransition) {
       this.sprite.clearTint();
     }
 
@@ -170,9 +170,10 @@ export class SpriteActorVisual {
       } else if (anim === 'phase_transition') {
         scale *= 1.16 + Math.sin(this.poseTime / 90) * 0.06;
       }
-    } else if (state.bossPattern === 'charge' && !state.dead) {
-      alpha = Math.min(alpha, 0.78);
-      scale *= 1.04;
+    } else if (this.kind === 'boss' && state.bossPattern === 'charge' && !state.dead) {
+      if (!state.attackActive) {
+        scale *= 0.84;
+      }
     }
 
     if (state.entrance && !state.dead) {
@@ -195,8 +196,13 @@ export class SpriteActorVisual {
     }
 
     if (state.dead) {
-      scale *= 1 - (state.deadT ?? 0) * 0.35;
-      alpha = 1 - (state.deadT ?? 0) * 0.7;
+      if (this.kind === 'boss') {
+        const t = state.deadT ?? 0;
+        alpha = t < 0.78 ? 1 : 1 - (t - 0.78) / 0.22;
+      } else {
+        scale *= 1 - (state.deadT ?? 0) * 0.35;
+        alpha = 1 - (state.deadT ?? 0) * 0.7;
+      }
       this.shadow.setAlpha(0.2);
     } else if (state.hit) {
       this.sprite.setTint(0xff5c5c);
@@ -211,12 +217,37 @@ export class SpriteActorVisual {
       alpha = 0;
     }
     this.sprite.setAlpha(alpha);
-    this.sprite.setScale(scale);
     this.sprite.setRotation(rotation);
+    this.applyStableSize(scale);
     this.shadow.setVisible(!state.concealed && (!state.dead || (state.deadT ?? 0) < 0.9));
     if (state.concealed) {
       this.shadow.setAlpha(0);
     }
+  }
+
+  /**
+   * One display box for every frame. flipX turns the same sprite; scale is never negative.
+   */
+  private applyStableSize(poseScale: number): void {
+    this.lockAspect();
+    const height = this.asset.visualSize * this.asset.scale * poseScale;
+    if (!this.aspectLocked) {
+      this.sprite.setScale(Math.abs(this.baseScale * poseScale));
+      return;
+    }
+    this.sprite.setDisplaySize(height * this.displayAspect, height);
+  }
+
+  private lockAspect(): void {
+    if (this.aspectLocked || this.sprite.texture.key === this.asset.fallbackKey) {
+      return;
+    }
+    const frame = this.sprite.frame;
+    if (!frame || frame.height < 2 || frame.width < 2) {
+      return;
+    }
+    this.displayAspect = frame.width / frame.height;
+    this.aspectLocked = true;
   }
 
   /** Semi-transparent red copy of the current frame, so a hit reads on bright and dark art. */

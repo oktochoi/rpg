@@ -25,7 +25,6 @@ export const SHOP_DEFINITIONS: Readonly<Record<string, ShopDefinition>> = {
       ITEM_ID.HEALING_POTION,
       ITEM_ID.MANA_POTION,
       ITEM_ID.IRON_SWORD,
-      ITEM_ID.APPRENTICE_STAFF,
       ITEM_ID.STEEL_DAGGER,
       ITEM_ID.LEATHER_ARMOR,
       ITEM_ID.SIMPLE_RING,

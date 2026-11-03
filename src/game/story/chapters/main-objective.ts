@@ -116,10 +116,7 @@ export function getMainObjectiveText(state: Readonly<GameState>): string {
   }
 
   if (isChapterCompleted(state, CHAPTER_ID.CHAPTER_1_LUEN_RUINS)) {
-    if (!worldFlag(state, WORLD_FLAG.FIRST_ADVANCEMENT_DONE)) {
-      return '제1장이 끝났다. 모험가 길드에서 길을 정할 수 있다.';
-    }
-    return '길이 정해졌다. 이번 이야기는 여기까지다.';
+    return '제1장이 끝났다. 이야기는 여기서 멈춘다.';
   }
 
   if (chapterId === CHAPTER_ID.CHAPTER_2_NORTHERN_SHADOW) {
@@ -146,11 +143,6 @@ export function getNextStepText(state: Readonly<GameState>): string {
   const chapterId = currentChapterId(state);
 
   if (isChapterCompleted(state, CHAPTER_ID.CHAPTER_1_LUEN_RUINS)) {
-    if (!worldFlag(state, WORLD_FLAG.FIRST_ADVANCEMENT_DONE)) {
-      return at(LOCATION_ID.LUEN_ADVENTURERS_GUILD)
-        ? '검사, 마법사, 도적 중 하나를 고른다'
-        : '길드에서 검사, 마법사, 도적 중 하나를 고른다';
-    }
     return '이번 이야기는 여기까지다';
   }
 
@@ -259,9 +251,6 @@ export function getQuestStepMark(state: Readonly<GameState>): QuestStepMark | nu
   const chapterId = currentChapterId(state);
 
   if (isChapterCompleted(state, CHAPTER_ID.CHAPTER_1_LUEN_RUINS)) {
-    if (!worldFlag(state, WORLD_FLAG.FIRST_ADVANCEMENT_DONE)) {
-      return { locationId: go(LOCATION_ID.LUEN_ADVENTURERS_GUILD), hints: ['검사', '마법사', '도적'] };
-    }
     return null;
   }
   if (chapterId !== CHAPTER_ID.CHAPTER_1_LUEN_RUINS) {

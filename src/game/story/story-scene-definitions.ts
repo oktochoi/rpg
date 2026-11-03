@@ -593,7 +593,7 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     entryConditions: allOf(
       loc(LOCATION_ID.LUEN_ADVENTURERS_GUILD),
       { type: 'WORLD_FLAG', flagId: WORLD_FLAG.CHAPTER_1_COMPLETE },
-      { type: 'WORLD_FLAG', flagId: WORLD_FLAG.GUILD_REGISTERED },
+      noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.CHAPTER_1_COMPLETE }),
       { type: 'PLAYER_CLASS', classId: PLAYER_CLASS_ID.ADVENTURER },
       noneOf({ type: 'WORLD_FLAG', flagId: WORLD_FLAG.FIRST_ADVANCEMENT_DONE })
     ),
@@ -1491,7 +1491,7 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
       {
         id: 'investigate_guardian_core',
         text: '코어를 조사한다',
-        action: { type: 'INVESTIGATE', targetId: EXPLORATION_POINT_ID.GUARDIAN_CORE },
+        action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.POST_GUARDIAN_AFTERMATH },
         effects: [
           { type: 'LEARN_FACT', factId: CHAPTER_FACT_ID.EVIDENCE_RECORDED },
           { type: 'SET_WORLD_FLAG', flagId: WORLD_FLAG.EVIDENCE_RECORDED, value: true },
@@ -1586,8 +1586,8 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
       {
         id: CHOICE_REPORT_RUINS,
         text: '세리아에게 폐허에서의 일을 보고한다',
-        action: { type: 'SHARE_FACT', factId: RUINS_SEAL_FACT_ID, toId: 'seria' },
-        conditions: noneOf({ type: 'NPC_KNOWS_FACT', npcId: 'seria', factId: RUINS_SEAL_FACT_ID }),
+        action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.SERIA_FINAL_REPORT },
+        choicePurpose: 'PROGRESSION',
       },
       talk(CHOICE_TALK_MARTA, '마르타에게 인사한다'),
       move(CHOICE_MOVE_INN, '여관에서 잠시 쉰다', LOCATION_ID.BLUE_MOON_INN),
@@ -1605,7 +1605,7 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
     npcDialogue: '네가 적은 결이 중요해. 봉인의 마력과 수호자를 움직인 방향이 다르면, 원인은 하나가 아니야.',
     entryConditions: allOf(
       loc(village),
-      { type: 'QUEST_STATUS', questId: QUEST_ID.RUINS_MYSTERY, status: QUEST_STATUS.COMPLETED },
+      { type: 'WORLD_FLAG', flagId: WORLD_FLAG.RUINS_GUARDIAN_DEFEATED },
       { type: 'WORLD_FLAG', flagId: WORLD_FLAG.RETURNED_TO_LUEN },
       { type: 'SCENE_NOT_VISITED', sceneId: STORY_SCENE_ID.SERIA_FINAL_REPORT }
     ),
@@ -1614,8 +1614,7 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
       {
         id: 'report_all',
         text: '조사한 내용을 전부 공개한다',
-        // Fun Pass: report → Leon in one beat (skip followup Next-click).
-        action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.LEON_CONFRONTATION },
+        action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.CHAPTER_1_COMPLETE },
         effects: [
           { type: 'SET_WORLD_FLAG', flagId: WORLD_FLAG.SERIA_REPORT_FULL, value: true },
           { type: 'SET_WORLD_FLAG', flagId: WORLD_FLAG.SERIA_FINAL_REPORT, value: true },
@@ -1626,7 +1625,7 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
       {
         id: 'report_withhold_evidence',
         text: '수호자와 봉인은 말하되, 파편과 물증은 보류한다',
-        action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.LEON_CONFRONTATION },
+        action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.CHAPTER_1_COMPLETE },
         effects: [
           { type: 'SET_WORLD_FLAG', flagId: WORLD_FLAG.SERIA_REPORT_WITHHELD_EVIDENCE, value: true },
           { type: 'SET_WORLD_FLAG', flagId: WORLD_FLAG.SERIA_FINAL_REPORT, value: true },
@@ -1636,7 +1635,7 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
       {
         id: 'report_human_intrusion',
         text: '인간의 최근 침입 흔적을 강조한다',
-        action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.LEON_CONFRONTATION },
+        action: { type: 'ENTER_SCENE', sceneId: STORY_SCENE_ID.CHAPTER_1_COMPLETE },
         effects: [
           { type: 'SET_WORLD_FLAG', flagId: WORLD_FLAG.SERIA_REPORT_HUMAN_INTRUSION, value: true },
           { type: 'SET_WORLD_FLAG', flagId: WORLD_FLAG.SERIA_FINAL_REPORT, value: true },
@@ -2057,18 +2056,16 @@ export const STORY_SCENES: Readonly<Record<string, StorySceneDefinition>> = {
   [STORY_SCENE_ID.CHAPTER_1_COMPLETE]: {
     id: STORY_SCENE_ID.CHAPTER_1_COMPLETE,
     locationId: village,
-    title: '제1장 완료',
-    narrative:
-      '폐허에서 깨어난 것의 정체가 드러났다.\n루엔은 잠시 숨을 고르지만, 북문 너머의 소문은 이미 마을까지 스며들고 있다.\n길드 장부에는 아직 모험가로 적혀 있다. 도란이라면 이제 길을 정할 때라고 말할 것이다.',
-    npcId: 'seria',
-    npcDialogue: '장부는 아직 모험가야. 도란에게 가면 길을 정할 수 있어.',
+    title: 'Chapter 1 Clear',
+    narrative: '수호자는 무너졌고, 봉인의 결은 세리아에게 닿았다.\n루엔의 첫 장은 여기서 멈춘다.',
     entryConditions: allOf(loc(village), { type: 'WORLD_FLAG', flagId: WORLD_FLAG.CHAPTER_1_COMPLETE }),
     priority: SCENE_PRIORITY.CHAPTER,
     choices: [
-      move(CHOICE_MOVE_GUILD, '모험가 길드로 간다', LOCATION_ID.LUEN_ADVENTURERS_GUILD),
-      move(CHOICE_MOVE_GATE, '북문으로 향한다', LOCATION_ID.NORTHERN_GATE),
-      talk(CHOICE_TALK_SERIA, '세리아와 이야기를 나눈다'),
-      move(CHOICE_MOVE_INN, '여관에서 숨을 고른다', LOCATION_ID.BLUE_MOON_INN),
+      {
+        id: 'chapter_clear_hold',
+        text: '여기까지다',
+        action: { type: 'TALK', promptId: 'chapter_clear_hold' },
+      },
     ],
   },
   [STORY_SCENE_ID.NORTHERN_GATE_HOOK]: {

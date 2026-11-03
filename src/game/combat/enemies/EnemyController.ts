@@ -579,10 +579,11 @@ export class EnemyController {
     const dy = aimY - this.enemy.y;
     const dist = Math.hypot(dx, dy) || 1;
     this._attackDirection.set(dx / dist, dy / dist);
+    const reach = this.definition.id === 'goblin_mage' ? 42 : 18;
     this.onRangedShot?.({
       instanceId: this._id,
-      originX: this.enemy.x + this._attackDirection.x * 18,
-      originY: this.enemy.y + this._attackDirection.y * 18,
+      originX: this.enemy.x + this._attackDirection.x * reach,
+      originY: this.enemy.y + this._attackDirection.y * reach,
       dirX: this._attackDirection.x,
       dirY: this._attackDirection.y,
       definition: this.definition,

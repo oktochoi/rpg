@@ -19,7 +19,8 @@ const PROJECTILE_DISPLAY: Record<ProjectileVisualKind, { width: number; height: 
   ENEMY_ARROW: { width: 220, height: 84, additive: false },
   MAGIC_BOLT: { width: 128, height: 128, additive: true },
   FIREBALL: { width: 136, height: 136, additive: true },
-  BOSS_ARCANE_BOLT: { width: 132, height: 132, additive: true },
+  BOSS_ARCANE_BOLT: { width: 228, height: 228, additive: true },
+  MAGE_ORB: { width: 210, height: 210, additive: true },
 };
 
 export function projectileKindFromSpawn(skillId: string, owner: 'player' | 'enemy', color: number): ProjectileVisualKind {
@@ -27,7 +28,7 @@ export function projectileKindFromSpawn(skillId: string, owner: 'player' | 'enem
     return 'FIREBALL';
   }
   if (owner === 'enemy' && (skillId === 'enemy_mage_bolt' || color === 0x7a4ab8)) {
-    return 'MAGIC_BOLT';
+    return 'MAGE_ORB';
   }
   if (owner === 'enemy' && (skillId === 'enemy_shot' || color === 0xffb060)) {
     return 'ENEMY_ARROW';

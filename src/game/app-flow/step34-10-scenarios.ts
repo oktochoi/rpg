@@ -265,8 +265,8 @@ export async function runStep3410Scenarios(): Promise<string[]> {
   const finishBlob = playerFacingBlob(full, finishChoices.choices.map((choice) => choice.text));
   if (
     isChapterCompleted(finished, CHAPTER_ID.CHAPTER_1_LUEN_RUINS) &&
-    finished.player.classId !== PLAYER_CLASS_ID.ADVENTURER &&
-    worldFlag(finished, WORLD_FLAG.FIRST_ADVANCEMENT_DONE) &&
+    finished.player.classId === PLAYER_CLASS_ID.ADVENTURER &&
+    finished.story.currentSceneId === STORY_SCENE_ID.CHAPTER_1_COMPLETE &&
     !productionTextHasInternalId(finishBlob)
   ) {
     pass('N-full-chapter', `${finished.player.classId} lv ${finished.player.level}`);

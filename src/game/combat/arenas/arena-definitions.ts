@@ -97,7 +97,6 @@ export const ARENA_DEFINITIONS: Record<string, CombatArenaDefinition> = {
     obstacles: [
       { x: 0.04, y: 0.48, w: 0.08, h: 0.2, kind: 'palisade' },
       { x: 0.06, y: 0.7, w: 0.08, h: 0.16, kind: 'palisade' },
-      { x: 0.16, y: 0.46, w: 0.1, h: 0.1, kind: 'crate' },
       { x: 0.82, y: 0.68, w: 0.1, h: 0.1, kind: 'crate' },
       { x: 0.88, y: 0.46, w: 0.08, h: 0.18, kind: 'palisade' },
       { x: 0.86, y: 0.66, w: 0.08, h: 0.16, kind: 'palisade' },
@@ -142,18 +141,8 @@ export const ARENA_DEFINITIONS: Record<string, CombatArenaDefinition> = {
       { x: 0.08, y: 0.08, w: 0.16, h: 0.1, kind: 'wall' },
       { x: 0.76, y: 0.08, w: 0.16, h: 0.1, kind: 'wall' },
     ],
-    obstacles: [
-      { x: 0.2, y: 0.22, w: 0.08, h: 0.16, kind: 'pillar' },
-      { x: 0.72, y: 0.22, w: 0.08, h: 0.16, kind: 'pillar' },
-      { x: 0.18, y: 0.68, w: 0.09, h: 0.1, kind: 'rubble' },
-      { x: 0.74, y: 0.7, w: 0.09, h: 0.1, kind: 'rubble' },
-      { x: 0.46, y: 0.58, w: 0.08, h: 0.07, kind: 'debris' },
-    ],
-    decorations: [
-      { x: 0.44, y: 0.16, w: 0.12, h: 0.08, kind: 'altar' },
-      { x: 0.34, y: 0.46, w: 0.05, h: 0.05, kind: 'debris' },
-      { x: 0.6, y: 0.3, w: 0.05, h: 0.05, kind: 'rubble' },
-    ],
+    obstacles: [],
+    decorations: [{ x: 0.44, y: 0.16, w: 0.12, h: 0.08, kind: 'altar' }],
     palette: GUARDIAN_PALETTE,
   },
   [ARENA_ID.TRAINING_YARD]: {

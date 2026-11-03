@@ -63,6 +63,52 @@ export class CombatFeedback {
     this.playShake(COMBAT_FEEL.bossDeathShakeDurationMs, COMBAT_FEEL.bossDeathShakeIntensity);
   }
 
+  playBossMoment(kind: 'slam' | 'charge-start' | 'charge-stop' | 'death', x: number, y: number): void {
+    if (kind === 'slam') {
+      this.playBossFx('boss_impact', x, y + 12, 300, 190);
+      this.playBossFx('boss_dust', x, y + 20, 220, 120);
+      this.playHitStop(70);
+      this.playShake(180, 0.006);
+      return;
+    }
+    if (kind === 'charge-start') {
+      this.playBossFx('boss_dust', x, y + 16, 170, 86);
+      this.playShake(90, 0.002);
+      return;
+    }
+    if (kind === 'charge-stop') {
+      this.playBossFx('boss_impact', x, y + 10, 200, 130);
+      this.playBossFx('boss_dust', x, y + 18, 180, 90);
+      this.playShake(140, 0.003);
+      return;
+    }
+    this.playBossFx('boss_dust', x, y + 8, 260, 140);
+    this.playBossFx('boss_rune', x, y, 180, 180);
+    this.playShake(200, 0.004);
+  }
+
+  playMageMoment(kind: 'cast' | 'impact', x: number, y: number): void {
+    if (kind === 'cast') {
+      this.playBossFx('mage_cast', x, y, 150, 150);
+      return;
+    }
+    this.playBossFx('mage_impact', x, y, 220, 220);
+    this.playShake(110, 0.003);
+  }
+
+  playBossFx(effectId: CombatEffectId, x: number, y: number, width: number, height: number): void {
+    if (width <= 0 || height <= 0) {
+      return;
+    }
+    this.tryPlaySprite(effectId, x, y, {
+      displayWidth: width,
+      displayHeight: height,
+      originX: 0.5,
+      originY: 0.62,
+      lifetimeMs: 420,
+    });
+  }
+
   playReceivedHit(target: WorldPoint, amount: number, offsetY?: number, heavy = false): void {
     this.playHitStop(heavy ? COMBAT_FEEL.receivedHeavyHitStopMs : COMBAT_FEEL.receivedHitStopMs);
     this.playShake(

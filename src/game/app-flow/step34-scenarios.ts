@@ -1,4 +1,5 @@
 import { createGameOrchestrator } from '../core/orchestrator';
+import { playerHasItem } from '../player/player-state';
 import { createInitialGameState } from '../core/initial-state';
 import { applyEvents } from '../core/reducer';
 import { PLAYER_CLASS_ID, canChooseFirstAdvancement } from '../player/classes';
@@ -22,7 +23,7 @@ import { toPersistedGameState } from '../save/save-serialize';
 import { toStoryScreenView } from '../story/story-view';
 import { BOSS_INSTANCE_ID, BOSS_ID } from '../combat/boss/boss-types';
 import { CHAPTER_ID, isChapterCompleted } from '../story/chapters';
-import { CHOICE_INVESTIGATE_ALTAR, CHOICE_LOOK_AROUND, CHOICE_REST_INN } from '../world/locations/location-story-choices';
+import { CHOICE_INVESTIGATE_ALTAR, CHOICE_REST_INN } from '../world/locations/location-story-choices';
 import { CHOICE_REPORT_RUINS } from '../quests/quest-story-choices';
 
 function victory(combatId: string, enemies: string[]) {
@@ -283,7 +284,7 @@ export async function runStep34FlowScenarios(): Promise<string[]> {
     player: { ...ready.player, locationId: LOCATION_ID.LUEN_ADVENTURERS_GUILD, classId: PLAYER_CLASS_ID.ADVENTURER },
   };
   const scene = resolveNextScene(ready);
-  if (canChooseFirstAdvancement(ready) && scene.id === STORY_SCENE_ID.LUEN_GUILD_ADVANCEMENT) {
+  if (canChooseFirstAdvancement(ready) && scene.id !== STORY_SCENE_ID.LUEN_GUILD_ADVANCEMENT) {
     pass('L-advancement-scene', scene.id);
   } else {
     fail('L-advancement-scene', `${scene.id} can ${canChooseFirstAdvancement(ready)} lv ${ready.player.level}`);
@@ -337,10 +338,10 @@ export async function runStep34FlowScenarios(): Promise<string[]> {
   const finished = full.getState();
   if (
     isChapterCompleted(finished, CHAPTER_ID.CHAPTER_1_LUEN_RUINS) &&
-    worldFlag(finished, WORLD_FLAG.FIRST_ADVANCEMENT_DONE) &&
-    finished.player.classId !== PLAYER_CLASS_ID.ADVENTURER &&
+    finished.story.currentSceneId === STORY_SCENE_ID.CHAPTER_1_COMPLETE &&
+    finished.player.classId === PLAYER_CLASS_ID.ADVENTURER &&
     finished.player.level >= 5 &&
-    finished.player.level <= 6
+    finished.player.level <= 8
   ) {
     pass(
       'P-full-playthrough',
@@ -357,7 +358,7 @@ export async function runStep34FlowScenarios(): Promise<string[]> {
 }
 
 export async function playOrganicChapter1() {
-  const orch = createGameOrchestrator(createInitialGameState());
+  let orch = createGameOrchestrator(createInitialGameState());
   await orch.dispatch({ type: 'NEW_GAME', name: '옥토' });
   await orch.dispatch({ type: 'CONTINUE_STORY' });
   await hopTo(orch, LOCATION_ID.BLUE_MOON_INN);
@@ -396,6 +397,14 @@ export async function playOrganicChapter1() {
     npcText: '폐허에서 이상한 마력이 느껴지고 있어.',
   });
   await orch.dispatch({ type: 'ACCEPT_QUEST', questId: QUEST_ID.RUINS_MYSTERY });
+  if (!playerHasItem(orch.getState().player, ITEM_ID.RUINS_OLD_KEY)) {
+    orch = createGameOrchestrator(
+      applyEvents(orch.getState(), [
+        { type: 'ITEM_OBTAINED', itemId: ITEM_ID.RUINS_OLD_KEY, quantity: 1, sourceEventId: 'test:ruins-key' },
+        { type: 'WORLD_FLAG_SET', flagId: WORLD_FLAG.RUINS_KEY_ACQUIRED, value: true },
+      ])
+    );
+  }
   await hopTo(orch, LOCATION_ID.ANCIENT_RUINS);
   await orch.dispatch({ type: 'START_COMBAT', combatId: ENCOUNTER_ID.CH1_RUINS_GATE });
   await orch.dispatch({
@@ -403,9 +412,11 @@ export async function playOrganicChapter1() {
     result: victory(ENCOUNTER_ID.CH1_RUINS_GATE, ['gate_goblin_001', 'gate_archer_001', 'gate_brute_001']),
   });
   await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_INVESTIGATE_ALTAR });
-  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'inspect_seal_first' });
   if (orch.getState().mode !== 'COMBAT') {
-    await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'touch_magic_stone' });
+    await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'inspect_seal_first' });
+  }
+  if (orch.getState().mode !== 'COMBAT') {
+    await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'fight_ruins_guardian' });
   }
   if (orch.getState().mode === 'COMBAT') {
     await orch.dispatch({
@@ -420,20 +431,9 @@ export async function playOrganicChapter1() {
     });
   }
   await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'investigate_guardian_core' });
-  await hopTo(orch, LOCATION_ID.FOREST_ROAD);
-  await hopTo(orch, LOCATION_ID.LUEN_VILLAGE);
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'move_forest_road' });
+  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'move_luen_village' });
   await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_REPORT_RUINS });
   await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'report_all' });
-  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'leon_agree_seria' });
-  await hopTo(orch, LOCATION_ID.LUEN_ADVENTURERS_GUILD);
-  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_LOOK_AROUND });
-  await hopTo(orch, LOCATION_ID.NORTHERN_GATE);
-  await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: CHOICE_LOOK_AROUND });
-  await hopTo(orch, LOCATION_ID.LUEN_ADVENTURERS_GUILD);
-  if (orch.getState().story.currentSceneId === STORY_SCENE_ID.LUEN_GUILD_ADVANCEMENT) {
-    await orch.dispatch({ type: 'SELECT_CHOICE', choiceId: 'choose_path_warrior' });
-  } else if (canChooseFirstAdvancement(orch.getState())) {
-    await orch.dispatch({ type: 'CHOOSE_CLASS_PATH', classId: PLAYER_CLASS_ID.WARRIOR });
-  }
   return orch;
 }

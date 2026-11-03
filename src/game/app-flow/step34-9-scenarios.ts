@@ -287,9 +287,9 @@ export async function runStep349Scenarios(): Promise<string[]> {
   const finished = full.getState();
   if (
     isChapterCompleted(finished, CHAPTER_ID.CHAPTER_1_LUEN_RUINS) &&
-    finished.player.classId !== PLAYER_CLASS_ID.ADVENTURER &&
+    finished.player.classId === PLAYER_CLASS_ID.ADVENTURER &&
     finished.player.allocatedStats &&
-    worldFlag(finished, WORLD_FLAG.FIRST_ADVANCEMENT_DONE)
+    finished.story.currentSceneId === STORY_SCENE_ID.CHAPTER_1_COMPLETE
   ) {
     pass('T-chapter-advancement', `${finished.player.classId} stats ${JSON.stringify(finished.player.allocatedStats)}`);
   } else {

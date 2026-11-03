@@ -22,13 +22,11 @@ export function canCompleteChapter(state: Readonly<GameState>, chapterId: string
   if (chapterId !== CHAPTER_ID.CHAPTER_1_LUEN_RUINS) {
     return false;
   }
-  const quest = state.quests[QUEST_ID.RUINS_MYSTERY];
   return (
-    quest?.status === QUEST_STATUS.COMPLETED &&
     worldFlag(state, WORLD_FLAG.RUINS_GUARDIAN_DEFEATED) &&
-    worldFlag(state, WORLD_FLAG.SERIA_FINAL_REPORT) &&
-    worldFlag(state, WORLD_FLAG.GUILD_RECOGNITION_DONE) &&
-    worldFlag(state, WORLD_FLAG.NORTHERN_GATE_HOOK_SEEN)
+    worldFlag(state, WORLD_FLAG.POST_GUARDIAN_INVESTIGATED) &&
+    worldFlag(state, WORLD_FLAG.RETURNED_TO_LUEN) &&
+    worldFlag(state, WORLD_FLAG.SERIA_FINAL_REPORT)
   );
 }
 

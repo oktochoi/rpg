@@ -172,12 +172,12 @@ export const GAME_ASSETS = {
       damageTextOffsetY: 54,
       ...smoothCoreSheet('sprites/goblin_archer', 'goblin_archer'),
     }),
-    goblin_mage: character('goblin_mage', 'enemy', 'enemies/goblin-mage', 'goblin_mage_idle.png', 'placeholder_goblin_mage', 96, {
+    goblin_mage: character('goblin_mage', 'enemy', 'enemies/goblin-mage', 'goblin_mage_idle.png', 'placeholder_goblin_mage', 136, {
       scale: 1,
       originX: 0.5,
       originY: 0.9,
-      hpBarOffsetY: 52,
-      damageTextOffsetY: 56,
+      hpBarOffsetY: 74,
+      damageTextOffsetY: 78,
       ...smoothCoreSheet('sprites/goblin_mage', 'goblin_mage'),
     }),
     brute: character('brute', 'enemy', 'enemies/stone-golem', 'stone_golem_idle.png', 'placeholder_brute', 148, {
@@ -204,15 +204,15 @@ export const GAME_ASSETS = {
       'bosses/ruins_guardian',
       'ruins_guardian_idle.png',
       'placeholder_ruins_guardian',
-      232,
+      314,
       {
         scale: 1,
         originX: 0.5,
         originY: 0.92,
         // Sheet walk and slam face left at rest.
         artFacesLeft: true,
-        hpBarOffsetY: 128,
-        damageTextOffsetY: 118,
+        hpBarOffsetY: 174,
+        damageTextOffsetY: 160,
         path: `${GUARDIAN_SHEET}/idle_01.png`,
         sequenceFrameRate: {
           idle: 5,
@@ -272,9 +272,13 @@ export const GAME_ASSETS = {
       originY: 0.5,
       path: '/assets/vfx/projectiles/frames/arrow_01.png',
     }),
-    BOSS_ARCANE_BOLT: character('boss_arcane_bolt', 'projectile', 'effects', 'boss_arcane_bolt.png', 'placeholder_arcane', 52, {
+    BOSS_ARCANE_BOLT: character('boss_arcane_bolt', 'projectile', 'effects', 'boss_arcane_bolt.png', 'placeholder_arcane', 96, {
       originY: 0.5,
       path: '/assets/RPG_Boss_Page1_Page2_Sliced/page1_guardian/guardian_projectile_04.png',
+    }),
+    MAGE_ORB: character('mage_orb', 'projectile', 'effects', 'mage_orb.png', 'placeholder_arcane', 96, {
+      originY: 0.5,
+      path: '/assets/vfx/projectiles/frames/arcane_orb_03.png',
     }),
   },
   EFFECT: {
@@ -288,6 +292,13 @@ export const GAME_ASSETS = {
     boss_slam: effect('boss_slam', 'boss_slam.png'),
     boss_charge: effect('boss_charge', 'boss_charge.png'),
     boss_phase: effect('boss_phase', 'boss_phase.png'),
+    boss_impact: effectFromPack('boss_impact', '/assets/RPG_Boss_Page1_Page2_Sliced/page2_effects/effect_finisher_03.png'),
+    boss_rune: effectFromPack('boss_rune', '/assets/RPG_Boss_Page1_Page2_Sliced/page2_effects/effect_sigil_05.png'),
+    boss_burst: effectFromPack('boss_burst', '/assets/RPG_Boss_Page1_Page2_Sliced/page2_effects/effect_burst_04.png'),
+    boss_dust: effectFromPack('boss_dust', '/assets/RPG_Boss_Page1_Page2_Sliced/page2_effects/effect_darkfx_02.png'),
+    boss_phase_glow: effectFromPack('boss_phase_glow', '/assets/RPG_Boss_Page1_Page2_Sliced/page2_effects/effect_seal_03.png'),
+    mage_cast: effectFromPack('mage_cast', '/assets/vfx/projectiles/frames/arcane_orb_03.png'),
+    mage_impact: effectFromPack('mage_impact', '/assets/vfx/projectiles/frames/arcane_orb_07.png'),
   } satisfies Record<string, EffectAssetDefinition>,
   STORY_BACKGROUND: {
     luen_village: { id: 'luen_village', path: '/assets/story/01_luen_village_square.png', theme: 'village' },

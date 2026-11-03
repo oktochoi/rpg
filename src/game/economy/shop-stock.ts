@@ -18,7 +18,7 @@ export type ShopStockPhase = (typeof SHOP_STOCK_PHASE)[keyof typeof SHOP_STOCK_P
 const CONSUMABLES = [ITEM_ID.LINEN_BANDAGE, ITEM_ID.HEALING_POTION, ITEM_ID.MANA_POTION] as const;
 const PHASE_A = [...CONSUMABLES, ITEM_ID.STURDY_SWORD];
 const PHASE_B = [...PHASE_A, ITEM_ID.SIMPLE_RING, ITEM_ID.LEATHER_ARMOR, ITEM_ID.IRON_SWORD];
-const PHASE_C = [...PHASE_B, ITEM_ID.APPRENTICE_STAFF, ITEM_ID.STEEL_DAGGER];
+const PHASE_C = [...PHASE_B, ITEM_ID.STEEL_DAGGER];
 
 export function shopStockPhase(state: Readonly<GameState>): ShopStockPhase {
   const ruins = state.quests[QUEST_ID.RUINS_MYSTERY]?.status;

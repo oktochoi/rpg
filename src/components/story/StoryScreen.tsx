@@ -53,6 +53,7 @@ export function StoryScreen({
             ? styles.night
             : '';
   const closeMenu = () => dispatch({ type: 'CLOSE_MENU' });
+  const chapterClear = gameState?.story.currentSceneId === 'chapter_1_complete';
 
   return (
     <div className={`${styles.screen} ${todClass}`.trim()} data-phase={view.story.gamePhase}>
@@ -65,11 +66,17 @@ export function StoryScreen({
       />
       {saveNotice ? <p className={styles.notice}>{saveNotice}</p> : null}
       {fallbackNotice ? <p className={styles.fallback}>{fallbackNotice}</p> : null}
-      {view.suggestedNextAction ? (
+      {view.suggestedNextAction && !chapterClear ? (
         <aside className={styles.nextStep} aria-label="다음 할 일">
           <p className={styles.nextKicker}>다음</p>
           <p className={styles.nextBody}>{view.suggestedNextAction}</p>
         </aside>
+      ) : null}
+      {chapterClear ? (
+        <div className={styles.clearing} role="status">
+          <p className={styles.clearTitle}>Chapter 1 Clear</p>
+          <p className={styles.clearNext}>To Be Continued...</p>
+        </div>
       ) : null}
       <div className={styles.stage}>
         <div className={styles.scene}>

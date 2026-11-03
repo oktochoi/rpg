@@ -5,8 +5,6 @@ import {
   ENEMY_ATTACK_ACTIVE_ALPHA,
   ENEMY_ATTACK_HITBOX_COLOR,
   ENEMY_ATTACK_WINDUP_ALPHA,
-  ENEMY_DEATH_END_SCALE,
-  ENEMY_DEATH_FADE_MS,
   ENEMY_HIT_COLOR,
   ENEMY_HIT_FLASH_MS,
   ENEMY_KNOCKBACK_DURATION_MS,
@@ -35,7 +33,7 @@ export class BossController implements CombatHittable {
   private readonly telegraph: Phaser.GameObjects.Graphics;
   private readonly debugLabel: Phaser.GameObjects.Text;
   private readonly phaseLabel: Phaser.GameObjects.Text;
-  private coreRemnant: Phaser.GameObjects.Arc | null = null;
+  private readonly deathDurationMs = 1700;
   private readonly knockbackVelocity = new Phaser.Math.Vector2();
   private readonly lockedDirection = new Phaser.Math.Vector2(1, 0);
   private readonly _attackDirection = new Phaser.Math.Vector2(1, 0);
@@ -194,7 +192,7 @@ export class BossController implements CombatHittable {
     if (!this.runtime.isDead) {
       return 0;
     }
-    return 1 - Math.max(0, this.deathFadeRemainingMs / (ENEMY_DEATH_FADE_MS + 180));
+    return 1 - Math.max(0, this.deathFadeRemainingMs / this.deathDurationMs);
   }
 
   get state(): BossState {
@@ -381,12 +379,7 @@ export class BossController implements CombatHittable {
     this.clearAttackVisuals();
     this.body.setVelocity(0, 0);
     this.body.setEnable(false);
-    this.deathFadeRemainingMs = ENEMY_DEATH_FADE_MS + 180;
-    if (!this.coreRemnant) {
-      this.coreRemnant = this.visual.scene.add.circle(this.visual.x, this.visual.y + 24, 16, 0x8fd4ff, 0.95);
-      this.coreRemnant.setStrokeStyle(4, 0xd7b4ff, 0.95);
-      this.coreRemnant.setDepth(6);
-    }
+    this.deathFadeRemainingMs = this.deathDurationMs;
     this.onDeath?.();
   }
 
@@ -395,12 +388,9 @@ export class BossController implements CombatHittable {
       return;
     }
     this.deathFadeRemainingMs -= delta;
-    const t = 1 - Math.max(0, this.deathFadeRemainingMs / (ENEMY_DEATH_FADE_MS + 180));
-    const fade = 1 - t;
-    this.visual.setAlpha(fade);
-    this.visual.setScale((this.runtime.currentPhase === 2 ? 1.08 : 1) - t * (1 - ENEMY_DEATH_END_SCALE));
-    this.debugLabel.setAlpha(fade);
-    this.phaseLabel.setAlpha(fade);
+    this.visual.setAlpha(0);
+    this.debugLabel.setAlpha(0);
+    this.phaseLabel.setAlpha(0);
     if (this.deathFadeRemainingMs <= 0) {
       this.visual.setVisible(false);
       this.debugLabel.setVisible(false);
@@ -649,7 +639,7 @@ export class BossController implements CombatHittable {
     this.slamHitbox.setRotation(0);
     this.slamHitbox.setSize(slamRange, slamRange);
     this.slamHitboxBody.setSize(slamRange, slamRange);
-    this.slamHitbox.setVisible(this.telegraphKind === 'slam' || this.slamHitboxActive);
+    this.slamHitbox.setVisible(false);
     this.slamHitbox.setAlpha(this.slamHitboxActive ? ENEMY_ATTACK_ACTIVE_ALPHA : ENEMY_ATTACK_WINDUP_ALPHA);
     this.slamHitboxBody.setEnable(this.slamHitboxActive && !this.runtime.isDead);
 
@@ -695,7 +685,6 @@ export class BossController implements CombatHittable {
     this.telegraph.destroy();
     this.slamHitbox.destroy();
     this.chargeHitbox.destroy();
-    this.coreRemnant?.destroy();
     this.debugLabel.destroy();
     this.phaseLabel.destroy();
   };

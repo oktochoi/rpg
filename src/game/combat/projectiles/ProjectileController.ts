@@ -47,6 +47,7 @@ export class ProjectileController {
   private readonly projectiles: TrackedProjectile[] = [];
   private nextId = 1;
   private nextAttackId = 10_000;
+  onEnded: ((skillId: string, x: number, y: number) => void) | null = null;
 
   constructor(private readonly scene: Phaser.Scene) {
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, this.destroyAll, this);
@@ -272,6 +273,7 @@ export class ProjectileController {
     for (let index = this.projectiles.length - 1; index >= 0; index -= 1) {
       const item = this.projectiles[index];
       if (!item.state.alive) {
+        this.onEnded?.(item.state.skillId, item.state.x, item.state.y);
         item.visual.destroy();
         this.projectiles.splice(index, 1);
       } else {

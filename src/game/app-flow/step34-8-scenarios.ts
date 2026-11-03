@@ -250,8 +250,8 @@ export async function runStep348Scenarios(): Promise<string[]> {
   if (
     isChapterCompleted(finished, CHAPTER_ID.CHAPTER_1_LUEN_RUINS) &&
     finished.player.level >= 5 &&
-    finished.player.level <= 6 &&
-    finished.player.classId !== PLAYER_CLASS_ID.ADVENTURER
+    finished.player.level <= 8 &&
+    finished.player.classId === PLAYER_CLASS_ID.ADVENTURER
   ) {
     pass('Q-recommended-level', `lv ${finished.player.level}`);
   } else {

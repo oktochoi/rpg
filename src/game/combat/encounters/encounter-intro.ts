@@ -121,7 +121,7 @@ const INTRO_BY_ENCOUNTER: Record<string, IntroSeed> = {
     alert: '석문 안에서 쇳소리가 난다…',
     appear: '골렘 수문장이 입구를 막는다',
     warn: '수문장',
-    tagline: '주술사가 뒤에서 돕는다',
+    tagline: '주술사가 마력을 모은다',
     backdrop: ART.ruins,
   },
   [ENCOUNTER_ID.RUINS_MIXED_01]: {

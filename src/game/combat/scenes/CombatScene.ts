@@ -84,6 +84,8 @@ export class CombatScene extends Phaser.Scene {
   private wasDashing = false;
   private wasPlayerDead = false;
   private wasPhaseTransition = false;
+  private bossBeat = '';
+  private phaseVeil: Phaser.GameObjects.Rectangle | null = null;
   private readonly heardDeathIds = new Set<string>();
   /** PRE_ENCOUNTER → ENEMY_ENTRANCE → READY → ACTIVE_COMBAT. AI stays halted until active. */
   private startPhase: EncounterStartPhase = 'pre';
@@ -158,6 +160,14 @@ export class CombatScene extends Phaser.Scene {
       invulnerable: training,
     });
     this.projectiles = new ProjectileController(this);
+    this.projectiles.onEnded = (skillId, x, y) => {
+      if (skillId === 'boss_burst') {
+        this.feedback?.playBossFx('boss_burst', x, y, 210, 210);
+      }
+      if (skillId === 'enemy_mage_bolt') {
+        this.feedback?.playMageMoment('impact', x, y);
+      }
+    };
     const basic = getBasicAttack(classId, classDefinition.combat.basicAttackId);
     const rangeScale = this.combatConfig?.player.attackRangeScale ?? 1;
     const attackPercent = this.combatConfig?.player.attackPercent ?? 0;
@@ -683,8 +693,9 @@ export class CombatScene extends Phaser.Scene {
         originY: this.arena?.layout.y ?? 0,
       }),
       (shot) => {
-        this.projectiles?.spawnEnemyShot(shot);
+        this.projectiles?.spawnEnemyShot({ ...shot, skillId: 'boss_burst', color: 0xb45c9a });
         audioManager.playSfx(SFX_ID.GUARDIAN_PROJECTILE);
+        this.feedback?.playBossFx('boss_burst', shot.x, shot.y, 150, 150);
       },
       () => {
         if (this.boss) {
@@ -921,6 +932,9 @@ export class CombatScene extends Phaser.Scene {
       color: isMage ? shot.definition.color : undefined,
       skillId: isMage ? 'enemy_mage_bolt' : 'enemy_shot',
     });
+    if (isMage) {
+      this.feedback?.playMageMoment('cast', shot.originX, shot.originY);
+    }
     audioManager.playSfx(SFX_ID.ARCHER_SHOT);
   };
 
@@ -954,6 +968,53 @@ export class CombatScene extends Phaser.Scene {
     this.aliveLabel?.setText(`ALIVE ${alive}/${spawned}`);
   }
 
+  private showPhaseVeil(): void {
+    const width = this.scale.width;
+    const height = this.scale.height;
+    if (!this.phaseVeil) {
+      this.phaseVeil = this.add.rectangle(width / 2, height / 2, width, height, 0x07060c, 0.46);
+      this.phaseVeil.setScrollFactor(0);
+      this.phaseVeil.setDepth(7);
+    }
+    this.phaseVeil.setAlpha(0.46);
+    this.tweens.add({
+      targets: this.phaseVeil,
+      alpha: 0,
+      duration: 900,
+      ease: 'Quad.easeOut',
+    });
+  }
+
+  private syncBossAttackFx(): void {
+    if (!this.boss || !this.feedback) {
+      return;
+    }
+    const snap = this.boss.debugSnapshot();
+    const beat = `${snap.patternId ?? 'none'}:${snap.state}:${this.boss.isDead ? 1 : 0}`;
+    if (beat === this.bossBeat) {
+      return;
+    }
+    const previous = this.bossBeat;
+    this.bossBeat = beat;
+    const x = this.boss.gameObject.x;
+    const y = this.boss.gameObject.y;
+    if (snap.patternId === 'heavy_slam' && snap.state === 'WINDUP' && !previous.startsWith('heavy_slam:WINDUP')) {
+      this.feedback.playBossFx('boss_rune', x, y + 18, 240, 150);
+    }
+    if (snap.patternId === 'heavy_slam' && snap.state === 'ATTACKING' && !previous.startsWith('heavy_slam:ATTACKING')) {
+      this.feedback.playBossMoment('slam', x, y);
+    }
+    if (snap.patternId === 'charge' && snap.state === 'ATTACKING' && !previous.startsWith('charge:ATTACKING')) {
+      this.feedback.playBossMoment('charge-start', x, y);
+    }
+    if (previous.startsWith('charge:ATTACKING') && snap.state === 'RECOVERY') {
+      this.feedback.playBossMoment('charge-stop', x, y);
+    }
+    if (this.boss.isDead && !previous.endsWith(':1')) {
+      this.feedback.playBossMoment('death', x, y);
+    }
+  }
+
   private checkCombatEnd(): void {
     if (this.health?.isDead) {
       this.enterResult('DEFEAT');
@@ -961,7 +1022,7 @@ export class CombatScene extends Phaser.Scene {
     }
 
     if (this.boss) {
-      if (this.boss.isDead) {
+      if (this.boss.isDead && this.boss.deathProgress >= 0.9) {
         this.enterResult('VICTORY');
       }
       return;
@@ -1176,8 +1237,13 @@ export class CombatScene extends Phaser.Scene {
 
     if (this.boss?.isTransitioningPhase && !this.wasPhaseTransition) {
       audioManager.playSfx(SFX_ID.GUARDIAN_PHASE2);
+      this.cameras.main.shake(280, 0.004);
+      this.feedback?.playBossFx('boss_phase_glow', this.boss.gameObject.x, this.boss.gameObject.y, 340, 340);
+      this.feedback?.playBossFx('boss_rune', this.boss.gameObject.x, this.boss.gameObject.y, 220, 160);
+      this.showPhaseVeil();
     }
     this.wasPhaseTransition = this.boss?.isTransitioningPhase === true;
+    this.syncBossAttackFx();
   }
 
   private handleResize(gameSize: Phaser.Structs.Size): void {

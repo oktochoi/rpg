@@ -62,7 +62,14 @@ export function runCombatPressureScenarios(): string[] {
     const solids = [...arena.walls, ...arena.obstacles].map((rect) => toWorldRect(rect, layout));
     return { id, ratio: walkableRatio(layout.width, layout.height, solids), obstacles: arena.obstacles.length };
   });
-  if (ratios.every((item) => item.ratio >= 0.8 && item.ratio <= 0.92 && item.obstacles >= 3)) {
+  const bossArena = ratios.find((item) => item.id === ARENA_ID.RUINS_GUARDIAN);
+  const cluttered = ratios.filter((item) => item.id !== ARENA_ID.RUINS_GUARDIAN);
+  const floorsOpen =
+    cluttered.every((item) => item.ratio >= 0.8 && item.ratio <= 0.92 && item.obstacles >= 3) &&
+    bossArena != null &&
+    bossArena.obstacles === 0 &&
+    bossArena.ratio >= 0.8;
+  if (floorsOpen) {
     pass(
       'arenas-walkable',
       ratios.map((item) => `${item.id}:${(item.ratio * 100).toFixed(0)}%`).join(' ')

@@ -103,24 +103,20 @@ export function toStoryScreenView(
   const attack = derived.attackPower;
   const canAdvance = canChooseFirstAdvancement(state);
   const isStillAdventurer = isAdventurer(state.player.classId);
-  const nextRankLabel = canAdvance
-    ? '검사 / 마법사 / 도적'
-    : isStillAdventurer
-      ? undefined
-      : nextList.length > 1
-        ? nextList.map((item) => getClassRank(item.toRank)?.name ?? item.toRank).join(' / ')
-        : nextList[0]
-          ? getClassRank(nextList[0].toRank)?.name ?? displayClassName(nextList[0].familyId, nextList[0].toRank)
-          : undefined;
-  const nextRankHint = canAdvance
-    ? '길드에서 전직 가능'
-    : isStillAdventurer
-      ? '제1장을 마친 뒤 전직'
+  const nextRankLabel = canAdvance || isStillAdventurer
+    ? undefined
+    : nextList.length > 1
+      ? nextList.map((item) => getClassRank(item.toRank)?.name ?? item.toRank).join(' / ')
       : nextList[0]
-        ? nextList.length > 1
-          ? `Lv.${nextList[0].levelRequirement} + 제1장 완료`
-          : `Lv.${nextList[0].levelRequirement} · 전직 퀘스트`
+        ? getClassRank(nextList[0].toRank)?.name ?? displayClassName(nextList[0].familyId, nextList[0].toRank)
         : undefined;
+  const nextRankHint = canAdvance || isStillAdventurer
+    ? undefined
+    : nextList[0]
+      ? nextList.length > 1
+        ? `Lv.${nextList[0].levelRequirement} + 제1장 완료`
+        : `Lv.${nextList[0].levelRequirement} · 전직 퀘스트`
+      : undefined;
 
   const choices = dynamicChoices ?? getAvailableChoices(state);
   const suggestedNextAction = getNextStepText(state);

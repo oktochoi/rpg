@@ -25,7 +25,7 @@ export const RUINS_GUARDIAN_CONFIG: RuinsGuardianConfig = {
     anglesPhase2: [-32, -16, 0, 16, 32],
     speed: 210,
     lifetimeMs: 1800,
-    radius: 9,
+    radius: 16,
     windUpMs: 780,
     recoveryMs: 420,
   },
